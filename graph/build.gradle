@@ -10,12 +10,17 @@ repositories {
 }
 
 dependencies {
-    compile 'org.scala-lang:scala-library:2.12.3'
-    testCompile 'org.scalatest:scalatest_2.12:3.0.0'
+    compile 'org.scala-lang:scala-library:2.11.7'
+    testCompile 'org.scalatest:scalatest_2.11:3.0.0'
 
     compile 'org.apache.hadoop:hadoop-common:2.7.1'
     compile 'org.apache.hadoop:hadoop-yarn:2.7.1'
     compile 'org.apache.hadoop:hadoop-yarn-client:2.7.1'
 
     testCompile group: 'junit', name: 'junit', version: '4.12'
+}
+
+task copyGraphJar(type: Copy) {
+    from file("${buildDir}/libs/graph.jar")
+    into file("${projectDir}/publish/")
 }

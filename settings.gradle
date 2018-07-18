@@ -10,4 +10,5 @@
 rootProject.name = 'Jalebi'
 include 'graph'
 include 'appclient'
+include 'Netty'
 

@@ -41,10 +41,7 @@ object Client {
   private def createApplicationMasterContext(yarnClient: YarnClient, jarPath: String, conf: YarnConfiguration) = {
     val amContainer = Records.newRecord(classOf[ContainerLaunchContext])
     amContainer.setCommands(List(
-//      "export CLASSPATH=.:$CLASSPATH:./graph.jar",
-      "$JAVA_HOME/bin/java -Xmx256M com.jalebi.yarn.ApplicationMaster" +
-//        "  " + jarPath + "   " +
-//        " graph.jar  " +
+      "scala -cp graph.jar com.jalebi.yarn.ApplicationMaster" +
         " 1>" + ApplicationConstants.LOG_DIR_EXPANSION_VAR + "/stdout" +
         " 2>" + ApplicationConstants.LOG_DIR_EXPANSION_VAR + "/stderr"
     ).asJava)

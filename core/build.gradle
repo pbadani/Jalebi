@@ -11,6 +11,7 @@ repositories {
 
 dependencies {
     compile 'org.scala-lang:scala-library:2.12.3'
+    compile 'org.scala-lang:scala-compiler:2.12.3'
     testCompile 'org.scalatest:scalatest_2.12:3.0.0'
 
     compile 'org.apache.hadoop:hadoop-common:2.7.1'

@@ -17,5 +17,9 @@ trait Vertex[T] extends Serializable {
     relations.filter(e => (e.isDirected && e.isTarget(this.id))
       || (!e.isDirected))
   }
+
+  override def toString: String = {
+    s"VertexID: ${id}"
+  }
 }
 

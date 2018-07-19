@@ -5,6 +5,7 @@ abstract case class Edge[T](source: VertexID, target: VertexID, data: T) extends
   self: EdgeDirection with EdgeWeight =>
 
   def isSource(id: VertexID): Boolean = source == id
+
   def isTarget(id: VertexID): Boolean = target == id
 }
 

@@ -1,7 +1,7 @@
-package com.jalebi.netty.sample
+package com.jalebi.netty.sample.discard
 
 import io.netty.bootstrap.ServerBootstrap
-import io.netty.channel.{ChannelInitializer, ChannelOption}
+import io.netty.channel.ChannelInitializer
 import io.netty.channel.nio.NioEventLoopGroup
 import io.netty.channel.socket.SocketChannel
 import io.netty.channel.socket.nio.NioServerSocketChannel
@@ -10,7 +10,7 @@ object DiscardServer {
 
   @throws[Exception]
   def main(args: Array[String]): Unit = {
-    val port = if (args.length > 0) args(0).toInt else 8080
+    val port = if (args.length > 0) args(0).toInt else 8009
     DiscardServer(port).run()
   }
 }
@@ -33,13 +33,13 @@ case class DiscardServer(port: Int) {
             }
           }
         )
-        .option(ChannelOption.SO_BACKLOG, 128)
-        .childOption(ChannelOption.SO_KEEPALIVE, true)
+//        .option(ChannelOption.SO_BACKLOG, 128)
+//        .childOption(ChannelOption.SO_KEEPALIVE, true)
       val f = b.bind(port).sync
       f.channel.closeFuture.sync
     } finally {
-      workerGroup.shutdownGracefully
-      bossGroup.shutdownGracefully
+      workerGroup.shutdownGracefully()
+      bossGroup.shutdownGracefully()
     }
   }
 }

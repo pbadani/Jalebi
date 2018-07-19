@@ -7,8 +7,7 @@ import org.apache.hadoop.yarn.api.ApplicationConstants
 import org.apache.hadoop.yarn.api.records._
 import org.apache.hadoop.yarn.client.api.{YarnClient, YarnClientApplication}
 import org.apache.hadoop.yarn.conf.YarnConfiguration
-import org.apache.hadoop.yarn.util.Records
-import org.apache.hadoop.yarn.util.ConverterUtils
+import org.apache.hadoop.yarn.util.{ConverterUtils, Records}
 
 import scala.collection.JavaConverters._
 

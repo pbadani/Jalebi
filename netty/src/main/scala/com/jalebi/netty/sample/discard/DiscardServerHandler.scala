@@ -1,8 +1,7 @@
-package com.jalebi.netty.sample
+package com.jalebi.netty.sample.discard
 
 import io.netty.buffer.ByteBuf
-import io.netty.channel.ChannelHandlerContext
-import io.netty.channel.ChannelInboundHandlerAdapter
+import io.netty.channel.{ChannelHandlerContext, ChannelInboundHandlerAdapter}
 
 class DiscardServerHandler extends ChannelInboundHandlerAdapter {
 

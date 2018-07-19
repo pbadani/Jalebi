@@ -2,9 +2,21 @@ package com.jalebi.context
 
 import com.jalebi.api.{Edge, Jalebi, Vertex}
 
-case class JalebiContext(conf: JalebiConfig) {
+case class JalebiContext private(conf: JalebiConfig) {
 
-  def load[V, E](vertices: Vertex[V], edges: Edge[E]): Jalebi[V, E] = {
-
+  @throws[IllegalArgumentException]
+  private def validate[V, E](vertices: Seq[Vertex[V]], edges: Seq[Edge[E]]): Jalebi[V, E] = {
+    //    val vertexID
+    null
   }
+
+  @throws[IllegalArgumentException]
+  def load[V, E](vertices: Seq[Vertex[V]], edges: Seq[Edge[E]]): Jalebi[V, E] = {
+    validate(vertices, edges)
+    Jalebi.apply(vertices, edges)
+  }
+}
+
+object JalebiContext {
+  def apply(conf: JalebiConfig): JalebiContext = JalebiContext(conf)
 }

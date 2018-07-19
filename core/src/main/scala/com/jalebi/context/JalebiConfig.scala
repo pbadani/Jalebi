@@ -6,31 +6,26 @@ case class JalebiConfig private(appName: String, master: String)
 
 object JalebiConfig {
 
-  private class JalebiConfigBuilder {
+  private case class JalebiConfigBuilder(appName: Option[String], master: Option[String]) {
 
-    private var appName: String = _
-    private var master: String = _
-
-    def withClusterMaster(master: String): Unit = {
+    def withClusterMaster(master: String): JalebiConfigBuilder = {
       val uri = new URI(master)
       require(uri.getScheme == "jalebi")
       require(uri.getHost.nonEmpty)
-      this.master = master
+      this.copy(master = Some(master))
     }
 
-    def withAppName(appName: String): Unit = {
-      require(appName.nonEmpty)
-      this.appName = appName
-    }
-
-    def build(): JalebiConfig = {
-      require(master.nonEmpty)
-      require(appName.nonEmpty)
-      JalebiConfig(appName, master)
+    def fry(): JalebiConfig = {
+      require(master.isDefined)
+      require(appName.isDefined)
+      JalebiConfig(appName.get, master.get)
     }
   }
 
-  def createNew(): JalebiConfigBuilder = new JalebiConfigBuilder
+  def withAppName(appName: String): JalebiConfigBuilder = {
+    require(appName.nonEmpty)
+    JalebiConfigBuilder(Some(appName), None)
+  }
 
   def apply(appName: String, master: String): JalebiConfig = new JalebiConfig(appName, master)
 }

@@ -16,7 +16,7 @@ object EchoClient {
 
   @throws[Exception]
   def main(args: Array[String]): Unit = { // Configure SSL.git
-    val sslCtx =  if (SSL)  SslContextBuilder.forClient.trustManager(InsecureTrustManagerFactory.INSTANCE).build
+    val sslCtx = if (SSL) SslContextBuilder.forClient.trustManager(InsecureTrustManagerFactory.INSTANCE).build
     else null
     // Configure the client.
     val group = new NioEventLoopGroup
@@ -24,7 +24,7 @@ object EchoClient {
       val b = new Bootstrap
       b.group(group)
         .channel(classOf[NioSocketChannel])
-//        .option(ChannelOption.TCP_NODELAY, true.asInstanceOf[Any])
+        //        .option(ChannelOption.TCP_NODELAY, true.asInstanceOf[Any])
         .handler(new ChannelInitializer[SocketChannel]() {
         @throws[Exception]
         override def initChannel(ch: SocketChannel): Unit = {

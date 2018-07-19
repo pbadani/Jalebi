@@ -16,7 +16,7 @@ object EchoServer {
   private[echo] val PORT = System.getProperty("port", "8007").toInt
 
   @throws[Exception]
-  def main(args: Array[String]): Unit = { // Configure SSL.
+  def main(args: Array[String]): Unit = {
     // Configure the server.
     val bossGroup = new NioEventLoopGroup(1)
     val workerGroup = new NioEventLoopGroup
@@ -25,14 +25,13 @@ object EchoServer {
       val b = new ServerBootstrap
       b.group(bossGroup, workerGroup)
         .channel(classOf[NioServerSocketChannel])
-//        .option(ChannelOption.SO_BACKLOG, 100)
         .handler(new LoggingHandler(LogLevel.INFO))
         .childHandler(new ChannelInitializer[SocketChannel]() {
-        @throws[Exception]
-        override def initChannel(ch: SocketChannel): Unit = {
-          ch.pipeline.addLast(serverHandler)
-        }
-      })
+          @throws[Exception]
+          override def initChannel(ch: SocketChannel): Unit = {
+            ch.pipeline.addLast(serverHandler)
+          }
+        })
       // Start the server.
       val f = b.bind(PORT).sync
       // Wait until the server socket is closed.

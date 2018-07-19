@@ -19,19 +19,19 @@ object DiscardClient {
 
   @throws[Exception]
   def main(args: Array[String]): Unit = {
-    val sslCtx  = if (SSL) SslContextBuilder.forClient.trustManager(InsecureTrustManagerFactory.INSTANCE).build else null
+    val sslCtx = if (SSL) SslContextBuilder.forClient.trustManager(InsecureTrustManagerFactory.INSTANCE).build else null
     val group = new NioEventLoopGroup
     try {
       val b = new Bootstrap
       b.group(group).channel(classOf[NioSocketChannel])
         .handler(new ChannelInitializer[SocketChannel]() {
           @throws[Exception]
-        override protected def initChannel(ch: SocketChannel): Unit = {
-          val p = ch.pipeline
-          if (sslCtx != null) p.addLast(sslCtx.newHandler(ch.alloc, HOST, PORT))
-          p.addLast(new DiscardClientHandler())
-        }
-      })
+          override protected def initChannel(ch: SocketChannel): Unit = {
+            val p = ch.pipeline
+            if (sslCtx != null) p.addLast(sslCtx.newHandler(ch.alloc, HOST, PORT))
+            p.addLast(new DiscardClientHandler())
+          }
+        })
       // Make the connection attempt.
       val f = b.connect(HOST, PORT).sync
       // Wait until the connection is closed.

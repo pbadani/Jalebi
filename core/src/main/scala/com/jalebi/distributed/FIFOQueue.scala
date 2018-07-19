@@ -6,6 +6,5 @@ class FIFOQueue[E] extends Queue[E] {
   override def dequeue(): E = ???
 
   override def isEmpty: Boolean = ???
-
 }
 

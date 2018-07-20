@@ -4,11 +4,12 @@ import com.jalebi.api._
 import com.jalebi.context.{JalebiConfig, JalebiContext}
 
 class Test {
+
   def main(args: Array[String]): Unit = {
 
     val jalebiConfig = JalebiConfig
       .withAppName("Jalebi")
-      .withClusterMaster("jalebi://localhost:8080")
+      .withMaster("jalebi://localhost:8080")
       .fry()
 
     val jalebiContext = JalebiContext(jalebiConfig)

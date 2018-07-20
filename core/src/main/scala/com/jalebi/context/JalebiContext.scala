@@ -4,6 +4,8 @@ import com.jalebi.api._
 
 case class JalebiContext private(conf: JalebiConfig) {
 
+  private val applicationID = s"Jalebi_App_${System.currentTimeMillis()}"
+
   @throws[IllegalArgumentException]
   private def validate[V, E](vertices: Vertices[V], edges: Edges[E]): Jalebi[V, E] = {
     //    val vertexID

@@ -8,7 +8,7 @@ object JalebiConfig {
 
   private case class JalebiConfigBuilder(appName: Option[String], master: Option[String]) {
 
-    def withClusterMaster(master: String): JalebiConfigBuilder = {
+    def withMaster(master: String): JalebiConfigBuilder = {
       val uri = new URI(master)
       require(uri.getScheme == "jalebi")
       require(uri.getHost.nonEmpty)

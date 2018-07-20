@@ -1,9 +1,13 @@
 package com.jalebi.api
 
-case class Jalebi[V, E] private(vertices: Vertices[V], edges: Edges[E]) {
+abstract class Jalebi[V, E] private(vertices: Vertices[V], edges: Edges[E]) {
+
+  def searchBreadthFirst(verticesToSearch: Option[V => Boolean], edgesToTraverse: Option[E => Boolean]): Unit
+  def searchDepthFirst(verticesToSearch: Option[V => Boolean], edgesToTraverse: Option[E => Boolean]): Unit
+
 
 }
 
 object Jalebi {
-  def apply[V, E](vertices: Vertices[V], edges: Edges[E]): Jalebi[V, E] = Jalebi(vertices, edges)
+  def createLocal[V, E](vertices: Vertices[V], edges: Edges[E]): Jalebi[V, E] = Jalebi(vertices, edges)
 }

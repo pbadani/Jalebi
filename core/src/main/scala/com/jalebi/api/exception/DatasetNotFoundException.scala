@@ -1,0 +1,3 @@
+package com.jalebi.api.exception
+
+class DatasetNotFoundException extends IllegalStateException

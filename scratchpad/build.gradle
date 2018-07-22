@@ -16,7 +16,8 @@ dependencies {
     compile group: 'com.thesamet.scalapb', name: 'scalapb-runtime_2.12', version: '0.7.4'
     compile group: 'com.thesamet.scalapb', name: 'scalapb-runtime-grpc_2.12', version: '0.7.4'
 
-    compile group: 'io.grpc', name: 'grpc-netty', version: '1.13.2'
+    compile group: 'io.grpc', name: 'grpc-netty-shaded', version: '1.13.2'
+    compile group: 'io.netty', name: 'netty-common', version: '4.1.8.Final'
 
     compile 'com.google.protobuf:protobuf-java:3.5.1'
     compile 'com.github.os72:protoc-jar:3.5.1.1'
@@ -28,7 +29,10 @@ dependencies {
     testCompile group: 'junit', name: 'junit', version: '4.12'
 }
 
+task deleteArtifacts(type: Delete, group: "ProtoBuf", description: "Deletes protobuf artifacts") {
+    delete './src/main/scala/com/proto/generated/'
+}
+
 task generateArtifacts(type: Exec, group: "ProtoBuf", description: "Generates protobuf artifacts") {
-    commandLine './src/main/resources/scalapbc-0.7.4/bin/scalapbc', '--scala_out=grpc:./src/main/scala', '--java_out=./src/main/java', './src/main/resources/person.proto'
-    commandLine './src/main/resources/scalapbc-0.7.4/bin/scalapbc', '--scala_out=grpc:./src/main/scala', '--java_out=./src/main/java', './src/main/resources/greeter.proto'
+    commandLine './src/main/resources/scalapbc-0.7.4/bin/scalapbc', '--scala_out=grpc:./src/main/scala', '--java_out=./src/main/java', './src/main/resources/person.proto', './src/main/resources/greeter.proto', './src/main/resources/stream.proto'
 }

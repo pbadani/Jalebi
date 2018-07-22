@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+package com.proto.generated;
+
+service StreamGreeter {
+    rpc SayHello(stream StreamHelloRequest) returns (stream StreamHelloResponse) {}
+}
+
+message StreamHelloRequest {
+    string name = 1;
+}
+
+message StreamHelloResponse {
+    string message = 1;
+}

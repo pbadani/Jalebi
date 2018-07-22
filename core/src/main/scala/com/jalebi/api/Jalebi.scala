@@ -1,10 +1,12 @@
 package com.jalebi.api
 
+import com.jalebi.api.search.Criteria
+
 abstract class Jalebi[V, E] private(vertices: Vertices[V], edges: Edges[E]) {
 
-  def searchBreadthFirst(verticesToSearch: Option[V => Boolean], edgesToTraverse: Option[E => Boolean]): Unit
-  def searchDepthFirst(verticesToSearch: Option[V => Boolean], edgesToTraverse: Option[E => Boolean]): Unit
+  def searchBreadthFirst(verticesToSearch: Criteria[V], edgesToTraverse: Criteria[E]): Unit
 
+  def searchDepthFirst(verticesToSearch: Criteria[V], edgesToTraverse: Criteria[E]): Unit
 
 }
 

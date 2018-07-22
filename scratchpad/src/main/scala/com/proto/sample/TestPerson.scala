@@ -1,4 +1,4 @@
-package com.proto.test
+package com.proto.sample
 
 import com.proto.generated.person.Person
 

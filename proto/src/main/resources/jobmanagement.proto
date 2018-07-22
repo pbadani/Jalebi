@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package com.jalebi.proto.generated;
+
+service JobManagement {
+    rpc startTask(stream TaskRequest) returns (stream TaskResponse) {}
+}
+
+message TaskRequest {
+    string jobID = 1;
+    TaskOperation op = 2;
+}
+
+message TaskResponse {
+    int64 epoch = 1;
+}
+
+enum TaskOperation {
+    START = 0;
+    STOP = 1;
+    COMPUTE_NEXT = 2;
+}

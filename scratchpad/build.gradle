@@ -19,6 +19,10 @@ dependencies {
     compile group: 'io.grpc', name: 'grpc-netty-shaded', version: '1.13.2'
     compile group: 'io.netty', name: 'netty-common', version: '4.1.8.Final'
 
+    compile group: 'org.apache.hadoop', name: 'hadoop-common', version: '3.0.3'
+    compile group: 'org.apache.hadoop', name: 'hadoop-hdfs-client', version: '3.0.3'
+    compile group: 'org.apache.hadoop', name: 'hadoop-hdfs', version: '3.0.3'
+
     compile 'com.google.protobuf:protobuf-java:3.5.1'
     compile 'com.github.os72:protoc-jar:3.5.1.1'
 

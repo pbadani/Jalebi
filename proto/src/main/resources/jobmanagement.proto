@@ -16,7 +16,12 @@ message TaskResponse {
 }
 
 enum TaskOperation {
-    START = 0;
-    STOP = 1;
-    COMPUTE_NEXT = 2;
+    START_TASK = 0;
+    STOP_TASK = 1;
+    COMPUTE_NEXT_BATCH = 2;
+}
+
+enum Task {
+    MORE_TO_DO = 0;
+    I_AM_DONE = 1;
 }

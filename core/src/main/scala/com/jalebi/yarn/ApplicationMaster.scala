@@ -14,8 +14,10 @@ import org.apache.hadoop.yarn.conf.YarnConfiguration
 import org.apache.hadoop.yarn.exceptions.YarnException
 
 import scala.collection.mutable
+import scala.collection.mutable.ListBuffer
 
 class ApplicationMaster extends Logging {
+
 
   var amrmClient: AMRMClientAsync[ContainerRequest] = _
   var nmClient: NMClientAsync = _
@@ -27,6 +29,8 @@ class ApplicationMaster extends Logging {
   val shellCommand = "echo"
   val shellArgs = "'abc'"
   val shellEnvironment = mutable.Map.empty[String, String]
+
+  private val launchThreads = ListBuffer[Thread]()
 
   def main(args: Array[String]): Unit = {
     println("Test")
@@ -79,10 +83,27 @@ class ApplicationMaster extends Logging {
     })
   }
 
-  def createLaunchContainerThread(allocatedContainer: Container, executorId: String): Thread = {
-    new Thread(() => {
+  def removeContainerRequest(allocationRequestId: Long): Unit = {
+    require(amrmClientIsInitialized)
+    val requests = amrmClient.getMatchingRequests(allocationRequestId)
+    requests.forEach(request => {
+      LOGGER.info(s"Removing container request: " +
+        s" | Allocation request Id: $allocationRequestId".stripMargin('|'))
+      amrmClient.removeContainerRequest(request)
+    })
+  }
+
+  def createLaunchContainerThread(allocatedContainer: Container, containerStateManager: ContainerStateManager, executorId: String): Thread = {
+    val thread = new Thread(() => {
+
+      val nmCallbackHandler = NMCallbackHandler(this, containerStateManager)
+
+      val resources = mutable.HashMap[String, LocalResource]
+
 
     })
+    launchThreads += thread
+    thread
   }
 
   private def amrmClientIsInitialized = amrmClient != null

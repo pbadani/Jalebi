@@ -11,21 +11,30 @@ import org.apache.hadoop.yarn.client.api.async.AMRMClientAsync.AbstractCallbackH
 
 class AMRMCallbackHandler(applicationMaster: ApplicationMaster, containerStateManager: ContainerStateManager) extends AbstractCallbackHandler with Logging {
 
-  override def onContainersUpdated(containers: util.List[UpdatedContainer]): Unit = ???
+  override def onContainersUpdated(containers: util.List[UpdatedContainer]): Unit = {
+    containers.forEach(container => {
+      LOGGER.info(s"Container resource updated:" +
+        s" | Container Id: ${container.getContainer.getId}" +
+        s" | Resource update type: ${container.getUpdateType}".stripMargin('|'))
+    })
+  }
 
   override def onError(e: Throwable): Unit = ???
 
   override def onShutdownRequest(): Unit = ???
 
   override def onContainersCompleted(statuses: util.List[ContainerStatus]): Unit = {
+    statuses.forEach(status => {
+      LOGGER.info(s"Container resource completed:" +
+        s" | Container Id: ${status.getContainerId}" +
+        s" | Container Substate: ${status.getContainerSubState}".stripMargin('|'))
+    })
     containerStateManager.containersCompleted(statuses)
   }
 
   override def getProgress: Float = ???
 
   override def onNodesUpdated(updatedNodes: util.List[NodeReport]): Unit = ???
-
-
 
   override def onContainersAllocated(containers: util.List[Container]): Unit = {
     LOGGER.info(s"Containers Allocated: ${containers.stream().map(container => container.getId).collect(Collectors.joining(", "))}")
@@ -35,6 +44,7 @@ class AMRMCallbackHandler(applicationMaster: ApplicationMaster, containerStateMa
       containerStateManager.containersAllocated(containers)
       containers.forEach(container => {
         val executorID = Executor.newExecutorID
+        val launchThread = applicationMaster.createLaunchContainerThread(container, containerStateManager, executorID)
 
         LOGGER.info(s"Launching executor on a new container:" +
           s" | Jalebi Executor id: $executorID" +
@@ -44,7 +54,10 @@ class AMRMCallbackHandler(applicationMaster: ApplicationMaster, containerStateMa
           s" | Container memory: ${container.getResource.getMemorySize}" +
           s" | Container vcores: ${container.getResource.getVirtualCores}".stripMargin('|'))
 
-        val launchThread = createLaunchContainerThread(allocatedContainer, yarnShellId)
+        launchThread.start()
+        containerStateManager.containerLaunched(container.getId)
+
+        applicationMaster.removeContainerRequest(container.getAllocationRequestId)
       })
     }
   }

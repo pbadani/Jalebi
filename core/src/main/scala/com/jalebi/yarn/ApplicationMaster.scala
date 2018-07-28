@@ -1,8 +1,9 @@
 package com.jalebi.yarn
 
 import java.io.IOException
-import java.util.concurrent.atomic.AtomicInteger
+import java.util
 
+import com.jalebi.utils.Logging
 import com.jalebi.yarn.handler.{AMRMCallbackHandler, NMCallbackHandler}
 import org.apache.hadoop.net.NetUtils
 import org.apache.hadoop.security.UserGroupInformation
@@ -11,13 +12,13 @@ import org.apache.hadoop.yarn.client.api.AMRMClient.ContainerRequest
 import org.apache.hadoop.yarn.client.api.async.{AMRMClientAsync, NMClientAsync}
 import org.apache.hadoop.yarn.conf.YarnConfiguration
 import org.apache.hadoop.yarn.exceptions.YarnException
-import org.slf4j.LoggerFactory
 
 import scala.collection.mutable
 
-object ApplicationMaster {
+class ApplicationMaster extends Logging {
 
-  private val LOG = LoggerFactory.getLogger(ApplicationMaster.getClass.getName)
+  var amrmClient: AMRMClientAsync[ContainerRequest] = _
+  var nmClient: NMClientAsync = _
 
   val containerMemory = 256
   val containerVCores = 1
@@ -27,13 +28,10 @@ object ApplicationMaster {
   val shellArgs = "'abc'"
   val shellEnvironment = mutable.Map.empty[String, String]
 
-  val numberOfCompletedContainers = new AtomicInteger()
-
   def main(args: Array[String]): Unit = {
     println("Test")
     //    val amArgs = AMArgs(args)
     System.exit(run(null))
-
   }
 
   @throws[YarnException]
@@ -41,32 +39,28 @@ object ApplicationMaster {
   @throws[InterruptedException]
   def run(args: AMArgs): Integer = {
     val numberOfContainersNeeded = 3
-    LOG.info("Inside Application Master.")
+    LOGGER.info("Inside Application Master.")
 
     val conf = new YarnConfiguration()
+    LOGGER.info(s"Current User: ${UserGroupInformation.getCurrentUser}")
+    LOGGER.info(s"Current User Credentials: ${UserGroupInformation.getCurrentUser.getCredentials}")
 
-    val currentUser = UserGroupInformation.getCurrentUser
-    LOG.info(s"Current User: $currentUser")
-    val credentials = currentUser.getCredentials
+    val containerStateManager = ContainerStateManager(numberOfContainersNeeded)
 
-    val amrmClient = AMRMClientAsync.createAMRMClientAsync[ContainerRequest](1000, AMRMCallbackHandler())
+    amrmClient = AMRMClientAsync.createAMRMClientAsync[ContainerRequest](1000, AMRMCallbackHandler(this, containerStateManager))
     amrmClient.init(conf)
     amrmClient.start()
 
-    val nmClient = NMClientAsync.createNMClientAsync(NMCallbackHandler())
+    nmClient = NMClientAsync.createNMClientAsync(NMCallbackHandler(this, containerStateManager))
     nmClient.init(conf)
     nmClient.start()
 
     val appMasterHostname = NetUtils.getHostname
-
     val response = amrmClient.registerApplicationMaster(appMasterHostname, 8092, "")
+
     val maxMemory = response.getMaximumResourceCapability.getMemorySize
     val maxCores = response.getMaximumResourceCapability.getVirtualCores
-    LOG.info(s"Max memory: $maxMemory, Max cores: $maxCores")
-
-    val r = amrmClient.getAvailableResources
-
-    val previousAMRunningContainers = response.getContainersFromPreviousAttempts
+    LOGGER.info(s"Max memory: $maxMemory, Max cores: $maxCores")
 
     (1 to numberOfContainersNeeded).foreach(_ => {
       val resourceCapability = createResourceCapability()
@@ -76,6 +70,24 @@ object ApplicationMaster {
 
     0
   }
+
+  def releaseContainers(containers: util.List[Container]): Unit = {
+    require(amrmClientIsInitialized)
+    containers.forEach(container => {
+      LOGGER.info(s"Releasing Container with Id: ${container.getId}")
+      amrmClient.releaseAssignedContainer(container.getId)
+    })
+  }
+
+  def createLaunchContainerThread(allocatedContainer: Container, executorId: String): Thread = {
+    new Thread(() => {
+
+    })
+  }
+
+  private def amrmClientIsInitialized = amrmClient != null
+
+  private def nmClientIsInitialized = nmClient != null
 
   private def createResourceCapability(): Resource = {
     Resource.newInstance(containerMemory, containerVCores)

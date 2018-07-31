@@ -1,12 +1,8 @@
 package com.jalebi.executor
 
-import java.util.concurrent.atomic.AtomicLong
+import com.jalebi.utils.Logging
 
-object Executor {
-
-  private val executorIDCounter = new AtomicLong(0)
-
-  val newExecutorID = s"${ExecutorCommandConstants.executorPrefix}_${executorIDCounter.getAndIncrement()}"
+object Executor extends Logging {
 
   def main(args: Array[String]): Unit = {
     println("started Executor")

@@ -11,7 +11,6 @@ import com.jalebi.yarn.handler.{AMRMCallbackHandler, NMCallbackHandler}
 import org.apache.hadoop.fs.{FileSystem, Path}
 import org.apache.hadoop.net.NetUtils
 import org.apache.hadoop.security.UserGroupInformation
-import org.apache.hadoop.yarn.api.ApplicationConstants
 import org.apache.hadoop.yarn.api.records._
 import org.apache.hadoop.yarn.client.api.AMRMClient.ContainerRequest
 import org.apache.hadoop.yarn.client.api.async.{AMRMClientAsync, NMClientAsync}
@@ -42,6 +41,7 @@ class ApplicationMaster extends Logging {
 
   var amrmClient: AMRMClientAsync[ContainerRequest] = _
   var nmClient: NMClientAsync = _
+  var containerStateManager: ContainerStateManager = _
 
   private val containerMemory = 256
   private val containerVCores = 1
@@ -72,7 +72,7 @@ class ApplicationMaster extends Logging {
     LOGGER.info(s"Current User: ${UserGroupInformation.getCurrentUser}")
     LOGGER.info(s"Current User Credentials: ${UserGroupInformation.getCurrentUser.getCredentials}")
 
-    val containerStateManager = ContainerStateManager(numberOfContainersNeeded)
+    containerStateManager = ContainerStateManager(numberOfContainersNeeded)
 
     amrmClient = AMRMClientAsync.createAMRMClientAsync[ContainerRequest](1000, AMRMCallbackHandler(this, containerStateManager))
     amrmClient.init(conf)
@@ -85,6 +85,7 @@ class ApplicationMaster extends Logging {
     LOGGER.info(s"Registering Application $appMasterHostname")
     val response = amrmClient.registerApplicationMaster(appMasterHostname, appMasterHostPort, "")
     LOGGER.info(s"Registered Application $response")
+
     val maxMemory = response.getMaximumResourceCapability.getMemorySize
     val maxCores = response.getMaximumResourceCapability.getVirtualCores
     LOGGER.info(s"Max memory: $maxMemory, Max cores: $maxCores")
@@ -122,6 +123,10 @@ class ApplicationMaster extends Logging {
     val executorID = newExecutorID
     val thread = new Thread(() => {
       val containerLaunchContext = createExecutorContext(artifact, conf)
+      LOGGER.info(s"Starting container at: " +
+        s" | Container Id: ${allocatedContainer.getId}" +
+        s" | Node Id: ${allocatedContainer.getNodeId}" +
+        s" | Node Address: ${allocatedContainer.getNodeHttpAddress}".stripMargin('|'))
       nmClient.startContainerAsync(allocatedContainer, containerLaunchContext)
     })
     launchThreads += thread
@@ -130,10 +135,13 @@ class ApplicationMaster extends Logging {
 
   private def createExecutorContext(jarPath: String, conf: YarnConfiguration) = {
     val amContainer = Records.newRecord(classOf[ContainerLaunchContext])
+    //    amContainer.setCommands(List(
+    //      s"scala -cp $artifact com.jalebi.executor.Executor" +
+    //        " 1>" + ApplicationConstants.LOG_DIR_EXPANSION_VAR + "/stdout" +
+    //        " 2>" + ApplicationConstants.LOG_DIR_EXPANSION_VAR + "/stderr"
+    //    ).asJava)
     amContainer.setCommands(List(
-      s"scala -cp $artifact com.jalebi.executor.Executor" +
-        " 1>" + ApplicationConstants.LOG_DIR_EXPANSION_VAR + "/stdout" +
-        " 2>" + ApplicationConstants.LOG_DIR_EXPANSION_VAR + "/stderr"
+      s"echo 'Inside executor'"
     ).asJava)
     amContainer.setLocalResources(Collections.singletonMap(artifact, createLocalResource(conf, jarPath)))
     val env = collection.mutable.Map[String, String]()
@@ -166,6 +174,7 @@ class ApplicationMaster extends Logging {
   }
 
   def finish(): Unit = {
+    containerStateManager.forAllLaunchedContainers((containerId, nodeId) => nmClient.stopContainerAsync(containerId, nodeId))
     amrmClient.unregisterApplicationMaster(FinalApplicationStatus.SUCCEEDED, "Jalebi Done", "")
   }
 }

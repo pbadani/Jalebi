@@ -4,9 +4,9 @@ import scala.collection.mutable
 
 trait Vertex[T] extends Serializable {
 
-  protected val id: VertexID
+  val id: VertexID
 
-  protected val data: T
+  protected val data: Option[T]
 
   protected val relations: Seq[Edge[T] with EdgeDirection with EdgeWeight]
 

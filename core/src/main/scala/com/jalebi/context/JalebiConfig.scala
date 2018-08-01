@@ -6,7 +6,7 @@ case class JalebiConfig private(appName: String, master: String)
 
 object JalebiConfig {
 
-  private case class JalebiConfigBuilder(appName: Option[String], master: Option[String]) {
+  case class JalebiConfigBuilder(appName: Option[String], master: Option[String]) {
 
     def withMaster(master: String): JalebiConfigBuilder = {
       val uri = new URI(master)

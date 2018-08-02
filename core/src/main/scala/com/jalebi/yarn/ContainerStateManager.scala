@@ -42,6 +42,10 @@ case class ContainerStateManager(numOfContainersNeeded: Int) {
     }
   }
 
+  def getProgress: Float = {
+    containersCompleted.size
+  }
+
   def areAllContainerRequestsFulfilled(): Boolean = numberOfContainersAllocated == numOfContainersNeeded
 
   def numberOfContainersAllocated: Int = containersAllocated.size

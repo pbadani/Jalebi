@@ -25,15 +25,18 @@ object ApplicationClient extends Logging {
     val yarnClient = YarnClient.createYarnClient()
     yarnClient.init(conf)
     yarnClient.start()
-
     val jarPath = args(0)
 
     val application = yarnClient.createApplication()
     val amContainer = createApplicationMasterContext(jarPath, conf)
     val appContext = createApplicationSubmissionContext(application, amContainer)
+//    appContext.setApplicationTimeouts(util.Map[ApplicationTimeoutType, Long])
     LOGGER.info(s"Application ID - ${appContext.getApplicationId}")
 
-    yarnClient.submitApplication(appContext)
+    val applicationId = yarnClient.submitApplication(appContext)
+    val report = yarnClient.getApplicationReport(applicationId)
+    println(s"Report: $report")
+//    yarnClient.signalToContainer(application, SignalContainerCommand.GRACEFUL_SHUTDOWN)
   }
 
   private def createApplicationSubmissionContext(app: YarnClientApplication, amContainer: ContainerLaunchContext) = {

@@ -11,6 +11,7 @@ import com.jalebi.yarn.handler.{AMRMCallbackHandler, NMCallbackHandler}
 import org.apache.hadoop.fs.{FileSystem, Path}
 import org.apache.hadoop.net.NetUtils
 import org.apache.hadoop.security.UserGroupInformation
+import org.apache.hadoop.yarn.api.ApplicationConstants
 import org.apache.hadoop.yarn.api.records._
 import org.apache.hadoop.yarn.client.api.AMRMClient.ContainerRequest
 import org.apache.hadoop.yarn.client.api.async.{AMRMClientAsync, NMClientAsync}
@@ -58,7 +59,20 @@ class ApplicationMaster extends Logging {
   private val launchThreads = ListBuffer[Thread]()
 
   private val executorIDCounter = new AtomicLong(0)
-  val newExecutorID = s"${ExecutorCommandConstants.executorPrefix}_${executorIDCounter.getAndIncrement()}"
+
+  def newExecutorID = s"${ExecutorCommandConstants.executorPrefix}_${executorIDCounter.getAndIncrement()}"
+
+  lazy val amContainerId: ContainerId = {
+    val containerIdString = System.getenv.get(ApplicationConstants.Environment.CONTAINER_ID.toString)
+    if (containerIdString == null) {
+      // container id should always be set in the env by the framework
+      throw new IllegalArgumentException("ContainerId not set in the environment")
+    }
+    val containerId = ContainerId.fromString(containerIdString)
+    //    val appAttemptID = containerId.getApplicationAttemptId
+    containerId
+  }
+
 
   @throws[YarnException]
   @throws[IOException]
@@ -73,7 +87,6 @@ class ApplicationMaster extends Logging {
     LOGGER.info(s"Current User Credentials: ${UserGroupInformation.getCurrentUser.getCredentials}")
 
     containerStateManager = ContainerStateManager(numberOfContainersNeeded)
-
     amrmClient = AMRMClientAsync.createAMRMClientAsync[ContainerRequest](1000, AMRMCallbackHandler(this, containerStateManager))
     amrmClient.init(conf)
     amrmClient.start()
@@ -174,6 +187,7 @@ class ApplicationMaster extends Logging {
   }
 
   def finish(): Unit = {
+    amrmClient.releaseAssignedContainer(amContainerId)
     containerStateManager.forAllLaunchedContainers((containerId, nodeId) => nmClient.stopContainerAsync(containerId, nodeId))
     amrmClient.unregisterApplicationMaster(FinalApplicationStatus.SUCCEEDED, "Jalebi Done", "")
   }

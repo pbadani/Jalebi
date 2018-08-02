@@ -34,9 +34,7 @@ class AMRMCallbackHandler(applicationMaster: ApplicationMaster, containerStateMa
     containerStateManager.containersCompleted(statuses)
   }
 
-  override def getProgress: Float = {
-    Float.MinValue
-  }
+  override def getProgress: Float = containerStateManager.getProgress
 
   override def onNodesUpdated(updatedNodes: util.List[NodeReport]): Unit = {
     updatedNodes.forEach(nodeReport => {
@@ -60,17 +58,17 @@ class AMRMCallbackHandler(applicationMaster: ApplicationMaster, containerStateMa
       containerStateManager.containersAllocated(containers)
       containers.forEach(container => {
         val (launchThread, executorId) = applicationMaster.createLaunchContainerThread(container)
-
-        LOGGER.info(s"Launching executor on a new container:" +
-          s" | Jalebi Executor id: $executorId" +
-          s" | Container id: ${container.getId}" +
-          s" | Node id: ${container.getNodeId}" +
-          s" | Node address: ${container.getNodeHttpAddress}" +
-          s" | Container memory: ${container.getResource.getMemorySize}" +
-          s" | Container vcores: ${container.getResource.getVirtualCores}".stripMargin('|'))
+        println(s"Launching $executorId")
+        LOGGER.info(s"""Launching executor on a new container:" +
+          " | Jalebi Executor id: $executorId" +
+          " | Container id: ${container.getId}" +
+          " | Node id: ${container.getNodeId}" +
+          " | Node address: ${container.getNodeHttpAddress}" +
+          " | Container memory: ${container.getResource.getMemorySize}" +
+          " | Container vcores: ${container.getResource.getVirtualCores}""".stripMargin('|'))
 
         launchThread.start()
-        applicationMaster.removeContainerRequest(container.getAllocationRequestId)
+//        applicationMaster.removeContainerRequest(container.getAllocationRequestId)
       })
     }
   }

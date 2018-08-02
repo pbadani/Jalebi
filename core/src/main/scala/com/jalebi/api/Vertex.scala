@@ -6,7 +6,7 @@ trait Vertex[T] extends Serializable {
 
   val id: VertexID
 
-  protected val data: Option[T]
+  protected val data: T
 
   protected val relations: Seq[Edge[T] with EdgeDirection with EdgeWeight]
 

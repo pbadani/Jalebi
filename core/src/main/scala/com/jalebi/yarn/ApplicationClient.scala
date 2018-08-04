@@ -1,20 +1,16 @@
 package com.jalebi.yarn
 
-import java.net.URI
 import java.util.Collections
 
-import com.jalebi.utils.{JalebiUtils, Logging, URIBuilder}
-import org.apache.hadoop.conf.Configuration
+import com.jalebi.utils.{JalebiUtils, Logging, URIBuilder, YarnUtils}
 import org.apache.hadoop.fs.{FileSystem, Path}
 import org.apache.hadoop.yarn.api.ApplicationConstants
-import org.apache.hadoop.yarn.api.ApplicationConstants.Environment
 import org.apache.hadoop.yarn.api.records._
 import org.apache.hadoop.yarn.client.api.{YarnClient, YarnClientApplication}
 import org.apache.hadoop.yarn.conf.YarnConfiguration
 import org.apache.hadoop.yarn.util.Records
 
 import scala.collection.JavaConverters._
-import scala.collection.mutable
 
 object ApplicationClient extends Logging {
 
@@ -57,7 +53,7 @@ object ApplicationClient extends Logging {
         s" 2> ${ApplicationConstants.LOG_DIR_EXPANSION_VAR}/stderr"
     ).asJava)
     amContainer.setLocalResources(Collections.singletonMap(JalebiAppConstants.jalebiArtifact, createLocalResource(conf, jarPath, applicationId)))
-    amContainer.setEnvironment(createEnvironmentVariables(conf).asJava)
+    amContainer.setEnvironment(YarnUtils.createEnvironmentVariables(conf).asJava)
     amContainer
   }
 
@@ -69,14 +65,7 @@ object ApplicationClient extends Logging {
     fs.copyFromLocalFile(sourcePath, destPath)
     LOGGER.info(s"Copied resource $jarPath to HDFS destination ${destPath.getParent}/${destPath.getName}")
 
-    val appMasterJar = Records.newRecord(classOf[LocalResource])
-    val jarStat = fs.getFileStatus(destPath)
-    appMasterJar.setResource(URL.fromPath(destPath))
-    appMasterJar.setSize(jarStat.getLen)
-    appMasterJar.setTimestamp(jarStat.getModificationTime)
-    appMasterJar.setType(LocalResourceType.FILE)
-    appMasterJar.setVisibility(LocalResourceVisibility.APPLICATION)
-    appMasterJar
+    YarnUtils.createFileResource(fs, destPath)
   }
 
   private def amCapacity = {
@@ -84,24 +73,5 @@ object ApplicationClient extends Logging {
     resource.setMemorySize(300)
     resource.setVirtualCores(1)
     resource
-  }
-
-  private def createEnvironmentVariables(conf: YarnConfiguration): mutable.HashMap[String, String] = {
-    val envVariables = mutable.HashMap[String, String]()
-    populateYarnClasspath(conf, envVariables)
-  }
-
-  private[yarn] def populateYarnClasspath(conf: Configuration, env: mutable.HashMap[String, String]): mutable.HashMap[String, String] = {
-    val classPathElementsToAdd = Option(conf.getStrings(YarnConfiguration.YARN_APPLICATION_CLASSPATH)) match {
-      case Some(s) => s.toSeq
-      case None => YarnConfiguration.DEFAULT_YARN_APPLICATION_CLASSPATH.toSeq
-    }
-    classPathElementsToAdd.foreach { c =>
-      JalebiUtils.addPathToEnvironment(env, Environment.CLASSPATH.name, c.trim)
-    }
-    Seq(JalebiAppConstants.jalebiArtifact).foreach { c =>
-      JalebiUtils.addPathToEnvironment(env, Environment.CLASSPATH.name, c.trim)
-    }
-    env
   }
 }

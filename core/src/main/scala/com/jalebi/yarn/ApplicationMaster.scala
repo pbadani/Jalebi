@@ -7,7 +7,7 @@ import java.util.Collections
 import java.util.concurrent.atomic.AtomicLong
 
 import com.jalebi.executor.ExecutorCommandConstants
-import com.jalebi.utils.{JalebiUtils, Logging}
+import com.jalebi.utils.{JalebiUtils, Logging, YarnUtils}
 import com.jalebi.yarn.handler.{AMRMCallbackHandler, NMCallbackHandler}
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{FileSystem, Path}
@@ -15,7 +15,7 @@ import org.apache.hadoop.net.NetUtils
 import org.apache.hadoop.security.UserGroupInformation
 import org.apache.hadoop.yarn.api.ApplicationConstants
 import org.apache.hadoop.yarn.api.ApplicationConstants.Environment
-import org.apache.hadoop.yarn.api.records.{URL, _}
+import org.apache.hadoop.yarn.api.records._
 import org.apache.hadoop.yarn.client.api.AMRMClient.ContainerRequest
 import org.apache.hadoop.yarn.client.api.async.{AMRMClientAsync, NMClientAsync}
 import org.apache.hadoop.yarn.conf.YarnConfiguration
@@ -155,8 +155,7 @@ class ApplicationMaster extends Logging {
         s" 2> ${ApplicationConstants.LOG_DIR_EXPANSION_VAR}/stderr"
     ).asJava)
     amContainer.setLocalResources(Collections.singletonMap(JalebiAppConstants.jalebiArtifact, createLocalResource(conf)))
-    val env = createEnvironmentVariables(conf)
-    amContainer.setEnvironment(env.asJava)
+    amContainer.setEnvironment(YarnUtils.createEnvironmentVariables(conf).asJava)
     amContainer
   }
 
@@ -173,14 +172,7 @@ class ApplicationMaster extends Logging {
   private def createLocalResource(conf: YarnConfiguration): LocalResource = {
     val fs = FileSystem.get(conf)
     val resourcePath = new Path(fs.getHomeDirectory, JalebiUtils.getResourcePath(amArgs.getApplicationId, JalebiAppConstants.jalebiArtifact))
-    val applicationJar = Records.newRecord(classOf[LocalResource])
-    val jarStat = fs.getFileStatus(resourcePath)
-    applicationJar.setResource(URL.fromPath(resourcePath))
-    applicationJar.setSize(jarStat.getLen)
-    applicationJar.setTimestamp(jarStat.getModificationTime)
-    applicationJar.setType(LocalResourceType.FILE)
-    applicationJar.setVisibility(LocalResourceVisibility.APPLICATION)
-    applicationJar
+    YarnUtils.createFileResource(fs, resourcePath)
   }
 
   private def amrmClientIsInitialized = amrmClient != null
@@ -189,25 +181,6 @@ class ApplicationMaster extends Logging {
 
   private def createResourceCapability(): Resource = {
     Resource.newInstance(containerMemory, containerVCores)
-  }
-
-  private def createEnvironmentVariables(conf: YarnConfiguration): mutable.HashMap[String, String] = {
-    val envVariables = mutable.HashMap[String, String]()
-    populateYarnClasspath(conf, envVariables)
-  }
-
-  private[yarn] def populateYarnClasspath(conf: Configuration, env: mutable.HashMap[String, String]): mutable.HashMap[String, String] = {
-    val classPathElementsToAdd = Option(conf.getStrings(YarnConfiguration.YARN_APPLICATION_CLASSPATH)) match {
-      case Some(s) => s.toSeq
-      case None => YarnConfiguration.DEFAULT_YARN_APPLICATION_CLASSPATH.toSeq
-    }
-    classPathElementsToAdd.foreach { c =>
-      JalebiUtils.addPathToEnvironment(env, Environment.CLASSPATH.name, c.trim)
-    }
-    Seq(JalebiAppConstants.jalebiArtifact).foreach { c =>
-      JalebiUtils.addPathToEnvironment(env, Environment.CLASSPATH.name, c.trim)
-    }
-    env
   }
 
   def finish(): Unit = {

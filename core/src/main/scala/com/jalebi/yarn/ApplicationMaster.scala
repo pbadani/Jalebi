@@ -1,18 +1,21 @@
 package com.jalebi.yarn
 
 import java.io.IOException
+import java.security.PrivilegedExceptionAction
 import java.util
 import java.util.Collections
 import java.util.concurrent.atomic.AtomicLong
 
 import com.jalebi.executor.ExecutorCommandConstants
-import com.jalebi.utils.{Logging, URIBuilder}
+import com.jalebi.utils.{JalebiUtils, Logging}
 import com.jalebi.yarn.handler.{AMRMCallbackHandler, NMCallbackHandler}
+import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{FileSystem, Path}
 import org.apache.hadoop.net.NetUtils
 import org.apache.hadoop.security.UserGroupInformation
 import org.apache.hadoop.yarn.api.ApplicationConstants
-import org.apache.hadoop.yarn.api.records._
+import org.apache.hadoop.yarn.api.ApplicationConstants.Environment
+import org.apache.hadoop.yarn.api.records.{URL, _}
 import org.apache.hadoop.yarn.client.api.AMRMClient.ContainerRequest
 import org.apache.hadoop.yarn.client.api.async.{AMRMClientAsync, NMClientAsync}
 import org.apache.hadoop.yarn.conf.YarnConfiguration
@@ -29,7 +32,8 @@ object ApplicationMaster extends Logging {
   def main(args: Array[String]): Unit = {
     try {
       println("Test")
-      applicationMaster.run(null)
+      applicationMaster.run(AMArgs(args))
+      Thread.sleep(1000000)
     } finally {
       LOGGER.info(s"Unregistering Application Master")
       applicationMaster.finish()
@@ -38,8 +42,7 @@ object ApplicationMaster extends Logging {
 }
 
 class ApplicationMaster extends Logging {
-  private val artifact = "core.jar"
-
+  var amArgs: AMArgs = _
   var amrmClient: AMRMClientAsync[ContainerRequest] = _
   var nmClient: NMClientAsync = _
   var containerStateManager: ContainerStateManager = _
@@ -47,10 +50,6 @@ class ApplicationMaster extends Logging {
   private val containerMemory = 256
   private val containerVCores = 1
   private val containerType = ExecutionType.GUARANTEED
-
-  private val shellCommand = "echo"
-  private val shellArgs = "'abc'"
-  private val shellEnvironment = mutable.Map.empty[String, String]
 
   private var conf: YarnConfiguration = _
   private val appMasterHostname: String = NetUtils.getHostname
@@ -73,11 +72,11 @@ class ApplicationMaster extends Logging {
     containerId
   }
 
-
   @throws[YarnException]
   @throws[IOException]
   @throws[InterruptedException]
   def run(args: AMArgs): Integer = {
+    this.amArgs = args
     val numberOfContainersNeeded = 3
     LOGGER.info("Inside Application Master.")
 
@@ -98,6 +97,7 @@ class ApplicationMaster extends Logging {
     LOGGER.info(s"Registering Application $appMasterHostname")
     val response = amrmClient.registerApplicationMaster(appMasterHostname, appMasterHostPort, "")
     LOGGER.info(s"Registered Application $response")
+    println(s"Registered Application $response")
 
     val maxMemory = response.getMaximumResourceCapability.getMemorySize
     val maxCores = response.getMaximumResourceCapability.getVirtualCores
@@ -133,9 +133,10 @@ class ApplicationMaster extends Logging {
 
   def createLaunchContainerThread(allocatedContainer: Container): (Thread, String) = {
     //TODO
+    println(s"create launch thread $allocatedContainer")
     val executorID = newExecutorID
     val thread = new Thread(() => {
-      val containerLaunchContext = createExecutorContext(artifact, conf)
+      val containerLaunchContext = createExecutorContext(conf)
       LOGGER.info(s"Starting container at: " +
         s" | Container Id: ${allocatedContainer.getId}" +
         s" | Node Id: ${allocatedContainer.getNodeId}" +
@@ -146,18 +147,15 @@ class ApplicationMaster extends Logging {
     (thread, executorID)
   }
 
-  private def createExecutorContext(jarPath: String, conf: YarnConfiguration) = {
+  private def createExecutorContext(conf: YarnConfiguration) = {
     val amContainer = Records.newRecord(classOf[ContainerLaunchContext])
-    //    amContainer.setCommands(List(
-    //      s"scala -cp $artifact com.jalebi.executor.Executor" +
-    //        " 1>" + ApplicationConstants.LOG_DIR_EXPANSION_VAR + "/stdout" +
-    //        " 2>" + ApplicationConstants.LOG_DIR_EXPANSION_VAR + "/stderr"
-    //    ).asJava)
     amContainer.setCommands(List(
-      s"echo 'Inside executor'"
+      s"scala com.jalebi.executor.Executor" +
+        s" 1> ${ApplicationConstants.LOG_DIR_EXPANSION_VAR}/stdout" +
+        s" 2> ${ApplicationConstants.LOG_DIR_EXPANSION_VAR}/stderr"
     ).asJava)
-    amContainer.setLocalResources(Collections.singletonMap(artifact, createLocalResource(conf, jarPath)))
-    val env = collection.mutable.Map[String, String]()
+    amContainer.setLocalResources(Collections.singletonMap(JalebiAppConstants.jalebiArtifact, createLocalResource(conf)))
+    val env = createEnvironmentVariables(conf)
     amContainer.setEnvironment(env.asJava)
     amContainer
   }
@@ -166,11 +164,18 @@ class ApplicationMaster extends Logging {
     Priority.newInstance(1)
   }
 
-  private def createLocalResource(conf: YarnConfiguration, jarPath: String): LocalResource = {
+  private def doAsUser[T](fn: => T): T = {
+    UserGroupInformation.getCurrentUser.doAs(new PrivilegedExceptionAction[T]() {
+      override def run: T = fn
+    })
+  }
+
+  private def createLocalResource(conf: YarnConfiguration): LocalResource = {
+    val fs = FileSystem.get(conf)
+    val resourcePath = new Path(fs.getHomeDirectory, JalebiUtils.getResourcePath(amArgs.getApplicationId, JalebiAppConstants.jalebiArtifact))
     val applicationJar = Records.newRecord(classOf[LocalResource])
-    val path = new Path(URIBuilder.forLocalFile(jarPath))
-    val jarStat = FileSystem.get(conf).getFileStatus(path)
-    applicationJar.setResource(URL.fromPath(path))
+    val jarStat = fs.getFileStatus(resourcePath)
+    applicationJar.setResource(URL.fromPath(resourcePath))
     applicationJar.setSize(jarStat.getLen)
     applicationJar.setTimestamp(jarStat.getModificationTime)
     applicationJar.setType(LocalResourceType.FILE)
@@ -186,9 +191,34 @@ class ApplicationMaster extends Logging {
     Resource.newInstance(containerMemory, containerVCores)
   }
 
+  private def createEnvironmentVariables(conf: YarnConfiguration): mutable.HashMap[String, String] = {
+    val envVariables = mutable.HashMap[String, String]()
+    populateYarnClasspath(conf, envVariables)
+  }
+
+  private[yarn] def populateYarnClasspath(conf: Configuration, env: mutable.HashMap[String, String]): mutable.HashMap[String, String] = {
+    val classPathElementsToAdd = Option(conf.getStrings(YarnConfiguration.YARN_APPLICATION_CLASSPATH)) match {
+      case Some(s) => s.toSeq
+      case None => YarnConfiguration.DEFAULT_YARN_APPLICATION_CLASSPATH.toSeq
+    }
+    classPathElementsToAdd.foreach { c =>
+      JalebiUtils.addPathToEnvironment(env, Environment.CLASSPATH.name, c.trim)
+    }
+    Seq(JalebiAppConstants.jalebiArtifact).foreach { c =>
+      JalebiUtils.addPathToEnvironment(env, Environment.CLASSPATH.name, c.trim)
+    }
+    env
+  }
+
   def finish(): Unit = {
-    amrmClient.releaseAssignedContainer(amContainerId)
-    containerStateManager.forAllLaunchedContainers((containerId, nodeId) => nmClient.stopContainerAsync(containerId, nodeId))
-    amrmClient.unregisterApplicationMaster(FinalApplicationStatus.SUCCEEDED, "Jalebi Done", "")
+    if (nmClient != null) {
+      containerStateManager.forAllLaunchedContainers((containerId, nodeId) => nmClient.stopContainerAsync(containerId, nodeId))
+      nmClient.stop()
+    }
+    if (amrmClient != null) {
+      amrmClient.releaseAssignedContainer(amContainerId)
+      amrmClient.unregisterApplicationMaster(FinalApplicationStatus.SUCCEEDED, "Jalebi Done", "")
+      amrmClient.stop()
+    }
   }
 }

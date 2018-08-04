@@ -3,7 +3,7 @@ package com.jalebi.api
 import com.jalebi.api.search.MatchCriteria
 import com.jalebi.context.JalebiContext
 
-abstract class Jalebi[V, E] private(context: JalebiContext, vertices: Vertices[V], edges: Edges[E]) {
+abstract class Jalebi[V, E](context: JalebiContext, vertices: Vertices[V], edges: Edges[E]) {
 
   def searchBreadthFirst(verticesToSearch: MatchCriteria[V], edgesToTraverse: MatchCriteria[E]): Unit
 
@@ -12,5 +12,5 @@ abstract class Jalebi[V, E] private(context: JalebiContext, vertices: Vertices[V
 }
 
 object Jalebi {
-  def createLocal[V, E](context: JalebiContext, vertices: Vertices[V], edges: Edges[E]): Jalebi[V, E] = Jalebi(vertices, edges)
+//  def createLocal[V, E](context: JalebiContext, vertices: Vertices[V], edges: Edges[E]): Jalebi[V, E] = Jalebi(vertices, edges)
 }

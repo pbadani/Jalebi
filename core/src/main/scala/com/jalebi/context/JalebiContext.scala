@@ -3,7 +3,7 @@ package com.jalebi.context
 import java.util.concurrent.atomic.AtomicLong
 
 import com.jalebi.api._
-import com.jalebi.api.exception.DatasetNotFoundException
+import com.jalebi.exception.DatasetNotFoundException
 import com.jalebi.job.JobManager
 
 case class JalebiContext private(conf: JalebiConfig) {
@@ -21,7 +21,8 @@ case class JalebiContext private(conf: JalebiConfig) {
   @throws[IllegalArgumentException]
   def load[V, E](vertices: Vertices[V], edges: Edges[E]): Jalebi[V, E] = {
     validate(vertices, edges)
-    Jalebi.createLocal(this, vertices, edges)
+//    Jalebi.createLocal(this, vertices, edges)
+    null
   }
 
   @throws[DatasetNotFoundException]

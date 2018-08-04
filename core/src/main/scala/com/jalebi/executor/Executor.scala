@@ -5,6 +5,8 @@ import com.jalebi.utils.Logging
 object Executor extends Logging {
 
   def main(args: Array[String]): Unit = {
-    println("started Executor")
+    LOGGER.info("####################################")
+    LOGGER.info("started Executor")
+    Thread.sleep(1000000)
   }
 }

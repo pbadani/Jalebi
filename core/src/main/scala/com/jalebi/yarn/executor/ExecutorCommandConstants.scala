@@ -1,4 +1,4 @@
-package com.jalebi.executor
+package com.jalebi.yarn.executor
 
 object ExecutorCommandConstants {
 

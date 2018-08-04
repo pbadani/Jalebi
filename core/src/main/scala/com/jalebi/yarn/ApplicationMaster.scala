@@ -6,7 +6,7 @@ import java.util
 import java.util.Collections
 import java.util.concurrent.atomic.AtomicLong
 
-import com.jalebi.executor.ExecutorCommandConstants
+import com.jalebi.yarn.executor.ExecutorCommandConstants
 import com.jalebi.utils.{JalebiUtils, Logging, YarnUtils}
 import com.jalebi.yarn.handler.{AMRMCallbackHandler, NMCallbackHandler}
 import org.apache.hadoop.conf.Configuration
@@ -150,7 +150,7 @@ class ApplicationMaster extends Logging {
   private def createExecutorContext(conf: YarnConfiguration) = {
     val amContainer = Records.newRecord(classOf[ContainerLaunchContext])
     amContainer.setCommands(List(
-      s"scala com.jalebi.executor.Executor" +
+      s"scala com.jalebi.yarn.executor.Executor" +
         s" 1> ${ApplicationConstants.LOG_DIR_EXPANSION_VAR}/stdout" +
         s" 2> ${ApplicationConstants.LOG_DIR_EXPANSION_VAR}/stderr"
     ).asJava)

@@ -6,15 +6,13 @@ import java.util
 import java.util.Collections
 import java.util.concurrent.atomic.AtomicLong
 
-import com.jalebi.yarn.executor.ExecutorCommandConstants
 import com.jalebi.utils.{JalebiUtils, Logging, YarnUtils}
+import com.jalebi.yarn.executor.ExecutorCommandConstants
 import com.jalebi.yarn.handler.{AMRMCallbackHandler, NMCallbackHandler}
-import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{FileSystem, Path}
 import org.apache.hadoop.net.NetUtils
 import org.apache.hadoop.security.UserGroupInformation
 import org.apache.hadoop.yarn.api.ApplicationConstants
-import org.apache.hadoop.yarn.api.ApplicationConstants.Environment
 import org.apache.hadoop.yarn.api.records._
 import org.apache.hadoop.yarn.client.api.AMRMClient.ContainerRequest
 import org.apache.hadoop.yarn.client.api.async.{AMRMClientAsync, NMClientAsync}
@@ -23,7 +21,6 @@ import org.apache.hadoop.yarn.exceptions.YarnException
 import org.apache.hadoop.yarn.util.Records
 
 import scala.collection.JavaConverters._
-import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
 object ApplicationMaster extends Logging {
@@ -149,8 +146,11 @@ class ApplicationMaster extends Logging {
 
   private def createExecutorContext(conf: YarnConfiguration) = {
     val amContainer = Records.newRecord(classOf[ContainerLaunchContext])
+    val driverURL = s"$appMasterHostname:$appMasterHostPort"
     amContainer.setCommands(List(
       s"scala com.jalebi.yarn.executor.Executor" +
+        s" --${ExecutorCommandConstants.driverURL} $driverURL" +
+        s" --${AppMasterCommandConstants.applicationId} ${amArgs.getApplicationId}" +
         s" 1> ${ApplicationConstants.LOG_DIR_EXPANSION_VAR}/stdout" +
         s" 2> ${ApplicationConstants.LOG_DIR_EXPANSION_VAR}/stderr"
     ).asJava)

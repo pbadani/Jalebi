@@ -7,5 +7,5 @@ case class JobManager(context: JalebiContext) {
 }
 
 object JobManager {
-  def createNew(context: JalebiContext) =  new JobManager(context)
+  def createNew(context: JalebiContext) = new JobManager(context)
 }

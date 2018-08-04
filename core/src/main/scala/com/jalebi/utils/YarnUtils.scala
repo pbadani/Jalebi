@@ -1,7 +1,6 @@
 package com.jalebi.utils
 
 import com.jalebi.yarn.JalebiAppConstants
-import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{FileSystem, Path}
 import org.apache.hadoop.yarn.api.ApplicationConstants.Environment
 import org.apache.hadoop.yarn.api.records.{LocalResource, LocalResourceType, LocalResourceVisibility, URL}

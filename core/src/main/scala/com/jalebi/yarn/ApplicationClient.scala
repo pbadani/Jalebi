@@ -15,10 +15,9 @@ import scala.collection.JavaConverters._
 object ApplicationClient extends Logging {
 
   def main(args: Array[String]): Unit = {
+    val yarnClient = YarnClient.createYarnClient()
     val conf = new YarnConfiguration()
     conf.set("fs.defaultFS", "hdfs://localhost:8020")
-
-    val yarnClient = YarnClient.createYarnClient()
     yarnClient.init(conf)
     yarnClient.start()
     val jarPath = args(0)
@@ -36,10 +35,10 @@ object ApplicationClient extends Logging {
 
   private def createApplicationSubmissionContext(app: YarnClientApplication, conf: YarnConfiguration, jarPath: String) = {
     val appContext = app.getApplicationSubmissionContext
-    val amContainer = createApplicationMasterContext(conf, jarPath, appContext.getApplicationId.toString)
+    val container = createApplicationMasterContext(conf, jarPath, appContext.getApplicationId.toString)
     appContext.setApplicationName(JalebiAppConstants.applicationName)
-    appContext.setAMContainerSpec(amContainer)
-    appContext.setResource(amCapacity)
+    appContext.setAMContainerSpec(container)
+    appContext.setResource(applicationMasterCapacity)
     appContext
   }
 
@@ -68,7 +67,7 @@ object ApplicationClient extends Logging {
     YarnUtils.createFileResource(fs, destPath)
   }
 
-  private def amCapacity = {
+  private def applicationMasterCapacity = {
     val resource = Records.newRecord(classOf[Resource])
     resource.setMemorySize(300)
     resource.setVirtualCores(1)

@@ -24,36 +24,38 @@ import scala.collection.JavaConverters._
 import scala.collection.mutable.ListBuffer
 
 object ApplicationMaster extends Logging {
-  val applicationMaster = new ApplicationMaster()
 
   def main(args: Array[String]): Unit = {
+    var applicationMaster: Option[ApplicationMaster] = None
     try {
-      println("Test")
-      applicationMaster.run(AMArgs(args))
+      applicationMaster = Some(new ApplicationMaster(AMArgs(args)))
+      applicationMaster.get.run()
       Thread.sleep(1000000)
     } finally {
-      LOGGER.info(s"Unregistering Application Master")
-      applicationMaster.finish()
+      if (applicationMaster.isDefined) {
+        LOGGER.info(s"Unregistering Application Master")
+        applicationMaster.get.finish()
+      }
     }
   }
 }
 
-class ApplicationMaster extends Logging {
-  var amArgs: AMArgs = _
-  var amrmClient: AMRMClientAsync[ContainerRequest] = _
-  var nmClient: NMClientAsync = _
-  var containerStateManager: ContainerStateManager = _
+class ApplicationMaster(amArgs: AMArgs) extends Logging {
+  val numberOfContainersNeeded = 3
+  val containerStateManager = ContainerStateManager(numberOfContainersNeeded)
+
+  val amrmClient: AMRMClientAsync[ContainerRequest] = AMRMClientAsync.createAMRMClientAsync[ContainerRequest](1000, AMRMCallbackHandler(this, containerStateManager))
+  val nmClient: NMClientAsync = NMClientAsync.createNMClientAsync(NMCallbackHandler(this, containerStateManager))
+
+  private val conf = new YarnConfiguration()
 
   private val containerMemory = 256
   private val containerVCores = 1
-  private val containerType = ExecutionType.GUARANTEED
 
-  private var conf: YarnConfiguration = _
   private val appMasterHostname: String = NetUtils.getHostname
   private val appMasterHostPort: Integer = 8092
 
   private val launchThreads = ListBuffer[Thread]()
-
   private val executorIDCounter = new AtomicLong(0)
 
   def newExecutorID = s"${ExecutorCommandConstants.executorPrefix}_${executorIDCounter.getAndIncrement()}"
@@ -72,26 +74,17 @@ class ApplicationMaster extends Logging {
   @throws[YarnException]
   @throws[IOException]
   @throws[InterruptedException]
-  def run(args: AMArgs): Integer = {
-    this.amArgs = args
-    val numberOfContainersNeeded = 3
+  def run(): Integer = {
     LOGGER.info("Inside Application Master.")
-
-    conf = new YarnConfiguration()
-
     LOGGER.info(s"Current User: ${UserGroupInformation.getCurrentUser}")
     LOGGER.info(s"Current User Credentials: ${UserGroupInformation.getCurrentUser.getCredentials}")
 
-    containerStateManager = ContainerStateManager(numberOfContainersNeeded)
-    amrmClient = AMRMClientAsync.createAMRMClientAsync[ContainerRequest](1000, AMRMCallbackHandler(this, containerStateManager))
     amrmClient.init(conf)
     amrmClient.start()
 
-    nmClient = NMClientAsync.createNMClientAsync(NMCallbackHandler(this, containerStateManager))
     nmClient.init(conf)
     nmClient.start()
 
-    LOGGER.info(s"Registering Application $appMasterHostname")
     val response = amrmClient.registerApplicationMaster(appMasterHostname, appMasterHostPort, "")
     LOGGER.info(s"Registered Application $response")
     println(s"Registered Application $response")
@@ -129,8 +122,6 @@ class ApplicationMaster extends Logging {
   }
 
   def createLaunchContainerThread(allocatedContainer: Container): (Thread, String) = {
-    //TODO
-    println(s"create launch thread $allocatedContainer")
     val executorID = newExecutorID
     val thread = new Thread(() => {
       val containerLaunchContext = createExecutorContext(conf)

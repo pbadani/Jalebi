@@ -46,8 +46,8 @@ object ApplicationClient extends Logging {
     val amContainer = Records.newRecord(classOf[ContainerLaunchContext])
     amContainer.setCommands(List(
       s"scala com.jalebi.yarn.ApplicationMaster " +
-        s"--${AppMasterCommandConstants.applicationId} $applicationId " +
-        s"--${AppMasterCommandConstants.jarPath} $jarPath" +
+        s"--${CommandConstants.AppMaster.applicationId} $applicationId " +
+        s"--${CommandConstants.AppMaster.jarPath} $jarPath" +
         s" 1> ${ApplicationConstants.LOG_DIR_EXPANSION_VAR}/stdout" +
         s" 2> ${ApplicationConstants.LOG_DIR_EXPANSION_VAR}/stderr"
     ).asJava)

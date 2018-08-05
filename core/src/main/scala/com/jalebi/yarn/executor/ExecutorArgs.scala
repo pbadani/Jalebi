@@ -1,16 +1,16 @@
 package com.jalebi.yarn.executor
 
 import com.jalebi.utils.Logging
-import com.jalebi.yarn.AppMasterCommandConstants
+import com.jalebi.yarn.CommandConstants
 
 case class ExecutorArgs(args: Map[String, String]) {
 
   def getDriverURL: String = {
-    args(ExecutorCommandConstants.driverURL)
+    args(CommandConstants.Executor.driverURL)
   }
 
   def getApplicationId: String = {
-    args(AppMasterCommandConstants.applicationId)
+    args(CommandConstants.AppMaster.applicationId)
   }
 }
 
@@ -20,8 +20,8 @@ object ExecutorArgs extends Logging {
   def apply(args: Array[String]): ExecutorArgs = {
     val usage =
       s"""Usage: com.jalebi.yarn.executor.Executor
-         |[--${ExecutorCommandConstants.driverURL} <driverURL>]
-         |[--${AppMasterCommandConstants.applicationId} <applicationId>]
+         |[--${CommandConstants.Executor.driverURL} <driverURL>]
+         |[--${CommandConstants.AppMaster.applicationId} <applicationId>]
          |""".stripMargin
 
     if (args.isEmpty) {
@@ -35,9 +35,9 @@ object ExecutorArgs extends Logging {
       list match {
         case Nil => map
         case "--applicationId" :: value :: tail =>
-          nextOption(map ++ Map(AppMasterCommandConstants.applicationId -> value.toString), tail)
+          nextOption(map ++ Map(CommandConstants.AppMaster.applicationId -> value.toString), tail)
         case "--driverURL" :: value :: tail =>
-          nextOption(map ++ Map(ExecutorCommandConstants.driverURL -> value.toString), tail)
+          nextOption(map ++ Map(CommandConstants.Executor.driverURL -> value.toString), tail)
         case option :: tail => LOGGER.warn("Unknown executor option " + option)
           //          System.exit(1)
           Map.empty
@@ -45,11 +45,11 @@ object ExecutorArgs extends Logging {
     }
 
     val options = nextOption(Map(), arglist)
-    if (options.get(ExecutorCommandConstants.driverURL).isEmpty) {
+    if (options.get(CommandConstants.Executor.driverURL).isEmpty) {
       LOGGER.error(s"DriverURL is not provided in arguments. Usage: $usage")
       throw new IllegalArgumentException("DriverURL not provided in arguments˚")
     }
-    if (options.get(AppMasterCommandConstants.applicationId).isEmpty) {
+    if (options.get(CommandConstants.AppMaster.applicationId).isEmpty) {
       LOGGER.error(s"ApplicationId is not provided in arguments. Usage: $usage")
       throw new IllegalArgumentException("ApplicationId not provided in arguments˚")
     }

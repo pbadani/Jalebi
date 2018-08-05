@@ -7,7 +7,6 @@ import java.util.Collections
 import java.util.concurrent.atomic.AtomicLong
 
 import com.jalebi.utils.{JalebiUtils, Logging, YarnUtils}
-import com.jalebi.yarn.executor.ExecutorCommandConstants
 import com.jalebi.yarn.handler.{AMRMCallbackHandler, NMCallbackHandler}
 import org.apache.hadoop.fs.{FileSystem, Path}
 import org.apache.hadoop.net.NetUtils
@@ -28,7 +27,7 @@ object ApplicationMaster extends Logging {
   def main(args: Array[String]): Unit = {
     var applicationMaster: Option[ApplicationMaster] = None
     try {
-      applicationMaster = Some(new ApplicationMaster(AMArgs(args)))
+      applicationMaster = Some(new ApplicationMaster(ApplicationMasterArgs(args)))
       applicationMaster.get.run()
       Thread.sleep(1000000)
     } finally {
@@ -40,7 +39,7 @@ object ApplicationMaster extends Logging {
   }
 }
 
-class ApplicationMaster(amArgs: AMArgs) extends Logging {
+class ApplicationMaster(amArgs: ApplicationMasterArgs) extends Logging {
   val numberOfContainersNeeded = 3
   val containerStateManager = ContainerStateManager(numberOfContainersNeeded)
 
@@ -58,7 +57,7 @@ class ApplicationMaster(amArgs: AMArgs) extends Logging {
   private val launchThreads = ListBuffer[Thread]()
   private val executorIDCounter = new AtomicLong(0)
 
-  def newExecutorID = s"${ExecutorCommandConstants.executorPrefix}_${executorIDCounter.getAndIncrement()}"
+  def newExecutorID = s"${CommandConstants.Executor.executorPrefix}_${executorIDCounter.getAndIncrement()}"
 
   lazy val amContainerId: ContainerId = {
     val containerIdString = System.getenv.get(ApplicationConstants.Environment.CONTAINER_ID.toString)
@@ -140,8 +139,8 @@ class ApplicationMaster(amArgs: AMArgs) extends Logging {
     val driverURL = s"$appMasterHostname:$appMasterHostPort"
     amContainer.setCommands(List(
       s"scala com.jalebi.yarn.executor.Executor" +
-        s" --${ExecutorCommandConstants.driverURL} $driverURL" +
-        s" --${AppMasterCommandConstants.applicationId} ${amArgs.getApplicationId}" +
+        s" --${CommandConstants.Executor.driverURL} $driverURL" +
+        s" --${CommandConstants.AppMaster.applicationId} ${amArgs.getApplicationId}" +
         s" 1> ${ApplicationConstants.LOG_DIR_EXPANSION_VAR}/stdout" +
         s" 2> ${ApplicationConstants.LOG_DIR_EXPANSION_VAR}/stderr"
     ).asJava)

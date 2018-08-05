@@ -2,26 +2,26 @@ package com.jalebi.yarn
 
 import com.jalebi.utils.Logging
 
-case class AMArgs(args: Map[String, String]) {
+case class ApplicationMasterArgs(args: Map[String, String]) {
 
   //Since precondition check for mandatory arguments is already done, just return the arg
   def getApplicationId: String = {
-    args(AppMasterCommandConstants.applicationId)
+    args(CommandConstants.AppMaster.applicationId)
   }
 
   def getJarPath: String = {
-    args(AppMasterCommandConstants.jarPath)
+    args(CommandConstants.AppMaster.jarPath)
   }
 }
 
-object AMArgs extends Logging {
+object ApplicationMasterArgs extends Logging {
 
   @throws[IllegalArgumentException]
-  def apply(args: Array[String]): AMArgs = {
+  def apply(args: Array[String]): ApplicationMasterArgs = {
     val usage =
       s"""Usage: scala com.jalebi.yarn.ApplicationMaster
-         |[--${AppMasterCommandConstants.applicationId} <applicationId>]
-         |[--${AppMasterCommandConstants.jarPath} <jarPath>]
+         |[--${CommandConstants.AppMaster.applicationId} <applicationId>]
+         |[--${CommandConstants.AppMaster.jarPath} <jarPath>]
          |""".stripMargin
 
     if (args.isEmpty) {
@@ -35,9 +35,9 @@ object AMArgs extends Logging {
       list match {
         case Nil => map
         case "--applicationId" :: value :: tail =>
-          nextOption(map ++ Map(AppMasterCommandConstants.applicationId -> value.toString), tail)
+          nextOption(map ++ Map(CommandConstants.AppMaster.applicationId -> value.toString), tail)
         case "--jarPath" :: value :: tail =>
-          nextOption(map ++ Map(AppMasterCommandConstants.jarPath -> value.toString), tail)
+          nextOption(map ++ Map(CommandConstants.AppMaster.jarPath -> value.toString), tail)
         case option :: tail => LOGGER.warn("Unknown option " + option)
           //          System.exit(1)
           Map.empty
@@ -45,14 +45,14 @@ object AMArgs extends Logging {
     }
 
     val options = nextOption(Map(), arglist)
-    if (options.get(AppMasterCommandConstants.applicationId).isEmpty) {
+    if (options.get(CommandConstants.AppMaster.applicationId).isEmpty) {
       LOGGER.error(s"ApplicationId is not provided in arguments. Usage: $usage")
       throw new IllegalArgumentException("ApplicationId not provided in arguments˚")
     }
-    if (options.get(AppMasterCommandConstants.jarPath).isEmpty) {
+    if (options.get(CommandConstants.AppMaster.jarPath).isEmpty) {
       LOGGER.error(s"jarPath is not provided in arguments. Usage: $usage")
       throw new IllegalArgumentException("jarPath not provided in arguments")
     }
-    AMArgs(options)
+    ApplicationMasterArgs(options)
   }
 }

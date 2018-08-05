@@ -3,33 +3,41 @@ package com.jalebi.context
 import java.util.concurrent.atomic.AtomicLong
 
 import com.jalebi.api._
-import com.jalebi.exception.DatasetNotFoundException
+import com.jalebi.exception.{DatasetNotFoundException, DatasetNotLoadedException}
+import com.jalebi.hdfs.{FileSystemType, HDFSClient}
 import com.jalebi.job.JobManager
 
 case class JalebiContext private(conf: JalebiConfig) {
 
   val applicationID = s"Jalebi_App_${System.currentTimeMillis()}"
   val jobIDCounter = new AtomicLong(0)
-  private val jobManager = JobManager.createNew(this)
+  var currentDataset: Option[String] = None
+  val jobManager: JobManager = JobManager.createNew(this)
 
-  @throws[IllegalArgumentException]
   private def validate[V, E](vertices: Vertices[V], edges: Edges[E]): Jalebi[V, E] = {
     //    val vertexID
     null
   }
 
-  @throws[IllegalArgumentException]
   def load[V, E](vertices: Vertices[V], edges: Edges[E]): Jalebi[V, E] = {
     validate(vertices, edges)
-//    Jalebi.createLocal(this, vertices, edges)
+    //    Jalebi.createLocal(this, vertices, edges)
     null
   }
 
   @throws[DatasetNotFoundException]
-  def load[V, E](datasetName: String): Jalebi[V, E] = {
-    //    validate(vertices, edges)
-    //    Jalebi.createLocal(vertices, edges)
-    null
+  @throws[DatasetNotLoadedException]
+  def load[V, E](name: String, fileSystem: FileSystemType.FS): Unit = {
+    val hdfsClient = fileSystem match {
+      case FileSystemType.HDFS_LOCAL => HDFSClient.withLocalFileSystem()
+      case FileSystemType.HDFS_DISTRIBUTED => HDFSClient.withDistributedFileSystem(conf.hdfsHostPort)
+    }
+    if (!hdfsClient.checkDatasetExists(name)) {
+      throw new DatasetNotFoundException(s"Dataset $name not found at $fileSystem filesystem.")
+    }
+    if (jobManager.load(hdfsClient, name)) {
+      currentDataset = Some(name)
+    }
   }
 
   def generateNewJobID(): Long = jobIDCounter.getAndIncrement()

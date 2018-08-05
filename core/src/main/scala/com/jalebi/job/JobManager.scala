@@ -1,9 +1,22 @@
 package com.jalebi.job
 
 import com.jalebi.context.JalebiContext
+import com.jalebi.exception.DatasetNotLoadedException
+import com.jalebi.hdfs.HDFSClient
 
 case class JobManager(context: JalebiContext) {
-  val jobID = s"${context.applicationID}.${context.generateNewJobID()}"
+
+  @throws[DatasetNotLoadedException]
+  def load(hdfsClient: HDFSClient, name: String): Boolean = {
+    hdfsClient.getFileBlockLocations()
+    false
+  }
+
+  def submitJob(job: Job): Unit = {
+
+  }
+
+  def newJobId(): String = s"${context.applicationID}.${context.generateNewJobID()}"
 }
 
 object JobManager {

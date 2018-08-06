@@ -10,6 +10,8 @@ repositories {
 }
 
 dependencies {
+    implementation project(":proto")
+
     compile group: 'org.scala-lang', name: 'scala-library', version: '2.12.3'
     compile group: 'org.scala-lang', name: 'scala-compiler', version: '2.12.3'
     testCompile group: 'org.scalatest', name: 'scalatest_2.12', version: '3.0.0'
@@ -38,4 +40,12 @@ dependencies {
 task copyGraphJar(type: Copy) {
     from file("${buildDir}/libs/core.jar")
     into file("${projectDir}/publish/")
+}
+
+task deleteArtifacts(type: Delete, group: "ProtoBuf", description: "Deletes protobuf artifacts") {
+    delete './src/main/scala/com/jalebi/proto/', './src/main/java/com/jalebi/generated/'
+}
+
+task generateArtifacts(type: Exec, group: "ProtoBuf", description: "Generates protobuf artifacts") {
+    commandLine './src/main/resources/scalapbc-0.7.4/bin/scalapbc', '--scala_out=grpc:./src/main/scala', /* '--java_out=./src/main/java',*/ './src/main/resources/jobmanagement.proto'
 }

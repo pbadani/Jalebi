@@ -57,7 +57,7 @@ class ApplicationMaster(amArgs: ApplicationMasterArgs) extends Logging {
   private val launchThreads = ListBuffer[Thread]()
   private val executorIDCounter = new AtomicLong(0)
 
-  def newExecutorID = s"${CommandConstants.Executor.executorPrefix}_${executorIDCounter.getAndIncrement()}"
+  def newExecutorId = s"${CommandConstants.Executor.executorPrefix}_${executorIDCounter.getAndIncrement()}"
 
   lazy val amContainerId: ContainerId = {
     val containerIdString = System.getenv.get(ApplicationConstants.Environment.CONTAINER_ID.toString)
@@ -65,9 +65,7 @@ class ApplicationMaster(amArgs: ApplicationMasterArgs) extends Logging {
       // container id should always be set in the env by the framework
       throw new IllegalArgumentException("ContainerId not set in the environment")
     }
-    val containerId = ContainerId.fromString(containerIdString)
-    //    val appAttemptID = containerId.getApplicationAttemptId
-    containerId
+    ContainerId.fromString(containerIdString)
   }
 
   @throws[YarnException]
@@ -86,7 +84,6 @@ class ApplicationMaster(amArgs: ApplicationMasterArgs) extends Logging {
 
     val response = amrmClient.registerApplicationMaster(appMasterHostname, appMasterHostPort, "")
     LOGGER.info(s"Registered Application $response")
-    println(s"Registered Application $response")
 
     val maxMemory = response.getMaximumResourceCapability.getMemorySize
     val maxCores = response.getMaximumResourceCapability.getVirtualCores
@@ -121,7 +118,7 @@ class ApplicationMaster(amArgs: ApplicationMasterArgs) extends Logging {
   }
 
   def createLaunchContainerThread(allocatedContainer: Container): (Thread, String) = {
-    val executorID = newExecutorID
+    val executorID = newExecutorId
     val thread = new Thread(() => {
       val containerLaunchContext = createExecutorContext(conf)
       LOGGER.info(s"Starting container at: " +

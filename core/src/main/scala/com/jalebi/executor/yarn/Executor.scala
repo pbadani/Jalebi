@@ -1,4 +1,4 @@
-package com.jalebi.yarn.executor
+package com.jalebi.executor.yarn
 
 import com.jalebi.utils.Logging
 

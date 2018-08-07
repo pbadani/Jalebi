@@ -4,7 +4,7 @@ import com.jalebi.context.JalebiContext
 import com.jalebi.driver.{DriverCoordinatorService, Scheduler}
 import com.jalebi.exception.DatasetNotLoadedException
 import com.jalebi.hdfs.{HDFSClient, HostPort}
-import com.jalebi.standalone.LocalScheduler
+import com.jalebi.executor.standalone.LocalScheduler
 import com.jalebi.utils.Logging
 import com.jalebi.yarn.YarnScheduler
 import org.apache.hadoop.fs.BlockLocation

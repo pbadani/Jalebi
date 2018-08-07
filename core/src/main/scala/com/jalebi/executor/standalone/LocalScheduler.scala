@@ -1,4 +1,4 @@
-package com.jalebi.standalone
+package com.jalebi.executor.standalone
 
 import com.jalebi.context.JalebiContext
 import com.jalebi.driver.Scheduler

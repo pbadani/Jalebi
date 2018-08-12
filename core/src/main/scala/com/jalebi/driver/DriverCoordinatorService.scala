@@ -7,11 +7,11 @@ import io.grpc.ServerBuilder
 
 import scala.concurrent.ExecutionContext
 
-case class DriverCoordinatorService(jobManager: JobManager) extends Logging {
+case class DriverCoordinatorService(jobManager: JobManager) extends Runnable with Logging {
 
-  jobManager.shutRunningExecutors()
+  override def run(): Unit = {
+    jobManager.shutRunningExecutors()
 
-  def start(): Unit = {
     val server = ServerBuilder
       .forPort(jobManager.driverHostPort.port.toInt)
       .addService(JobManagementProtocolGrpc.bindService(new JobManagementServerImpl(jobManager), ExecutionContext.global))

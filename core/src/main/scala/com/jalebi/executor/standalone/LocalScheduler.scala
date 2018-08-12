@@ -13,10 +13,9 @@ case class LocalScheduler(context: JalebiContext) extends Scheduler(context) wit
   private val threads: ListBuffer[Thread] = new ListBuffer[Thread]()
 
   override def startExecutors(blockLocations: Map[String, BlockLocation]): Unit = {
-    val driverHostPort = context.driverHostPort
     blockLocations.foreach {
-      case (executorId, BlockLocation) =>
-        val runnable = LocalRunnable(executorId, driverHostPort)
+      case (executorId, _) =>
+        val runnable = LocalRunnable(executorId, context.driverHostPort)
         val thread = new Thread(runnable, executorId)
         threads += thread
         LOGGER.info(s"Starting thread for id $executorId")

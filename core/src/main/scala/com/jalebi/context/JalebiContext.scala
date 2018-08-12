@@ -37,7 +37,7 @@ case class JalebiContext private(conf: JalebiConfig) {
       case FileSystemType.HDFS_DISTRIBUTED => HDFSClient.withDistributedFileSystem(conf.hdfsHostPort)
     }
     if (!hdfsClient.checkDatasetExists(name)) {
-      throw new DatasetNotFoundException(s"Dataset $name not found at $fileSystem filesystem.")
+      throw new DatasetNotFoundException(s"Dataset '$name' not found at $fileSystem filesystem.")
     }
     if (jobManager.load(hdfsClient, name)) {
       currentDataset = Some(name)

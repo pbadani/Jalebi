@@ -24,7 +24,8 @@ case class JobManager(context: JalebiContext) extends Logging {
   def load(hdfsClient: HDFSClient, name: String): Boolean = {
     val blockLocations: Array[BlockLocation] = hdfsClient.getFileBlockLocations(name)
 
-    DriverCoordinatorService(this).start()
+    val service = new Thread(DriverCoordinatorService(this))
+    service.start()
     executorIdToBlockLocations = assignExecutorIds(blockLocations)
     LOGGER.info(s"Starting executors: [${registeredExecutors.mkString(", ")}]")
     scheduler.startExecutors(executorIdToBlockLocations)
@@ -37,7 +38,7 @@ case class JobManager(context: JalebiContext) extends Logging {
     }).toMap[String, BlockLocation]
   }
 
-  def shutRunningExecutors() = {
+  def shutRunningExecutors(): Unit = {
     LOGGER.info(s"Shutting down executors: [${registeredExecutors.mkString(", ")}]")
     scheduler.shutExecutors(registeredExecutors)
   }

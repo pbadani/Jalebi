@@ -1,7 +1,7 @@
 package com.jalebi.api
 
-case class Triplets[V, E](values: Seq[Triplet[V, E]])
+case class Triplets(values: Seq[Triplet])
 
 object Triplets {
-  def apply[V, E](values: Seq[Triplet[V, E]]): Triplets[V, E] = new Triplets(values)
+  def apply(values: Seq[Triplet]): Triplets = new Triplets(values)
 }

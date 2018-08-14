@@ -12,13 +12,12 @@ case class LocalScheduler(context: JalebiContext) extends Scheduler(context) wit
 
   private val threads: ListBuffer[Thread] = new ListBuffer[Thread]()
 
-  override def startExecutors(blockLocations: Map[String, BlockLocation]): Unit = {
-    blockLocations.foreach {
+  override def startExecutors(parts: Map[String, String]): Unit = {
+    parts.foreach {
       case (executorId, _) =>
-        val runnable = LocalRunnable(executorId, context.driverHostPort)
-        val thread = new Thread(runnable, executorId)
+        val thread = new Thread(LocalRunnable(executorId, context.driverHostPort), executorId)
         threads += thread
-        LOGGER.info(s"Starting thread for id $executorId")
+        LOGGER.info(s"Starting thread for $executorId.")
         thread.start()
     }
   }
@@ -28,7 +27,7 @@ case class LocalScheduler(context: JalebiContext) extends Scheduler(context) wit
       LOGGER.warn(s"No threads to stop.")
     } else {
       threads.foreach(thread => {
-        LOGGER.info(s"Stopping thread for id ${thread.getId}")
+        LOGGER.info(s"Stopping thread for ${thread.getId}.")
         thread.interrupt()
       })
     }

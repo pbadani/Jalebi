@@ -3,17 +3,16 @@ package com.jalebi.job
 import com.jalebi.context.JalebiContext
 import com.jalebi.driver.{DriverCoordinatorService, Scheduler}
 import com.jalebi.exception.DatasetNotLoadedException
-import com.jalebi.hdfs.{HDFSClient, HostPort}
 import com.jalebi.executor.standalone.LocalScheduler
+import com.jalebi.hdfs.{HDFSClient, HostPort}
 import com.jalebi.utils.Logging
 import com.jalebi.yarn.YarnScheduler
-import org.apache.hadoop.fs.BlockLocation
 
 import scala.collection.mutable
 
 case class JobManager(context: JalebiContext) extends Logging {
 
-  var executorIdToBlockLocations: Map[String, BlockLocation] = _
+  var executorIdToParts: Map[String, String] = _
   val registeredExecutors: mutable.Set[String] = new mutable.HashSet[String]()
 
   lazy private val scheduler: Scheduler = {
@@ -22,20 +21,19 @@ case class JobManager(context: JalebiContext) extends Logging {
 
   @throws[DatasetNotLoadedException]
   def load(hdfsClient: HDFSClient, name: String): Boolean = {
-    val blockLocations: Array[BlockLocation] = hdfsClient.getFileBlockLocations(name)
-
+    val parts = hdfsClient.listDatasetParts(name)
     val service = new Thread(DriverCoordinatorService(this))
     service.start()
-    executorIdToBlockLocations = assignExecutorIds(blockLocations)
+    executorIdToParts = assignExecutorIds(parts)
     LOGGER.info(s"Starting executors: [${registeredExecutors.mkString(", ")}]")
-    scheduler.startExecutors(executorIdToBlockLocations)
+    scheduler.startExecutors(executorIdToParts)
     false
   }
 
-  private def assignExecutorIds(blockLocations: Array[BlockLocation]): Map[String, BlockLocation] = {
+  private def assignExecutorIds(blockLocations: Set[String]): Map[String, String] = {
     blockLocations.map(blockLocation => {
       (context.newExecutorId(), blockLocation)
-    }).toMap[String, BlockLocation]
+    }).toMap[String, String]
   }
 
   def shutRunningExecutors(): Unit = {

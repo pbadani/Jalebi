@@ -2,8 +2,12 @@ package com.jalebi.hdfs
 
 import java.net.URI
 
+import com.jalebi.api.Triplets
+import com.jalebi.exception.{DatasetNotFoundException, DuplicateDatasetException}
 import com.jalebi.utils.Logging
-import org.apache.hadoop.fs.{BlockLocation, FileSystem, Path}
+import com.sksamuel.avro4s.{AvroOutputStream, AvroSchema}
+import org.apache.avro.Schema
+import org.apache.hadoop.fs.{FileSystem, Path}
 import org.apache.hadoop.yarn.conf.YarnConfiguration
 
 import scala.collection.mutable.ListBuffer
@@ -14,48 +18,79 @@ case class HostPort(host: String, port: String) {
 
 case class HDFSClient(fs: FileSystem) extends Logging {
 
-  //  def withDataset[U](name: String)(f: FileStatus => U): U = {
-  //    val filePath = s"${HDFSClientConstants.datasetParentDirectory}$name"
-  //    fs.getFileStatus(new Path(filePath))
-  //    val datasetExists =
-  //  }
+  @throws[DuplicateDatasetException]
+  def createDataset(name: String, triplets: Seq[Triplets]): Unit = {
+    val filePath = s"${HDFSClientConstants.datasetParentDirectory}$name"
+    LOGGER.info(s"Creating Dataset '$name' at location $filePath.")
+    if (checkDatasetExists(name)) {
+      throw new DuplicateDatasetException(s"Dataset '$name' is already present at $filePath.")
+    }
+    triplets.zipWithIndex.foreach {
+      case (t, index) =>
+        val partFileName = s"part-$index"
+        val os = fs.create(new Path(Seq(filePath, partFileName).mkString("/")))
+        val outputStream = AvroOutputStream.data[Triplets](os)
+        LOGGER.info(s"Writing part $partFileName for Dataset '$name' at $filePath.")
+        outputStream.write(t)
+        outputStream.flush()
+        outputStream.close()
+    }
+  }
+
+  @throws[DatasetNotFoundException]
+  def ensureDatasetExists(name: String): Unit = {
+    if (!checkDatasetExists(name)) {
+      throw new DatasetNotFoundException(s"Dataset '$name' not found.")
+    }
+  }
 
   def checkDatasetExists(name: String): Boolean = {
     val filePath = s"${HDFSClientConstants.datasetParentDirectory}$name"
-    LOGGER.info(s"Checking for Dataset $name at location $filePath for Filesystem $fs.")
+    LOGGER.info(s"Checking for Dataset $name at location $filePath.")
     val fileExists = fs.exists(new Path(filePath))
     LOGGER.info(s"Dataset $name ${if (fileExists) "exists." else "doesn't exist."}")
     fileExists
   }
 
   def listDatasets(): Set[String] = {
-    val files = new ListBuffer[String]()
-    val filePath = HDFSClientConstants.datasetParentDirectory
-    LOGGER.info(s"Listing Datasets at location $filePath for Filesystem $fs.")
-    val fileIterator = fs.listFiles(new Path(filePath), false)
-    while (fileIterator.hasNext)
-      files += fileIterator.next().getPath.getName
-    LOGGER.info(s"Datasets found for Filesystem $fs: [${files.mkString(", ")}]")
-    files.toSet
+    val filePath = new Path(HDFSClientConstants.datasetParentDirectory)
+    LOGGER.info(s"Listing Datasets at $filePath.")
+    val files = listDirectory(filePath)
+    LOGGER.info(s"${
+      if (files.isEmpty)
+        s"No Dataset found at $filePath"
+      else
+        s"Datasets found: [${files.mkString(", ")}]"
+    }")
+    files
   }
 
-  def getFileBlockLocations(name: String): Array[BlockLocation] = {
-    val path = new Path(s"${HDFSClientConstants.datasetParentDirectory}$name")
-    val fileStatus = fs.getFileStatus(path)
-    fs.getFileBlockLocations(path, 0L, fileStatus.getLen)
+  @throws[DatasetNotFoundException]
+  def listDatasetParts(name: String): Set[String] = {
+    if (!checkDatasetExists(name)) {
+      throw new DatasetNotFoundException(s"Dataset '$name' not found.")
+    }
+    LOGGER.info(s"Listing parts for Dataset $name.")
+    listDirectory(new Path(s"${HDFSClientConstants.datasetParentDirectory}$name"))
+  }
+
+  private def listDirectory(path: Path): Set[String] = {
+    val fileIterator = fs.listFiles(path, false)
+    val file = ListBuffer[String]()
+    while (fileIterator.hasNext)
+      file += fileIterator.next().getPath.getName
+    file.toSet
   }
 }
 
 object HDFSClient {
 
   def withLocalFileSystem(): HDFSClient = {
-    val conf = new YarnConfiguration()
-    new HDFSClient(FileSystem.getLocal(conf))
+    new HDFSClient(FileSystem.getLocal(new YarnConfiguration()))
   }
 
   def withDistributedFileSystem(hostPort: Option[HostPort]): HDFSClient = {
     require(hostPort.isDefined, "HDFS host and port are not defined in config.")
-    val conf = new YarnConfiguration()
-    new HDFSClient(FileSystem.get(new URI(s"hdfs://${hostPort.get.getAddress}"), conf))
+    new HDFSClient(FileSystem.get(new URI(s"hdfs://${hostPort.get.getAddress}"), new YarnConfiguration()))
   }
 }

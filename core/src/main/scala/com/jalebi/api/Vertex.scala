@@ -5,13 +5,13 @@ import scala.collection.mutable.ListBuffer
 
 case class VertexID(id: Long)
 
-case class Vertex[T](id: VertexID, data: T) extends Serializable {
+case class Vertex(id: VertexID, data: Map[String, Any]) extends Serializable {
 
-  private val relations = ListBuffer[Edge[_]]()
+  private val relations = ListBuffer[Edge]()
 
   private val visitedByJobIDs: mutable.Set[String] = new mutable.HashSet[String]()
 
-  def addRelation(edge: Edge[_]): Unit = {
+  def addRelation(edge: Edge): Unit = {
     relations += edge
   }
 
@@ -25,12 +25,12 @@ case class Vertex[T](id: VertexID, data: T) extends Serializable {
     visitedByJobIDs.contains(jobID)
   }
 
-  def getOutgoing: Seq[Edge[_]] = {
+  def getOutgoing: Seq[Edge] = {
     relations.filter(e => (e.isDirected && e.isSource(this.id))
       || (!e.isDirected))
   }
 
-  def getIncoming: Seq[Edge[_]] = {
+  def getIncoming: Seq[Edge] = {
     relations.filter(e => (e.isDirected && e.isTarget(this.id))
       || (!e.isDirected))
   }

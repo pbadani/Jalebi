@@ -2,13 +2,12 @@ package com.jalebi.yarn
 
 import com.jalebi.context.JalebiContext
 import com.jalebi.driver.Scheduler
-import org.apache.hadoop.fs.BlockLocation
 
 import scala.collection.mutable
 
 case class YarnScheduler(context: JalebiContext) extends Scheduler(context) {
 
-  override def startExecutors(blockLocations: Map[String, BlockLocation]) = {
+  override def startExecutors(parts: Map[String, String]): Unit = {
 
   }
 

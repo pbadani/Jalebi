@@ -1,16 +1,19 @@
 package com.jalebi.api
 
 import scala.collection.mutable
+import scala.collection.mutable.ListBuffer
 
-trait Vertex[T] extends Serializable {
+case class VertexID(id: Long)
 
-  val id: VertexID
+case class Vertex[T](id: VertexID, data: T) extends Serializable {
 
-  protected val data: T
-
-  protected val relations: Seq[Edge[T] with EdgeDirection with EdgeWeight]
+  private val relations = ListBuffer[Edge[_]]()
 
   private val visitedByJobIDs: mutable.Set[String] = new mutable.HashSet[String]()
+
+  def addRelation(edge: Edge[_]): Unit = {
+    relations += edge
+  }
 
   def markVisitedByJob(jobID: String): Unit = {
     require(jobID.nonEmpty)
@@ -22,18 +25,16 @@ trait Vertex[T] extends Serializable {
     visitedByJobIDs.contains(jobID)
   }
 
-  def getOutgoing: Seq[Edge[T] with EdgeDirection with EdgeWeight] = {
+  def getOutgoing: Seq[Edge[_]] = {
     relations.filter(e => (e.isDirected && e.isSource(this.id))
       || (!e.isDirected))
   }
 
-  def getIncoming: Seq[Edge[T] with EdgeDirection with EdgeWeight] = {
+  def getIncoming: Seq[Edge[_]] = {
     relations.filter(e => (e.isDirected && e.isTarget(this.id))
       || (!e.isDirected))
   }
 
-  override def toString: String = {
-    s"VertexID: $id"
-  }
+  override def toString: String = s"VertexID: $id"
 }
 

@@ -18,17 +18,6 @@ case class JalebiContext private(conf: JalebiConfig) {
 
   val driverHostPort = HostPort(NetUtils.getLocalHostname, "8585")
 
-  private def validate[V, E](vertices: Vertices[V], edges: Edges[E]): Jalebi[V, E] = {
-    //    val vertexID
-    null
-  }
-
-  def load[V, E](vertices: Vertices[V], edges: Edges[E]): Jalebi[V, E] = {
-    validate(vertices, edges)
-    //    Jalebi.createLocal(this, vertices, edges)
-    null
-  }
-
   @throws[DatasetNotFoundException]
   @throws[DatasetNotLoadedException]
   def load[V, E](name: String, fileSystem: FileSystemType.FS): Unit = {

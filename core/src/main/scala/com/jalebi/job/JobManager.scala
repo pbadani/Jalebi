@@ -22,18 +22,15 @@ case class JobManager(context: JalebiContext) extends Logging {
   @throws[DatasetNotLoadedException]
   def load(hdfsClient: HDFSClient, name: String): Boolean = {
     val parts = hdfsClient.listDatasetParts(name)
-    val service = new Thread(DriverCoordinatorService(this))
-    service.start()
+    DriverCoordinatorService(this).start()
     executorIdToParts = assignExecutorIds(parts)
     LOGGER.info(s"Starting executors: [${registeredExecutors.mkString(", ")}]")
     scheduler.startExecutors(executorIdToParts)
     false
   }
 
-  private def assignExecutorIds(blockLocations: Set[String]): Map[String, String] = {
-    blockLocations.map(blockLocation => {
-      (context.newExecutorId(), blockLocation)
-    }).toMap[String, String]
+  private def assignExecutorIds(parts: Set[String]): Map[String, String] = {
+    parts.map(part => (context.newExecutorId(), part)).toMap[String, String]
   }
 
   def shutRunningExecutors(): Unit = {

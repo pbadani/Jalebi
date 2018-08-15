@@ -27,3 +27,9 @@ case class DriverCoordinatorService(jobManager: JobManager) extends Runnable wit
     })
   }
 }
+
+object DriverCoordinatorService {
+  def apply(jobManager: JobManager): Thread = new Thread(new DriverCoordinatorService(jobManager))
+}
+
+

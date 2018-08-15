@@ -19,7 +19,7 @@ case class HostPort(host: String, port: String) {
 case class HDFSClient(fs: FileSystem) extends Logging {
 
   @throws[DuplicateDatasetException]
-  def createDataset(name: String, triplets: => Seq[Triplets]): Unit = {
+  def createDataset(name: String, triplets: => Iterator[Triplets]): Unit = {
     val filePath = s"${HDFSClientConstants.datasetParentDirectory}$name"
     if (checkDatasetExists(name)) {
       throw new DuplicateDatasetException(s"Dataset '$name' is already present at $filePath.")

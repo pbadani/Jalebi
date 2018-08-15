@@ -31,11 +31,11 @@ case class JalebiContext private(conf: JalebiConfig) {
   }
 
   def createDataset(input: Inputter): Unit = {
-    val verticesMap = input.listVertices.map(v => (v.id, v)).toMap
-    val triplets = input.listEdges.map(edge => {
+    val verticesMap = input.vertices.map(v => (v.id, v)).toMap
+    val triplets = input.edges.map(edge => {
       Triplet(verticesMap(edge.source), edge, verticesMap(edge.target))
     }).grouped(conf.options.getPartitionSize().toInt)
-      .map(Triplets(_)).toSeq
+      .map(Triplets(_))
     HDFSClient.withDistributedFileSystem(conf.hdfsHostPort).createDataset(input.datasetName, triplets)
   }
 

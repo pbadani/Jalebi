@@ -3,33 +3,36 @@ package com.jalebi.executor.standalone
 import com.jalebi.context.JalebiContext
 import com.jalebi.driver.Scheduler
 import com.jalebi.utils.Logging
-import org.apache.hadoop.fs.BlockLocation
 
 import scala.collection.mutable
-import scala.collection.mutable.ListBuffer
 
 case class LocalScheduler(context: JalebiContext) extends Scheduler(context) with Logging {
 
-  private val threads: ListBuffer[Thread] = new ListBuffer[Thread]()
+  private val threads: mutable.Map[String, Thread] = mutable.HashMap()
 
-  override def startExecutors(parts: Map[String, String]): Unit = {
-    parts.foreach {
-      case (executorId, _) =>
-        val thread = new Thread(LocalRunnable(executorId, context.driverHostPort), executorId)
-        threads += thread
-        LOGGER.info(s"Starting thread for $executorId.")
-        thread.start()
-    }
+  override def startExecutors(executorIds: Set[String]): Unit = {
+    executorIds.foreach(executorId => {
+      val thread = new Thread(LocalRunnable(executorId, context.driverHostPort), executorId)
+      threads += (executorId -> thread)
+      LOGGER.info(s"Starting thread for $executorId.")
+      thread.start()
+    })
   }
 
-  override def shutExecutors(executorIds: mutable.Set[String]): Unit = {
-    if (threads.isEmpty) {
-      LOGGER.warn(s"No threads to stop.")
-    } else {
-      threads.foreach(thread => {
-        LOGGER.info(s"Stopping thread for ${thread.getId}.")
-        thread.interrupt()
+  override def shutExecutors(executorIds: Set[String]): Unit = {
+    executorIds.foreach(executorId => {
+      threads.get(executorId).foreach(t => {
+        LOGGER.info(s"Stopping thread for $executorId.")
+        t.interrupt()
       })
+    })
+  }
+
+  override def shutAllExecutors(): Unit = {
+    threads.foreach {
+      case (executorId, thread) =>
+        LOGGER.info(s"Stopping thread for $executorId.")
+        thread.interrupt()
     }
   }
 }

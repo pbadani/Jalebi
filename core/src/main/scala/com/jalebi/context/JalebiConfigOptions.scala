@@ -5,8 +5,13 @@ case class JalebiConfigOptions(o: Map[String, String]) {
   def getPartitionSize(default: String = "100"): String = {
     o.getOrElse(JalebiConfigOptions.PARTITION_SIZE, default)
   }
+
+  def getNumberOfExecutors(default: String = "5"): String = {
+    o.getOrElse(JalebiConfigOptions.NUM_EXECUTORS, default)
+  }
 }
 
 object JalebiConfigOptions {
+  val NUM_EXECUTORS = "jalebi.conf.num.executors"
   val PARTITION_SIZE = "jalebi.conf.partition.size"
 }

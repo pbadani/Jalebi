@@ -1,41 +1,36 @@
 package com.jalebi.job
 
 import com.jalebi.context.JalebiContext
-import com.jalebi.driver.{DriverCoordinatorService, Scheduler}
+import com.jalebi.driver.DriverCoordinatorService
 import com.jalebi.exception.DatasetNotLoadedException
+import com.jalebi.executor.ExecutorIdToParts
 import com.jalebi.executor.standalone.LocalScheduler
 import com.jalebi.hdfs.{HDFSClient, HostPort}
+import com.jalebi.partitioner.HashPartitioner
 import com.jalebi.utils.Logging
 import com.jalebi.yarn.YarnScheduler
 
-import scala.collection.mutable
-
 case class JobManager(context: JalebiContext) extends Logging {
 
-  var executorIdToParts: Map[String, String] = _
-  val registeredExecutors: mutable.Set[String] = new mutable.HashSet[String]()
+  private var executorIdToParts: Option[ExecutorIdToParts] = None
 
-  lazy private val scheduler: Scheduler = {
-    if (context.onLocalMaster) LocalScheduler(context) else YarnScheduler(context)
-  }
+  lazy private val scheduler = if (context.onLocalMaster) LocalScheduler(context) else YarnScheduler(context)
 
   @throws[DatasetNotLoadedException]
-  def load(hdfsClient: HDFSClient, name: String): Boolean = {
-    val parts = hdfsClient.listDatasetParts(name)
+  def load(hdfsClient: HDFSClient, name: String, numberOfExecutors: Int): Boolean = {
     DriverCoordinatorService(this).start()
-    executorIdToParts = assignExecutorIds(parts)
-    LOGGER.info(s"Starting executors: [${registeredExecutors.mkString(", ")}]")
-    scheduler.startExecutors(executorIdToParts)
-    false
-  }
+    val parts = hdfsClient.listDatasetParts(name)
+    val executorIds = (0 until numberOfExecutors).map(_ => context.newExecutorId()).toSet
+    executorIdToParts = Some(HashPartitioner.partition(parts, executorIds))
+    LOGGER.info(s"Starting executors: [${executorIds.mkString(", ")}]")
+    scheduler.startExecutors(executorIdToParts.get.listExecutorIds())
 
-  private def assignExecutorIds(parts: Set[String]): Map[String, String] = {
-    parts.map(part => (context.newExecutorId(), part)).toMap[String, String]
+    true
   }
 
   def shutRunningExecutors(): Unit = {
-    LOGGER.info(s"Shutting down executors: [${registeredExecutors.mkString(", ")}]")
-    scheduler.shutExecutors(registeredExecutors)
+    LOGGER.info(s"Shutting All executors.")
+    scheduler.shutAllExecutors()
   }
 
   def driverHostPort: HostPort = context.driverHostPort

@@ -1,12 +1,11 @@
 package com.jalebi.driver
 
 import com.jalebi.context.JalebiContext
-import org.apache.hadoop.fs.BlockLocation
-
-import scala.collection.mutable
 
 abstract class Scheduler(context: JalebiContext) {
-  def startExecutors(executorIdsToBlockLocations: Map[String, String])
+  def startExecutors(executorIds: Set[String]): Unit
 
-  def shutExecutors(executorIds: mutable.Set[String])
+  def shutExecutors(executorIds: Set[String]): Unit
+
+  def shutAllExecutors(): Unit
 }

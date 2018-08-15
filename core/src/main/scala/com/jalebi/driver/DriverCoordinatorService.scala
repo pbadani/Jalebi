@@ -12,15 +12,15 @@ case class DriverCoordinatorService(jobManager: JobManager) extends Runnable wit
   override def run(): Unit = {
     jobManager.shutRunningExecutors()
 
+    val service = new JobManagementServerImpl(jobManager)
     val server = ServerBuilder
       .forPort(jobManager.driverHostPort.port.toInt)
-      .addService(JobManagementProtocolGrpc.bindService(new JobManagementServerImpl(jobManager), ExecutionContext.global))
+      .addService(JobManagementProtocolGrpc.bindService(service, ExecutionContext.global))
       .build()
       .start()
 
     LOGGER.info(s"Started Listening on port: ${jobManager.driverHostPort.port}")
     server.awaitTermination()
-
     sys.addShutdownHook({
       LOGGER.info("Shutting down the server.")
       server.shutdown()

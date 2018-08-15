@@ -1,6 +1,6 @@
 package com.jalebi.api
 
-case class Edge(source: VertexID, target: VertexID, data: Map[String, Any], isDirected: Boolean) {
+case class Edge(source: VertexID, target: VertexID, data: Map[String, String], isDirected: Boolean) {
 
   private var sourceRef: Option[Vertex] = None
 
@@ -24,5 +24,5 @@ case class Edge(source: VertexID, target: VertexID, data: Map[String, Any], isDi
 }
 
 object Edge {
-  def apply(source: VertexID, target: VertexID, data: Map[String, Any], isDirected: Boolean): Edge = new Edge(source, target, data, isDirected)
+  def apply(source: VertexID, target: VertexID, data: Map[String, String], isDirected: Boolean): Edge = new Edge(source, target, data, isDirected)
 }

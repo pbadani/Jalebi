@@ -5,7 +5,7 @@ import scala.collection.mutable.ListBuffer
 
 case class VertexID(id: Long)
 
-case class Vertex(id: VertexID, data: Map[String, Any]) extends Serializable {
+case class Vertex(id: VertexID, data: Map[String, String]) {
 
   private val relations = ListBuffer[Edge]()
 

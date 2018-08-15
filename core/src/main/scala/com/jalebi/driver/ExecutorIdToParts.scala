@@ -1,10 +1,8 @@
-package com.jalebi.executor
+package com.jalebi.driver
 
-import scala.collection.mutable
+case class ExecutorIdToParts(mapping: Map[String, Set[String]]) {
 
-case class ExecutorIdToParts(mapping: mutable.Map[String, Set[String]]) {
-
-  def listExecutorIds(): Set[String] = mapping.keySet.toSet
+  def listExecutorIds(): Set[String] = mapping.keySet
 
   def listPartsForExecutorId(executorId: String): Set[String] = mapping.getOrElse(executorId, Set.empty)
 

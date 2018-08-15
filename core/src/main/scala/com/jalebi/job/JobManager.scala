@@ -1,9 +1,8 @@
 package com.jalebi.job
 
 import com.jalebi.context.JalebiContext
-import com.jalebi.driver.DriverCoordinatorService
+import com.jalebi.driver.{DriverCoordinatorService, ExecutorIdToParts}
 import com.jalebi.exception.DatasetNotLoadedException
-import com.jalebi.executor.ExecutorIdToParts
 import com.jalebi.executor.standalone.LocalScheduler
 import com.jalebi.hdfs.{HDFSClient, HostPort}
 import com.jalebi.partitioner.HashPartitioner

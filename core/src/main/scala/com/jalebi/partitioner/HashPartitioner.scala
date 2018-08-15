@@ -1,6 +1,6 @@
 package com.jalebi.partitioner
 
-import com.jalebi.executor.ExecutorIdToParts
+import com.jalebi.driver.ExecutorIdToParts
 
 object HashPartitioner extends Partitioner {
 
@@ -10,8 +10,8 @@ object HashPartitioner extends Partitioner {
     val mapping = executors.toIterator.zip(parts.grouped(partsPerExecutor.toInt)).toMap
     LOGGER.info(s"Assigning partitions to Executors: ${
       mapping.map {
-        case (executorId, partitions) => s"ExecutorId $executorId   - Parts ${partitions.mkString(",")}"
-      }
+        case (executorId, partitions) => s"ExecutorId $executorId - [${partitions.mkString(",")}]"
+      }.mkString(System.lineSeparator())
     }")
     ExecutorIdToParts(mapping)
   }

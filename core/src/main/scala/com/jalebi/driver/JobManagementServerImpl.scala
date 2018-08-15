@@ -9,7 +9,7 @@ import scala.concurrent.Future
 
 case class JobManagementServerImpl(jobManager: JobManager) extends JobManagementProtocolGrpc.JobManagementProtocol with Logging {
   override def registerExecutor(request: RegisterExecutorRequest): Future[RegisterExecutorResponse] = {
-    LOGGER.info(s"Registering executor on server ${request.executorId}")
+    LOGGER.info(s"Driver side - Registering executor on server ${request.executorId}")
     Future.successful(RegisterExecutorResponse("R"))
   }
 

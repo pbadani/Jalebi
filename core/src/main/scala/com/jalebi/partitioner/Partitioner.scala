@@ -1,6 +1,6 @@
 package com.jalebi.partitioner
 
-import com.jalebi.executor.ExecutorIdToParts
+import com.jalebi.driver.ExecutorIdToParts
 import com.jalebi.utils.Logging
 
 trait Partitioner extends Logging {

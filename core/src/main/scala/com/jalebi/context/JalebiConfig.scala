@@ -4,11 +4,11 @@ import java.net.URI
 
 import com.jalebi.hdfs.HostPort
 
-case class JalebiConfig private(appName: String, master: String, hdfsHostPort: Option[HostPort])
+case class JalebiConfig private(appName: String, master: String, hdfsHostPort: Option[HostPort], options: JalebiConfigOptions)
 
 object JalebiConfig {
 
-  case class JalebiConfigBuilder(appName: Option[String], master: Option[String], hdfsHostPort: Option[HostPort]) {
+  case class JalebiConfigBuilder(appName: Option[String], master: Option[String], hdfsHostPort: Option[HostPort], options: Map[String, String]) {
 
     def withMaster(master: String): JalebiConfigBuilder = {
       master match {
@@ -27,17 +27,21 @@ object JalebiConfig {
       this.copy(hdfsHostPort = Some(HostPort(host, port)))
     }
 
+    def withOptions(options: Map[String, String]): JalebiConfigBuilder = {
+      this.copy(options = options.foldLeft(Map.empty[String, String])((m, t) => m + t))
+    }
+
     def fry(): JalebiConfig = {
       require(master.isDefined)
       require(appName.isDefined)
-      JalebiConfig(appName.get, master.get, hdfsHostPort)
+      JalebiConfig(appName.get, master.get, hdfsHostPort, JalebiConfigOptions(options))
     }
   }
 
   def withAppName(appName: String): JalebiConfigBuilder = {
     require(appName.nonEmpty)
-    JalebiConfigBuilder(Some(appName), None, None)
+    JalebiConfigBuilder(Some(appName), None, None, Map.empty)
   }
 
-  def apply(appName: String, master: String, hostPort: Option[HostPort]): JalebiConfig = new JalebiConfig(appName, master, hostPort)
+  def apply(appName: String, master: String, hostPort: Option[HostPort], options: JalebiConfigOptions): JalebiConfig = new JalebiConfig(appName, master, hostPort, options)
 }

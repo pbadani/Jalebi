@@ -9,7 +9,6 @@
 
 rootProject.name = 'Jalebi'
 include 'core'
-include 'appclient'
 include 'netty'
 include 'scratchpad'
 include 'proto'

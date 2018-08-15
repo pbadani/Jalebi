@@ -10,6 +10,8 @@ repositories {
 }
 
 dependencies {
+    implementation project(":core")
+
     compile group: 'com.thesamet.scalapb', name: 'compilerplugin_2.12', version: '0.7.4'
     compile group: 'com.thesamet.scalapb', name: 'protoc-bridge_2.12', version: '0.7.3'
     compile group: 'com.thesamet.scalapb', name: 'scalapbc_2.12', version: '0.7.4'

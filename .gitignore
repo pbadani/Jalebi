@@ -3,7 +3,6 @@
 /.idea/
 /Jalebi.iml
 /graph/out/
-/appclient/build/
 /graph/build/
 /graph/publish/
 /netty/out/
@@ -13,4 +12,3 @@
 /scratchpad/target/
 /scratchpad/out/
 /proto/out/
-/appclient/out/

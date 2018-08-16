@@ -39,6 +39,6 @@ object Task extends _root_.scalapb.GeneratedEnumCompanion[Task] {
     case 1 => I_AM_DONE
     case __other => Unrecognized(__other)
   }
-  def javaDescriptor: _root_.com.google.protobuf.Descriptors.EnumDescriptor = JobmanagementProto.javaDescriptor.getEnumTypes.get(1)
-  def scalaDescriptor: _root_.scalapb.descriptors.EnumDescriptor = JobmanagementProto.scalaDescriptor.enums(1)
+  def javaDescriptor: _root_.com.google.protobuf.Descriptors.EnumDescriptor = JobmanagementProto.javaDescriptor.getEnumTypes.get(2)
+  def scalaDescriptor: _root_.scalapb.descriptors.EnumDescriptor = JobmanagementProto.scalaDescriptor.enums(2)
 }

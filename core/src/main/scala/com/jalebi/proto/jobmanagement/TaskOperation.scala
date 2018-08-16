@@ -49,6 +49,6 @@ object TaskOperation extends _root_.scalapb.GeneratedEnumCompanion[TaskOperation
     case 2 => COMPUTE_NEXT_BATCH
     case __other => Unrecognized(__other)
   }
-  def javaDescriptor: _root_.com.google.protobuf.Descriptors.EnumDescriptor = JobmanagementProto.javaDescriptor.getEnumTypes.get(0)
-  def scalaDescriptor: _root_.scalapb.descriptors.EnumDescriptor = JobmanagementProto.scalaDescriptor.enums(0)
+  def javaDescriptor: _root_.com.google.protobuf.Descriptors.EnumDescriptor = JobmanagementProto.javaDescriptor.getEnumTypes.get(1)
+  def scalaDescriptor: _root_.scalapb.descriptors.EnumDescriptor = JobmanagementProto.scalaDescriptor.enums(1)
 }

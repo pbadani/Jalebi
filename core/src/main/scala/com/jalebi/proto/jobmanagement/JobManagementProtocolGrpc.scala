@@ -10,6 +10,15 @@ object JobManagementProtocolGrpc {
       .setResponseMarshaller(new scalapb.grpc.Marshaller(com.jalebi.proto.jobmanagement.RegisterExecutorResponse))
       .build()
   
+  val METHOD_HEARTBEAT: _root_.io.grpc.MethodDescriptor[com.jalebi.proto.jobmanagement.HeartbeatRequest, com.jalebi.proto.jobmanagement.HeartbeatResponse] =
+    _root_.io.grpc.MethodDescriptor.newBuilder()
+      .setType(_root_.io.grpc.MethodDescriptor.MethodType.UNARY)
+      .setFullMethodName(_root_.io.grpc.MethodDescriptor.generateFullMethodName("com.jalebi.proto.JobManagementProtocol", "heartbeat"))
+      .setSampledToLocalTracing(true)
+      .setRequestMarshaller(new scalapb.grpc.Marshaller(com.jalebi.proto.jobmanagement.HeartbeatRequest))
+      .setResponseMarshaller(new scalapb.grpc.Marshaller(com.jalebi.proto.jobmanagement.HeartbeatResponse))
+      .build()
+  
   val METHOD_START_TALK: _root_.io.grpc.MethodDescriptor[com.jalebi.proto.jobmanagement.TaskRequest, com.jalebi.proto.jobmanagement.TaskResponse] =
     _root_.io.grpc.MethodDescriptor.newBuilder()
       .setType(_root_.io.grpc.MethodDescriptor.MethodType.BIDI_STREAMING)
@@ -23,12 +32,14 @@ object JobManagementProtocolGrpc {
     _root_.io.grpc.ServiceDescriptor.newBuilder("com.jalebi.proto.JobManagementProtocol")
       .setSchemaDescriptor(new _root_.scalapb.grpc.ConcreteProtoFileDescriptorSupplier(com.jalebi.proto.jobmanagement.JobmanagementProto.javaDescriptor))
       .addMethod(METHOD_REGISTER_EXECUTOR)
+      .addMethod(METHOD_HEARTBEAT)
       .addMethod(METHOD_START_TALK)
       .build()
   
   trait JobManagementProtocol extends _root_.scalapb.grpc.AbstractService {
     override def serviceCompanion = JobManagementProtocol
     def registerExecutor(request: com.jalebi.proto.jobmanagement.RegisterExecutorRequest): scala.concurrent.Future[com.jalebi.proto.jobmanagement.RegisterExecutorResponse]
+    def heartbeat(request: com.jalebi.proto.jobmanagement.HeartbeatRequest): scala.concurrent.Future[com.jalebi.proto.jobmanagement.HeartbeatResponse]
     def startTalk(responseObserver: _root_.io.grpc.stub.StreamObserver[com.jalebi.proto.jobmanagement.TaskResponse]): _root_.io.grpc.stub.StreamObserver[com.jalebi.proto.jobmanagement.TaskRequest]
   }
   
@@ -40,11 +51,16 @@ object JobManagementProtocolGrpc {
   trait JobManagementProtocolBlockingClient {
     def serviceCompanion = JobManagementProtocol
     def registerExecutor(request: com.jalebi.proto.jobmanagement.RegisterExecutorRequest): com.jalebi.proto.jobmanagement.RegisterExecutorResponse
+    def heartbeat(request: com.jalebi.proto.jobmanagement.HeartbeatRequest): com.jalebi.proto.jobmanagement.HeartbeatResponse
   }
   
   class JobManagementProtocolBlockingStub(channel: _root_.io.grpc.Channel, options: _root_.io.grpc.CallOptions = _root_.io.grpc.CallOptions.DEFAULT) extends _root_.io.grpc.stub.AbstractStub[JobManagementProtocolBlockingStub](channel, options) with JobManagementProtocolBlockingClient {
     override def registerExecutor(request: com.jalebi.proto.jobmanagement.RegisterExecutorRequest): com.jalebi.proto.jobmanagement.RegisterExecutorResponse = {
       _root_.io.grpc.stub.ClientCalls.blockingUnaryCall(channel.newCall(METHOD_REGISTER_EXECUTOR, options), request)
+    }
+    
+    override def heartbeat(request: com.jalebi.proto.jobmanagement.HeartbeatRequest): com.jalebi.proto.jobmanagement.HeartbeatResponse = {
+      _root_.io.grpc.stub.ClientCalls.blockingUnaryCall(channel.newCall(METHOD_HEARTBEAT, options), request)
     }
     
     override def build(channel: _root_.io.grpc.Channel, options: _root_.io.grpc.CallOptions): JobManagementProtocolBlockingStub = new JobManagementProtocolBlockingStub(channel, options)
@@ -53,6 +69,10 @@ object JobManagementProtocolGrpc {
   class JobManagementProtocolStub(channel: _root_.io.grpc.Channel, options: _root_.io.grpc.CallOptions = _root_.io.grpc.CallOptions.DEFAULT) extends _root_.io.grpc.stub.AbstractStub[JobManagementProtocolStub](channel, options) with JobManagementProtocol {
     override def registerExecutor(request: com.jalebi.proto.jobmanagement.RegisterExecutorRequest): scala.concurrent.Future[com.jalebi.proto.jobmanagement.RegisterExecutorResponse] = {
       scalapb.grpc.Grpc.guavaFuture2ScalaFuture(_root_.io.grpc.stub.ClientCalls.futureUnaryCall(channel.newCall(METHOD_REGISTER_EXECUTOR, options), request))
+    }
+    
+    override def heartbeat(request: com.jalebi.proto.jobmanagement.HeartbeatRequest): scala.concurrent.Future[com.jalebi.proto.jobmanagement.HeartbeatResponse] = {
+      scalapb.grpc.Grpc.guavaFuture2ScalaFuture(_root_.io.grpc.stub.ClientCalls.futureUnaryCall(channel.newCall(METHOD_HEARTBEAT, options), request))
     }
     
     override def startTalk(responseObserver: _root_.io.grpc.stub.StreamObserver[com.jalebi.proto.jobmanagement.TaskResponse]): _root_.io.grpc.stub.StreamObserver[com.jalebi.proto.jobmanagement.TaskRequest] = {
@@ -69,6 +89,13 @@ object JobManagementProtocolGrpc {
       _root_.io.grpc.stub.ServerCalls.asyncUnaryCall(new _root_.io.grpc.stub.ServerCalls.UnaryMethod[com.jalebi.proto.jobmanagement.RegisterExecutorRequest, com.jalebi.proto.jobmanagement.RegisterExecutorResponse] {
         override def invoke(request: com.jalebi.proto.jobmanagement.RegisterExecutorRequest, observer: _root_.io.grpc.stub.StreamObserver[com.jalebi.proto.jobmanagement.RegisterExecutorResponse]): Unit =
           serviceImpl.registerExecutor(request).onComplete(scalapb.grpc.Grpc.completeObserver(observer))(
+            executionContext)
+      }))
+    .addMethod(
+      METHOD_HEARTBEAT,
+      _root_.io.grpc.stub.ServerCalls.asyncUnaryCall(new _root_.io.grpc.stub.ServerCalls.UnaryMethod[com.jalebi.proto.jobmanagement.HeartbeatRequest, com.jalebi.proto.jobmanagement.HeartbeatResponse] {
+        override def invoke(request: com.jalebi.proto.jobmanagement.HeartbeatRequest, observer: _root_.io.grpc.stub.StreamObserver[com.jalebi.proto.jobmanagement.HeartbeatResponse]): Unit =
+          serviceImpl.heartbeat(request).onComplete(scalapb.grpc.Grpc.completeObserver(observer))(
             executionContext)
       }))
     .addMethod(

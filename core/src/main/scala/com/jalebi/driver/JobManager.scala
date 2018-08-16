@@ -1,7 +1,6 @@
-package com.jalebi.job
+package com.jalebi.driver
 
 import com.jalebi.context.JalebiContext
-import com.jalebi.driver.{DriverCoordinatorService, ExecutorState}
 import com.jalebi.exception.DatasetNotLoadedException
 import com.jalebi.executor.standalone.LocalScheduler
 import com.jalebi.hdfs.{HDFSClient, HostPort}
@@ -9,25 +8,22 @@ import com.jalebi.partitioner.HashPartitioner
 import com.jalebi.utils.Logging
 import com.jalebi.yarn.YarnScheduler
 
-import scala.collection.mutable
-
 case class JobManager(context: JalebiContext) extends Logging {
 
   private val numOfExecutors = context.conf.options.getNumberOfExecutors().toInt
   lazy private val scheduler = if (context.onLocalMaster) LocalScheduler(context) else YarnScheduler(context)
-  lazy private val executorState: ExecutorState = {
-    (0 until numOfExecutors).
-      foldLeft(ExecutorState(mutable.Set.empty))((acc, _) => acc.addExecutorId(context.newExecutorId()))
-  }
-
-  def initialize(numberOfExecutors: Int): Unit = {
-    DriverCoordinatorService(this).start()
+  private val driverCoordinatorService = DriverCoordinatorService(this)
+  val executorState: ExecutorState = {
+    (0 until numOfExecutors)
+      .foldLeft(ExecutorState())((acc, _) => acc.addExecutorId(context.newExecutorId()))
   }
 
   def ensureInitialized(): Unit = synchronized {
-    if (executorIds.isEmpty) {
-      LOGGER.info(s"Starting executors: [${executorIds.mkString(", ")}]")
-      scheduler.startExecutors(executorIdToParts.get.listExecutorIds())
+    if (!executorState.isInitalized) {
+      driverCoordinatorService.start()
+      LOGGER.info(s"Starting executors: [${executorState.listExecutorIds().mkString(", ")}]")
+      scheduler.startExecutors(executorState.listExecutorIds())
+      executorState.initalize()
     }
   }
 
@@ -35,7 +31,8 @@ case class JobManager(context: JalebiContext) extends Logging {
   def load(hdfsClient: HDFSClient, name: String): Boolean = {
     ensureInitialized()
     val parts = hdfsClient.listDatasetParts(name)
-    executorIdToParts = Some(HashPartitioner.partition(parts, executorIds.get))
+    val executors = executorState.listExecutorIds()
+    val executorIdToParts = HashPartitioner.partition(parts, executors)
 
     true
   }
@@ -49,7 +46,5 @@ case class JobManager(context: JalebiContext) extends Logging {
 }
 
 object JobManager {
-
-
   def createNew(context: JalebiContext) = new JobManager(context)
 }

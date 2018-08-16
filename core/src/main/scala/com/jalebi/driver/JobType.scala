@@ -1,4 +1,4 @@
-package com.jalebi.job
+package com.jalebi.driver
 
 object JobType extends Enumeration {
   type JT = Value

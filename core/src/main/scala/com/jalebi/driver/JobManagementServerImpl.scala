@@ -1,6 +1,5 @@
 package com.jalebi.driver
 
-import com.jalebi.job.JobManager
 import com.jalebi.proto.jobmanagement._
 import com.jalebi.utils.Logging
 import io.grpc.stub.StreamObserver
@@ -8,12 +7,14 @@ import io.grpc.stub.StreamObserver
 import scala.concurrent.Future
 
 case class JobManagementServerImpl(jobManager: JobManager) extends JobManagementProtocolGrpc.JobManagementProtocol with Logging {
+
   override def registerExecutor(request: RegisterExecutorRequest): Future[RegisterExecutorResponse] = {
     LOGGER.info(s"Driver side - Registering executor on server ${request.executorId}")
+    jobManager.executorState.markRegistered(request.executorId)
     Future.successful(RegisterExecutorResponse("R"))
   }
 
-  override def startTalk(responseObserver: StreamObserver[TaskResponse]): StreamObserver[TaskRequest] = {
+  override def startTalk(requestObserver: StreamObserver[TaskResponse]): StreamObserver[TaskRequest] = {
     new StreamObserver[TaskRequest] {
       override def onError(t: Throwable): Unit = {
         LOGGER.info("server error")
@@ -28,8 +29,4 @@ case class JobManagementServerImpl(jobManager: JobManager) extends JobManagement
       }
     }
   }
-}
-
-object JobManagementServerImpl {
-
 }

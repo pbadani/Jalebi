@@ -1,6 +1,5 @@
 package com.jalebi.driver
 
-import com.jalebi.job.JobManager
 import com.jalebi.proto.jobmanagement.JobManagementProtocolGrpc
 import com.jalebi.utils.Logging
 import io.grpc.ServerBuilder

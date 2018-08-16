@@ -3,9 +3,9 @@ package com.jalebi.context
 import java.util.concurrent.atomic.AtomicLong
 
 import com.jalebi.api.{Triplet, Triplets}
+import com.jalebi.driver.JobManager
 import com.jalebi.exception.{DatasetNotFoundException, DatasetNotLoadedException, DuplicateDatasetException}
 import com.jalebi.hdfs.{HDFSClient, HostPort}
-import com.jalebi.job.JobManager
 import org.apache.hadoop.net.NetUtils
 
 case class JalebiContext private(conf: JalebiConfig) {
@@ -25,8 +25,7 @@ case class JalebiContext private(conf: JalebiConfig) {
     if (!hdfsClient.checkDatasetExists(name)) {
       throw new DatasetNotFoundException(s"Dataset '$name' not found.")
     }
-    val numberOfExecutors = conf.options.getNumberOfExecutors().toInt
-    if (jobManager.load(hdfsClient, name, numberOfExecutors)) {
+    if (jobManager.load(hdfsClient, name)) {
       currentDataset = Some(name)
     }
   }

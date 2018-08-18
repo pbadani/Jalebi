@@ -1,13 +1,18 @@
 package com.jalebi.driver
 
-import com.jalebi.proto.jobmanagement.ExecutorState
-import com.jalebi.proto.jobmanagement.ExecutorState.{NEW, REGISTERED, UNREGISTERED}
+import com.jalebi.context.JalebiConfig
+import com.jalebi.proto.jobmanagement.DatasetState.NONE
+import com.jalebi.proto.jobmanagement.ExecutorState._
+import com.jalebi.proto.jobmanagement.{DatasetState, ExecutorState, TaskType}
+import com.jalebi.utils.Logging
 
 import scala.collection.mutable
 
-case class ExecutorStateManager() {
+case class ExecutorStateManager(conf: JalebiConfig) extends Logging {
 
   private var initializationState = false
+
+  private var currentAction: Option[TaskType] = None
 
   private val executorIds = mutable.HashSet[String]()
 
@@ -17,56 +22,83 @@ case class ExecutorStateManager() {
   private val executorIdToState = mutable.HashMap[String, ExecutorState]()
     .withDefaultValue(NEW)
 
+  private val executorIdToDatasetState = mutable.HashMap[String, DatasetState]()
+    .withDefaultValue(NONE)
+
+  private val executorIdToLastHeartbeat = mutable.HashMap[String, Long]()
+
   def initialize(): Unit = {
     initializationState = true
   }
 
   def isInitialized: Boolean = initializationState
 
-  def assignPartsToExecutor(executorId: String, parts: mutable.Set[String]): Unit = {
+  def assignPartsToExecutor(executorId: String, parts: Set[String]): Unit = {
     val existingParts = executorIdToParts(executorId)
     executorIdToParts += (executorId -> existingParts.diff(parts))
   }
 
-  def removePartsFromExecutor(executorId: String, parts: mutable.Set[String]): Unit = {
+  def removePartsFromExecutor(executorId: String, parts: Set[String]): Unit = {
     val existingParts = executorIdToParts(executorId)
-    executorIdToParts += (executorId -> parts.union(existingParts))
+    executorIdToParts += (executorId -> existingParts.union(parts))
   }
 
   def markRegistered(executorId: String): Unit = {
-    val state = executorIdToState.get(executorId)
-    if (state.isDefined) {
+    if (executorIdToState.get(executorId).isDefined) {
       executorIdToState(executorId) = REGISTERED
     }
   }
 
   def markUnregistered(executorId: String): Unit = {
-    val state = executorIdToState.get(executorId)
-    if (state.isDefined) {
+    if (executorIdToState.get(executorId).isDefined) {
       executorIdToState(executorId) = UNREGISTERED
     }
   }
 
-  def updateLastHeartbeat(executorId: String): Unit = {
-    val state = executorIdToState.get(executorId)
-    //    if (state.isDefined) {
-    //      executorIdToState(executorId) = E.UNREGISTERED
-    //    }
+  def updateLastHeartbeat(executorId: String, executorState: ExecutorState, datasetState: DatasetState, heartbeat: Long): Unit = {
+    executorIdToState(executorId) = executorState
+    executorIdToDatasetState(executorId) = datasetState
+    executorIdToLastHeartbeat(executorId) = heartbeat
   }
 
   def addExecutorId(executorId: String): ExecutorStateManager = {
     executorIds.add(executorId)
     executorIdToState(executorId) = NEW
+    executorIdToDatasetState(executorId) = NONE
     this
   }
 
   def removeExecutorId(executorId: String): ExecutorStateManager = {
     executorIds.remove(executorId)
+    executorIdToState.remove(executorId)
+    executorIdToDatasetState.remove(executorId)
     this
   }
 
   def listExecutorIds(): Set[String] = executorIds.toSet
 
-  def listPartsForExecutorId(executorId: String): Set[String] = executorIdToParts.getOrElse(executorId, Set.empty).toSet
+  def listPartsForExecutorId(executorId: String): Set[String] = {
+    executorIdToParts.getOrElse(executorId, Set.empty).toSet
+  }
 
+  def clearState(): Unit = {
+    executorIdToParts.mapValues(mutable.Set.empty)
+  }
+
+  def getMissingHeartbeatExecutors: Set[String] = {
+
+    def isOlderThan(lastHeartbeat: Long, current: Long): Boolean = {
+      (current - lastHeartbeat) > ((conf.getHeartbeatInterval().toLong + conf.getHeartbeatMissBuffer().toLong) * 1000)
+    }
+
+    val current = System.currentTimeMillis()
+    executorIdToLastHeartbeat.filter {
+      case (executorId, lastHeartbeat) =>
+        val missedHeartbeat = isOlderThan(lastHeartbeat, current)
+        if (missedHeartbeat) {
+          LOGGER.warn(s"Executor id $executorId missed heartbeat. Current time: $current, last heartbeat time: $lastHeartbeat")
+        }
+        missedHeartbeat
+    }.toMap.keySet
+  }
 }

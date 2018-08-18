@@ -10,6 +10,10 @@ case class JalebiConfigOptions(o: Map[String, String]) {
     o.getOrElse(JalebiConfigOptions.HEARTBEAT_INTERVAL, default)
   }
 
+  def getHeartbeatMissBuffer(default: String = "2"): String = {
+    o.getOrElse(JalebiConfigOptions.HEARTBEAT_MISS_BUFFER, default)
+  }
+
   def getNumberOfExecutors(default: String = "5"): String = {
     o.getOrElse(JalebiConfigOptions.NUM_EXECUTORS, default)
   }
@@ -19,4 +23,5 @@ object JalebiConfigOptions {
   val NUM_EXECUTORS = "jalebi.conf.num.executors"
   val PARTITION_SIZE = "jalebi.conf.partition.size"
   val HEARTBEAT_INTERVAL = "jalebi.conf.heartbeat.interval"
+  val HEARTBEAT_MISS_BUFFER = "jalebi.conf.heartbeat.miss.buffer"
 }

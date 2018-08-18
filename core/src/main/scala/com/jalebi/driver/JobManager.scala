@@ -16,7 +16,7 @@ case class JobManager(context: JalebiContext) extends Logging {
   private val driverCoordinatorService = DriverCoordinatorService(this, context.conf)
   val executorState: ExecutorStateManager = {
     (0 until numOfExecutors)
-      .foldLeft(ExecutorStateManager())((acc, _) => acc.addExecutorId(context.newExecutorId()))
+      .foldLeft(ExecutorStateManager(context.conf))((acc, _) => acc.addExecutorId(context.newExecutorId()))
   }
 
   def ensureInitialized(): Unit = synchronized {
@@ -33,7 +33,10 @@ case class JobManager(context: JalebiContext) extends Logging {
     ensureInitialized()
     val parts = hdfsClient.listDatasetParts(name)
     val executors = executorState.listExecutorIds()
-    val executorIdToParts = HashPartitioner.partition(parts, executors)
+    HashPartitioner.partition(parts, executors).foreach {
+      case (e, p) => executorState.assignPartsToExecutor(e, p)
+    }
+
     true
   }
 

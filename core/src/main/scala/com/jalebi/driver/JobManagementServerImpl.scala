@@ -25,7 +25,8 @@ case class JobManagementServerImpl(jobManager: JobManager, conf: JalebiConfig) e
   override def startTalk(requestObserver: StreamObserver[TaskRequest]): StreamObserver[TaskResponse] = {
     new StreamObserver[TaskResponse] {
       override def onError(t: Throwable): Unit = {
-        LOGGER.info("server error")
+        LOGGER.error("server error")
+        LOGGER.error(t.getMessage)
       }
 
       override def onCompleted(): Unit = {
@@ -33,6 +34,8 @@ case class JobManagementServerImpl(jobManager: JobManager, conf: JalebiConfig) e
       }
 
       override def onNext(response: TaskResponse): Unit = {
+        val current = System.currentTimeMillis()
+        jobManager.executorState.updateLastHeartbeat(response.executorId, response.executorState, response.datasetState, current)
         LOGGER.info(s"on next $response")
       }
     }

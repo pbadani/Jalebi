@@ -2,7 +2,7 @@ package com.jalebi.context
 
 import com.jalebi.api.{Edge, Vertex}
 
-trait Inputter {
+trait JalebiWriter {
 
   def vertices[V]: Seq[Vertex]
 

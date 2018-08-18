@@ -1,6 +1,6 @@
 package com.jalebi.executor.local
 
-import com.jalebi.executor.TaskManager
+import com.jalebi.executor.{TaskConfig, TaskManager}
 import com.jalebi.hdfs.HDFSClient.RichHostPort
 import com.jalebi.proto.jobmanagement._
 import com.jalebi.utils.Logging
@@ -8,9 +8,6 @@ import io.grpc.ManagedChannelBuilder
 import io.grpc.stub.StreamObserver
 
 case class LocalRunnable(taskManager: TaskManager, driverHostPort: RichHostPort) extends Runnable with Logging {
-
-  private var running = true
-  private var heartbeatInterval: Long = 5
 
   //  private val jobManagementClient = new JobManagementClientImpl()
 
@@ -24,8 +21,7 @@ case class LocalRunnable(taskManager: TaskManager, driverHostPort: RichHostPort)
     import scala.concurrent.ExecutionContext.Implicits.global
     LOGGER.info(s"Registering executor ${taskManager.executorId}.")
     stub.registerExecutor(ExecutorRequest(taskManager.executorId)).onComplete(r => {
-      taskManager.markRegistered()
-      heartbeatInterval = r.get.heartbeatInterval
+      taskManager.markRegistered(TaskConfig(r.get))
     })
     LOGGER.info(s"Registered executor ${taskManager.executorId}.")
 
@@ -45,13 +41,13 @@ case class LocalRunnable(taskManager: TaskManager, driverHostPort: RichHostPort)
         }
       })
 
-    while (true) {
+    while (taskManager.keepRunning) {
       resp.onNext(TaskResponse("", taskManager.executorId, taskManager.currentState))
-      Thread.sleep(heartbeatInterval)
+      Thread.sleep(taskManager.heartbeatInterval)
     }
   }
 
   def terminate(): Unit = {
-    running = false
+    taskManager.keepRunning
   }
 }

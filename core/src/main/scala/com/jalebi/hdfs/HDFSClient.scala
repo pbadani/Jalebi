@@ -2,11 +2,11 @@ package com.jalebi.hdfs
 
 import java.net.URI
 
-import com.jalebi.api.Triplets
-import com.jalebi.exception.{DatasetNotFoundException, DuplicateDatasetException}
+import com.jalebi.api.{Jalebi, Triplets}
+import com.jalebi.exception.{DatasetCorruptException, DatasetNotFoundException, DuplicateDatasetException}
 import com.jalebi.proto.jobmanagement.HostPort
 import com.jalebi.utils.Logging
-import com.sksamuel.avro4s.AvroOutputStream
+import com.sksamuel.avro4s.{AvroInputStream, AvroOutputStream}
 import org.apache.hadoop.fs.{FileSystem, Path}
 import org.apache.hadoop.yarn.conf.YarnConfiguration
 
@@ -32,6 +32,23 @@ case class HDFSClient(fs: FileSystem) extends Logging {
         outputStream.flush()
         outputStream.close()
     }
+  }
+
+  @throws[DatasetCorruptException]
+  def loadDataset(name: String, parts: Set[String]): Jalebi = {
+    val existingParts = listDatasetParts(name)
+    val filePath = s"${HDFSClientConstants.datasetParentDirectory}$name"
+    val missingParts = parts.map(part => !existingParts.contains(part))
+    if (missingParts.nonEmpty) {
+      throw new DatasetCorruptException(s"Missing parts ${missingParts.mkString(", ")}")
+    }
+    Jalebi(parts.flatMap(partFileName => {
+      val inputStream = AvroInputStream.data[Triplets](Seq(filePath, partFileName).mkString("/"))
+      LOGGER.info(s"Reading $partFileName for Dataset '$name' at $filePath.")
+      val triplets = inputStream.iterator.toSet
+      inputStream.close()
+      triplets
+    }))
   }
 
   @throws[DatasetNotFoundException]

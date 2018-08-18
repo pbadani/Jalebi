@@ -23,8 +23,8 @@ case class JobManagementServerImpl(jobManager: JobManager, conf: JalebiConfig) e
     Future.successful(ExecutorResponse(conf.getHeartbeatInterval().toInt))
   }
 
-  override def startTalk(requestObserver: StreamObserver[TaskResponse]): StreamObserver[TaskRequest] = {
-    new StreamObserver[TaskRequest] {
+  override def startTalk(requestObserver: StreamObserver[TaskRequest]): StreamObserver[TaskResponse] = {
+    new StreamObserver[TaskResponse] {
       override def onError(t: Throwable): Unit = {
         LOGGER.info("server error")
       }
@@ -33,14 +33,10 @@ case class JobManagementServerImpl(jobManager: JobManager, conf: JalebiConfig) e
         LOGGER.info("server completed")
       }
 
-      override def onNext(value: TaskRequest): Unit = {
-        LOGGER.info(s"on next ${value.jobID}")
+      override def onNext(value: TaskResponse): Unit = {
+        LOGGER.info(s"on next ${value.executorId}")
       }
     }
   }
 
-  override def heartbeat(request: HeartbeatRequest): Future[HeartbeatResponse] = {
-//    jobManager.executorState.
-    null
-  }
 }

@@ -2,7 +2,7 @@ package com.jalebi.driver
 
 import com.jalebi.context.JalebiContext
 import com.jalebi.exception.DatasetNotLoadedException
-import com.jalebi.executor.standalone.LocalScheduler
+import com.jalebi.executor.local.LocalScheduler
 import com.jalebi.hdfs.{HDFSClient, HostPort}
 import com.jalebi.partitioner.HashPartitioner
 import com.jalebi.utils.Logging

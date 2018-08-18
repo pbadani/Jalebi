@@ -5,8 +5,7 @@ package com.jalebi.proto;
 service JobManagementProtocol {
     rpc registerExecutor (ExecutorRequest) returns (ExecutorResponse) {}
     rpc unregisterExecutor (ExecutorRequest) returns (ExecutorResponse) {}
-    rpc heartbeat (HeartbeatRequest) returns (HeartbeatResponse) {}
-    rpc startTalk (stream TaskRequest) returns (stream TaskResponse) {}
+    rpc startTalk (stream TaskResponse) returns (stream TaskRequest) {}
 }
 
 enum ExecutorState {
@@ -18,6 +17,12 @@ enum ExecutorState {
     ASSUMED_DEAD = 5;
 }
 
+enum TaskType {
+    LOAD_DATASET = 0;
+    BREADTH_FIRST = 1;
+    DEPTH_FIRST = 2;
+}
+
 message ExecutorRequest {
     string executorId = 1;
 }
@@ -26,31 +31,12 @@ message ExecutorResponse {
     int64 heartbeatInterval = 1;
 }
 
-message HeartbeatRequest {
-    string executorId = 1;
-    ExecutorState state = 2;
-}
-
-message HeartbeatResponse {
-    string executorId = 1;
-}
-
 message TaskRequest {
-    string jobID = 1;
-    TaskOperation op = 2;
+    TaskType taskType = 1;
 }
 
 message TaskResponse {
-    int64 epoch = 1;
-}
-
-enum TaskOperation {
-    START_TASK = 0;
-    STOP_TASK = 1;
-    COMPUTE_NEXT_BATCH = 2;
-}
-
-enum Task {
-    MORE_TO_DO = 0;
-    I_AM_DONE = 1;
+    string jobId = 1;
+    string executorId = 2;
+    ExecutorState state = 3;
 }

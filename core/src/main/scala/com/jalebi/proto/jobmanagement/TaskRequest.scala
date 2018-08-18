@@ -7,15 +7,13 @@ package com.jalebi.proto.jobmanagement
 
 @SerialVersionUID(0L)
 final case class TaskRequest(
-    jobID: _root_.scala.Predef.String = "",
-    op: com.jalebi.proto.jobmanagement.TaskOperation = com.jalebi.proto.jobmanagement.TaskOperation.START_TASK
+    taskType: com.jalebi.proto.jobmanagement.TaskType = com.jalebi.proto.jobmanagement.TaskType.LOAD_DATASET
     ) extends scalapb.GeneratedMessage with scalapb.Message[TaskRequest] with scalapb.lenses.Updatable[TaskRequest] {
     @transient
     private[this] var __serializedSizeCachedValue: _root_.scala.Int = 0
     private[this] def __computeSerializedValue(): _root_.scala.Int = {
       var __size = 0
-      if (jobID != "") { __size += _root_.com.google.protobuf.CodedOutputStream.computeStringSize(1, jobID) }
-      if (op != com.jalebi.proto.jobmanagement.TaskOperation.START_TASK) { __size += _root_.com.google.protobuf.CodedOutputStream.computeEnumSize(2, op.value) }
+      if (taskType != com.jalebi.proto.jobmanagement.TaskType.LOAD_DATASET) { __size += _root_.com.google.protobuf.CodedOutputStream.computeEnumSize(1, taskType.value) }
       __size
     }
     final override def serializedSize: _root_.scala.Int = {
@@ -28,48 +26,33 @@ final case class TaskRequest(
     }
     def writeTo(`_output__`: _root_.com.google.protobuf.CodedOutputStream): _root_.scala.Unit = {
       {
-        val __v = jobID
-        if (__v != "") {
-          _output__.writeString(1, __v)
-        }
-      };
-      {
-        val __v = op
-        if (__v != com.jalebi.proto.jobmanagement.TaskOperation.START_TASK) {
-          _output__.writeEnum(2, __v.value)
+        val __v = taskType
+        if (__v != com.jalebi.proto.jobmanagement.TaskType.LOAD_DATASET) {
+          _output__.writeEnum(1, __v.value)
         }
       };
     }
     def mergeFrom(`_input__`: _root_.com.google.protobuf.CodedInputStream): com.jalebi.proto.jobmanagement.TaskRequest = {
-      var __jobID = this.jobID
-      var __op = this.op
+      var __taskType = this.taskType
       var _done__ = false
       while (!_done__) {
         val _tag__ = _input__.readTag()
         _tag__ match {
           case 0 => _done__ = true
-          case 10 =>
-            __jobID = _input__.readString()
-          case 16 =>
-            __op = com.jalebi.proto.jobmanagement.TaskOperation.fromValue(_input__.readEnum())
+          case 8 =>
+            __taskType = com.jalebi.proto.jobmanagement.TaskType.fromValue(_input__.readEnum())
           case tag => _input__.skipField(tag)
         }
       }
       com.jalebi.proto.jobmanagement.TaskRequest(
-          jobID = __jobID,
-          op = __op
+          taskType = __taskType
       )
     }
-    def withJobID(__v: _root_.scala.Predef.String): TaskRequest = copy(jobID = __v)
-    def withOp(__v: com.jalebi.proto.jobmanagement.TaskOperation): TaskRequest = copy(op = __v)
+    def withTaskType(__v: com.jalebi.proto.jobmanagement.TaskType): TaskRequest = copy(taskType = __v)
     def getFieldByNumber(__fieldNumber: _root_.scala.Int): scala.Any = {
       (__fieldNumber: @_root_.scala.unchecked) match {
         case 1 => {
-          val __t = jobID
-          if (__t != "") __t else null
-        }
-        case 2 => {
-          val __t = op.javaValueDescriptor
+          val __t = taskType.javaValueDescriptor
           if (__t.getNumber() != 0) __t else null
         }
       }
@@ -77,8 +60,7 @@ final case class TaskRequest(
     def getField(__field: _root_.scalapb.descriptors.FieldDescriptor): _root_.scalapb.descriptors.PValue = {
       require(__field.containingMessage eq companion.scalaDescriptor)
       (__field.number: @_root_.scala.unchecked) match {
-        case 1 => _root_.scalapb.descriptors.PString(jobID)
-        case 2 => _root_.scalapb.descriptors.PEnum(op.scalaValueDescriptor)
+        case 1 => _root_.scalapb.descriptors.PEnum(taskType.scalaValueDescriptor)
       }
     }
     def toProtoString: _root_.scala.Predef.String = _root_.scalapb.TextFormat.printToUnicodeString(this)
@@ -91,34 +73,30 @@ object TaskRequest extends scalapb.GeneratedMessageCompanion[com.jalebi.proto.jo
     require(__fieldsMap.keys.forall(_.getContainingType() == javaDescriptor), "FieldDescriptor does not match message type.")
     val __fields = javaDescriptor.getFields
     com.jalebi.proto.jobmanagement.TaskRequest(
-      __fieldsMap.getOrElse(__fields.get(0), "").asInstanceOf[_root_.scala.Predef.String],
-      com.jalebi.proto.jobmanagement.TaskOperation.fromValue(__fieldsMap.getOrElse(__fields.get(1), com.jalebi.proto.jobmanagement.TaskOperation.START_TASK.javaValueDescriptor).asInstanceOf[_root_.com.google.protobuf.Descriptors.EnumValueDescriptor].getNumber)
+      com.jalebi.proto.jobmanagement.TaskType.fromValue(__fieldsMap.getOrElse(__fields.get(0), com.jalebi.proto.jobmanagement.TaskType.LOAD_DATASET.javaValueDescriptor).asInstanceOf[_root_.com.google.protobuf.Descriptors.EnumValueDescriptor].getNumber)
     )
   }
   implicit def messageReads: _root_.scalapb.descriptors.Reads[com.jalebi.proto.jobmanagement.TaskRequest] = _root_.scalapb.descriptors.Reads{
     case _root_.scalapb.descriptors.PMessage(__fieldsMap) =>
       require(__fieldsMap.keys.forall(_.containingMessage == scalaDescriptor), "FieldDescriptor does not match message type.")
       com.jalebi.proto.jobmanagement.TaskRequest(
-        __fieldsMap.get(scalaDescriptor.findFieldByNumber(1).get).map(_.as[_root_.scala.Predef.String]).getOrElse(""),
-        com.jalebi.proto.jobmanagement.TaskOperation.fromValue(__fieldsMap.get(scalaDescriptor.findFieldByNumber(2).get).map(_.as[_root_.scalapb.descriptors.EnumValueDescriptor]).getOrElse(com.jalebi.proto.jobmanagement.TaskOperation.START_TASK.scalaValueDescriptor).number)
+        com.jalebi.proto.jobmanagement.TaskType.fromValue(__fieldsMap.get(scalaDescriptor.findFieldByNumber(1).get).map(_.as[_root_.scalapb.descriptors.EnumValueDescriptor]).getOrElse(com.jalebi.proto.jobmanagement.TaskType.LOAD_DATASET.scalaValueDescriptor).number)
       )
     case _ => throw new RuntimeException("Expected PMessage")
   }
-  def javaDescriptor: _root_.com.google.protobuf.Descriptors.Descriptor = JobmanagementProto.javaDescriptor.getMessageTypes.get(4)
-  def scalaDescriptor: _root_.scalapb.descriptors.Descriptor = JobmanagementProto.scalaDescriptor.messages(4)
+  def javaDescriptor: _root_.com.google.protobuf.Descriptors.Descriptor = JobmanagementProto.javaDescriptor.getMessageTypes.get(2)
+  def scalaDescriptor: _root_.scalapb.descriptors.Descriptor = JobmanagementProto.scalaDescriptor.messages(2)
   def messageCompanionForFieldNumber(__number: _root_.scala.Int): _root_.scalapb.GeneratedMessageCompanion[_] = throw new MatchError(__number)
   lazy val nestedMessagesCompanions: Seq[_root_.scalapb.GeneratedMessageCompanion[_]] = Seq.empty
   def enumCompanionForFieldNumber(__fieldNumber: _root_.scala.Int): _root_.scalapb.GeneratedEnumCompanion[_] = {
     (__fieldNumber: @_root_.scala.unchecked) match {
-      case 2 => com.jalebi.proto.jobmanagement.TaskOperation
+      case 1 => com.jalebi.proto.jobmanagement.TaskType
     }
   }
   lazy val defaultInstance = com.jalebi.proto.jobmanagement.TaskRequest(
   )
   implicit class TaskRequestLens[UpperPB](_l: _root_.scalapb.lenses.Lens[UpperPB, com.jalebi.proto.jobmanagement.TaskRequest]) extends _root_.scalapb.lenses.ObjectLens[UpperPB, com.jalebi.proto.jobmanagement.TaskRequest](_l) {
-    def jobID: _root_.scalapb.lenses.Lens[UpperPB, _root_.scala.Predef.String] = field(_.jobID)((c_, f_) => c_.copy(jobID = f_))
-    def op: _root_.scalapb.lenses.Lens[UpperPB, com.jalebi.proto.jobmanagement.TaskOperation] = field(_.op)((c_, f_) => c_.copy(op = f_))
+    def taskType: _root_.scalapb.lenses.Lens[UpperPB, com.jalebi.proto.jobmanagement.TaskType] = field(_.taskType)((c_, f_) => c_.copy(taskType = f_))
   }
-  final val JOBID_FIELD_NUMBER = 1
-  final val OP_FIELD_NUMBER = 2
+  final val TASKTYPE_FIELD_NUMBER = 1
 }

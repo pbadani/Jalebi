@@ -42,7 +42,7 @@ case class LocalRunnable(taskManager: TaskManager, driverHostPort: RichHostPort)
       })
 
     while (taskManager.keepRunning) {
-      resp.onNext(TaskResponse("", taskManager.executorId, taskManager.currentState))
+      resp.onNext(taskManager.propagateInHeartbeat.get)
       Thread.sleep(taskManager.heartbeatInterval)
     }
   }

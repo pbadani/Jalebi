@@ -42,7 +42,7 @@ case class HDFSClient(fs: FileSystem) extends Logging {
     if (missingParts.nonEmpty) {
       throw new DatasetCorruptException(s"Missing parts ${missingParts.mkString(", ")}")
     }
-    Jalebi(parts.flatMap(partFileName => {
+    Jalebi(name, parts.flatMap(partFileName => {
       val inputStream = AvroInputStream.data[Triplets](Seq(filePath, partFileName).mkString("/"))
       LOGGER.info(s"Reading $partFileName for Dataset '$name' at $filePath.")
       val triplets = inputStream.iterator.toSet

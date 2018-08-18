@@ -10,7 +10,7 @@ sealed trait ExecutorState extends _root_.scalapb.GeneratedEnum {
   def isNew: _root_.scala.Boolean = false
   def isRegistered: _root_.scala.Boolean = false
   def isRunningJob: _root_.scala.Boolean = false
-  def isIdle: _root_.scala.Boolean = false
+  def isRunnable: _root_.scala.Boolean = false
   def isUnregistered: _root_.scala.Boolean = false
   def isAssumedDead: _root_.scala.Boolean = false
   def companion: _root_.scalapb.GeneratedEnumCompanion[ExecutorState] = com.jalebi.proto.jobmanagement.ExecutorState
@@ -36,23 +36,23 @@ object ExecutorState extends _root_.scalapb.GeneratedEnumCompanion[ExecutorState
   
   @SerialVersionUID(0L)
   case object RUNNING_JOB extends ExecutorState {
-    val value = 2
+    val value = 4
     val index = 2
     val name = "RUNNING_JOB"
     override def isRunningJob: _root_.scala.Boolean = true
   }
   
   @SerialVersionUID(0L)
-  case object IDLE extends ExecutorState {
-    val value = 3
+  case object RUNNABLE extends ExecutorState {
+    val value = 5
     val index = 3
-    val name = "IDLE"
-    override def isIdle: _root_.scala.Boolean = true
+    val name = "RUNNABLE"
+    override def isRunnable: _root_.scala.Boolean = true
   }
   
   @SerialVersionUID(0L)
   case object UNREGISTERED extends ExecutorState {
-    val value = 4
+    val value = 6
     val index = 4
     val name = "UNREGISTERED"
     override def isUnregistered: _root_.scala.Boolean = true
@@ -60,7 +60,7 @@ object ExecutorState extends _root_.scalapb.GeneratedEnumCompanion[ExecutorState
   
   @SerialVersionUID(0L)
   case object ASSUMED_DEAD extends ExecutorState {
-    val value = 5
+    val value = 7
     val index = 5
     val name = "ASSUMED_DEAD"
     override def isAssumedDead: _root_.scala.Boolean = true
@@ -69,14 +69,14 @@ object ExecutorState extends _root_.scalapb.GeneratedEnumCompanion[ExecutorState
   @SerialVersionUID(0L)
   final case class Unrecognized(value: _root_.scala.Int) extends ExecutorState with _root_.scalapb.UnrecognizedEnum
   
-  lazy val values = scala.collection.Seq(NEW, REGISTERED, RUNNING_JOB, IDLE, UNREGISTERED, ASSUMED_DEAD)
+  lazy val values = scala.collection.Seq(NEW, REGISTERED, RUNNING_JOB, RUNNABLE, UNREGISTERED, ASSUMED_DEAD)
   def fromValue(value: _root_.scala.Int): ExecutorState = value match {
     case 0 => NEW
     case 1 => REGISTERED
-    case 2 => RUNNING_JOB
-    case 3 => IDLE
-    case 4 => UNREGISTERED
-    case 5 => ASSUMED_DEAD
+    case 4 => RUNNING_JOB
+    case 5 => RUNNABLE
+    case 6 => UNREGISTERED
+    case 7 => ASSUMED_DEAD
     case __other => Unrecognized(__other)
   }
   def javaDescriptor: _root_.com.google.protobuf.Descriptors.EnumDescriptor = JobmanagementProto.javaDescriptor.getEnumTypes.get(0)

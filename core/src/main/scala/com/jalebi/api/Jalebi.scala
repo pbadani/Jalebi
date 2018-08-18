@@ -1,6 +1,6 @@
 package com.jalebi.api
 
-case class Jalebi(triplets: Set[Triplets]) {
+case class Jalebi(name: String, triplets: Set[Triplets]) {
 
 //  def searchBreadthFirst(verticesToSearch: MatchCriteria[V], edgesToTraverse: MatchCriteria[E]): Unit = {
 //    context.jobManager.breadthFirst(verticesToSearch, edgesToTraverse)

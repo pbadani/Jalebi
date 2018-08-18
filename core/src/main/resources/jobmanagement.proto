@@ -11,10 +11,16 @@ service JobManagementProtocol {
 enum ExecutorState {
     NEW = 0;
     REGISTERED = 1;
-    RUNNING_JOB = 2;
-    IDLE = 3;
-    UNREGISTERED = 4;
-    ASSUMED_DEAD = 5;
+    RUNNING_JOB = 4;
+    RUNNABLE = 5;
+    UNREGISTERED = 6;
+    ASSUMED_DEAD = 7;
+}
+
+enum DatasetState {
+    NONE = 0;
+    LOADING = 1;
+    LOADED = 2;
 }
 
 enum TaskType {
@@ -41,7 +47,8 @@ message TaskRequest {
 message TaskResponse {
     string jobId = 1;
     string executorId = 2;
-    ExecutorState state = 3;
+    ExecutorState executorState = 3;
+    DatasetState datasetState = 4;
 }
 
 message HostPort {

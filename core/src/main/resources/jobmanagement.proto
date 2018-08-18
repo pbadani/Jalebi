@@ -29,14 +29,22 @@ message ExecutorRequest {
 
 message ExecutorResponse {
     int64 heartbeatInterval = 1;
+    HostPort hostport = 2;
 }
 
 message TaskRequest {
     TaskType taskType = 1;
+    string dataset = 2;
+    repeated string parts = 3;
 }
 
 message TaskResponse {
     string jobId = 1;
     string executorId = 2;
     ExecutorState state = 3;
+}
+
+message HostPort {
+    string host = 1;
+    string port = 2;
 }

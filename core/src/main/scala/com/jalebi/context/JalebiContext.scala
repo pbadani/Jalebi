@@ -5,7 +5,9 @@ import java.util.concurrent.atomic.AtomicLong
 import com.jalebi.api.{Triplet, Triplets}
 import com.jalebi.driver.JobManager
 import com.jalebi.exception.{DatasetNotFoundException, DatasetNotLoadedException, DuplicateDatasetException}
-import com.jalebi.hdfs.{HDFSClient, HostPort}
+import com.jalebi.hdfs.HDFSClient
+import com.jalebi.hdfs.HDFSClient.RichHostPort
+import com.jalebi.proto.jobmanagement.HostPort
 import org.apache.hadoop.net.NetUtils
 
 case class JalebiContext private(conf: JalebiConfig) {
@@ -16,7 +18,7 @@ case class JalebiContext private(conf: JalebiConfig) {
   private var currentDataset: Option[String] = None
   val jobManager: JobManager = JobManager.createNew(this)
 
-  val driverHostPort = HostPort(NetUtils.getLocalHostname, "8585")
+  val driverHostPort = new RichHostPort(NetUtils.getLocalHostname, "8585")
 
   @throws[DatasetNotFoundException]
   @throws[DatasetNotLoadedException]

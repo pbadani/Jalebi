@@ -14,7 +14,7 @@ case class DriverCoordinatorService(jobManager: JobManager, conf: JalebiConfig) 
 
     val service = JobManagementServerImpl(jobManager, conf)
     val server = ServerBuilder
-      .forPort(jobManager.driverHostPort.port.toInt)
+      .forPort(jobManager.driverHostPort.port)
       .addService(JobManagementProtocolGrpc.bindService(service, ExecutionContext.global))
       .build()
       .start()

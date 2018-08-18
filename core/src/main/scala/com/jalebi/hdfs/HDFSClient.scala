@@ -4,6 +4,7 @@ import java.net.URI
 
 import com.jalebi.api.Triplets
 import com.jalebi.exception.{DatasetNotFoundException, DuplicateDatasetException}
+import com.jalebi.proto.jobmanagement.HostPort
 import com.jalebi.utils.Logging
 import com.sksamuel.avro4s.AvroOutputStream
 import org.apache.hadoop.fs.{FileSystem, Path}
@@ -11,10 +12,6 @@ import org.apache.hadoop.yarn.conf.YarnConfiguration
 
 import scala.collection.mutable.ListBuffer
 
-case class HostPort(host: String, port: String) {
-  def getAddress: String = s"$host:$port"
-  def getHDFSPath: String = s"hdfs://$getAddress"
-}
 
 case class HDFSClient(fs: FileSystem) extends Logging {
 
@@ -83,11 +80,24 @@ case class HDFSClient(fs: FileSystem) extends Logging {
 
 object HDFSClient {
 
+  implicit class RichHostPort(hostPort: HostPort) {
+
+    def this(host: String, port: String) = this(HostPort(host, port))
+
+    def getAddress: String = s"$host:$port"
+
+    def getHDFSPath: String = s"hdfs://$getAddress"
+
+    def port: Int = hostPort.port.toInt
+
+    def host: String = hostPort.host
+  }
+
   def withLocalFileSystem(): HDFSClient = {
     new HDFSClient(FileSystem.getLocal(new YarnConfiguration()))
   }
 
-  def withDistributedFileSystem(hostPort: Option[HostPort]): HDFSClient = {
+  def withDistributedFileSystem(hostPort: Option[RichHostPort]): HDFSClient = {
     require(hostPort.isDefined, "HDFS host and port are not defined in config.")
     new HDFSClient(FileSystem.get(new URI(hostPort.get.getHDFSPath), new YarnConfiguration()))
   }

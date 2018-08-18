@@ -3,7 +3,8 @@ package com.jalebi.driver
 import com.jalebi.context.JalebiContext
 import com.jalebi.exception.DatasetNotLoadedException
 import com.jalebi.executor.local.LocalScheduler
-import com.jalebi.hdfs.{HDFSClient, HostPort}
+import com.jalebi.hdfs.HDFSClient
+import com.jalebi.hdfs.HDFSClient.RichHostPort
 import com.jalebi.partitioner.HashPartitioner
 import com.jalebi.utils.Logging
 import com.jalebi.yarn.YarnScheduler
@@ -42,7 +43,7 @@ case class JobManager(context: JalebiContext) extends Logging {
     scheduler.shutAllExecutors()
   }
 
-  def driverHostPort: HostPort = context.driverHostPort
+  def driverHostPort: RichHostPort = context.driverHostPort
 }
 
 object JobManager {

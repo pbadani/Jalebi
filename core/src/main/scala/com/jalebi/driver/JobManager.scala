@@ -11,8 +11,8 @@ import com.jalebi.yarn.YarnScheduler
 case class JobManager(context: JalebiContext) extends Logging {
 
   private val numOfExecutors = context.conf.options.getNumberOfExecutors().toInt
-  lazy private val scheduler = if (context.onLocalMaster) LocalScheduler(context) else YarnScheduler(context)
-  private val driverCoordinatorService = DriverCoordinatorService(this)
+  private val scheduler = if (context.onLocalMaster) LocalScheduler(context) else YarnScheduler(context)
+  private val driverCoordinatorService = DriverCoordinatorService(this, context.conf)
   val executorState: ExecutorState = {
     (0 until numOfExecutors)
       .foldLeft(ExecutorState())((acc, _) => acc.addExecutorId(context.newExecutorId()))

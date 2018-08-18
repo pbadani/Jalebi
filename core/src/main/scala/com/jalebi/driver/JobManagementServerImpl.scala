@@ -1,17 +1,20 @@
 package com.jalebi.driver
 
+import com.jalebi.context.JalebiConfig
 import com.jalebi.proto.jobmanagement._
 import com.jalebi.utils.Logging
 import io.grpc.stub.StreamObserver
 
 import scala.concurrent.Future
 
-case class JobManagementServerImpl(jobManager: JobManager) extends JobManagementProtocolGrpc.JobManagementProtocol with Logging {
+case class JobManagementServerImpl(jobManager: JobManager, conf: JalebiConfig) extends JobManagementProtocolGrpc.JobManagementProtocol with Logging {
+
+  import com.jalebi.context.JalebiConfig._
 
   override def registerExecutor(request: RegisterExecutorRequest): Future[RegisterExecutorResponse] = {
     LOGGER.info(s"Driver side - Registering executor on server ${request.executorId}")
     jobManager.executorState.markRegistered(request.executorId)
-    Future.successful(RegisterExecutorResponse("R"))
+    Future.successful(RegisterExecutorResponse(conf.getHeartbeatInterval().toInt))
   }
 
   override def startTalk(requestObserver: StreamObserver[TaskResponse]): StreamObserver[TaskRequest] = {
@@ -28,5 +31,10 @@ case class JobManagementServerImpl(jobManager: JobManager) extends JobManagement
         LOGGER.info(s"on next ${value.jobID}")
       }
     }
+  }
+
+  override def heartbeat(request: HeartbeatRequest): Future[HeartbeatResponse] = {
+//    jobManager.executorState.
+    null
   }
 }

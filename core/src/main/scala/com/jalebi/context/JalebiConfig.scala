@@ -8,6 +8,8 @@ case class JalebiConfig private(appName: String, master: String, hdfsHostPort: O
 
 object JalebiConfig {
 
+  implicit def confToOptions(conf: JalebiConfig): JalebiConfigOptions =  conf.options
+
   case class JalebiConfigBuilder(appName: Option[String], master: Option[String], hdfsHostPort: Option[HostPort], options: Map[String, String]) {
 
     def withMaster(master: String): JalebiConfigBuilder = {

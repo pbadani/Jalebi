@@ -10,7 +10,7 @@ import io.grpc.stub.StreamObserver
 case class LocalRunnable(threadId: String, driverHostPort: HostPort) extends Runnable with Logging {
 
   private var running = true
-  private val jobManagementClient = JobManagementClientImpl()
+  private val jobManagementClient = new JobManagementClientImpl()
 
   override def run(): Unit = {
     val channel = ManagedChannelBuilder

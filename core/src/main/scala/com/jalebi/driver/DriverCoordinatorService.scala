@@ -1,17 +1,18 @@
 package com.jalebi.driver
 
+import com.jalebi.context.JalebiConfig
 import com.jalebi.proto.jobmanagement.JobManagementProtocolGrpc
 import com.jalebi.utils.Logging
 import io.grpc.ServerBuilder
 
 import scala.concurrent.ExecutionContext
 
-case class DriverCoordinatorService(jobManager: JobManager) extends Runnable with Logging {
+case class DriverCoordinatorService(jobManager: JobManager, conf: JalebiConfig) extends Runnable with Logging {
 
   override def run(): Unit = {
     jobManager.shutRunningExecutors()
 
-    val service = new JobManagementServerImpl(jobManager)
+    val service = JobManagementServerImpl(jobManager, conf)
     val server = ServerBuilder
       .forPort(jobManager.driverHostPort.port.toInt)
       .addService(JobManagementProtocolGrpc.bindService(service, ExecutionContext.global))
@@ -28,7 +29,7 @@ case class DriverCoordinatorService(jobManager: JobManager) extends Runnable wit
 }
 
 object DriverCoordinatorService {
-  def apply(jobManager: JobManager): Thread = new Thread(new DriverCoordinatorService(jobManager))
+  def apply(jobManager: JobManager, conf: JalebiConfig): Thread = new Thread(new DriverCoordinatorService(jobManager, conf))
 }
 
 

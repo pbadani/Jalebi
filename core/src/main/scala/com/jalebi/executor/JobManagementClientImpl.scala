@@ -1,11 +1,14 @@
 package com.jalebi.executor
 
-import com.jalebi.proto.jobmanagement.{JobManagementProtocolGrpc, RegisterExecutorRequest, RegisterExecutorResponse}
+import com.jalebi.proto.jobmanagement._
 
-case class JobManagementClientImpl() extends JobManagementProtocolGrpc.JobManagementProtocolBlockingClient {
+class JobManagementClientImpl extends JobManagementProtocolGrpc.JobManagementProtocolBlockingClient {
 
   override def registerExecutor(request: RegisterExecutorRequest): RegisterExecutorResponse = {
     null
   }
 
+  override def heartbeat(request: HeartbeatRequest): HeartbeatResponse = {
+    null
+  }
 }

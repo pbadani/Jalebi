@@ -24,10 +24,10 @@ case class TaskManager(executorId: String) extends Logging {
     def put(taskResponse: TaskResponse): Unit = queue.enqueue(taskResponse)
 
     def get: TaskResponse = {
-      if (queue.isEmpty) {
-        TaskResponse("", taskManager.executorId, taskManager.executorState, taskManager.datasetState)
-      } else {
+      if (queue.nonEmpty) {
         queue.dequeue()
+      } else {
+        TaskResponse("", taskManager.executorId, taskManager.executorState, taskManager.datasetState)
       }
     }
   }

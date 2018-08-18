@@ -13,7 +13,7 @@ case class LocalRunnable(taskManager: TaskManager, driverHostPort: RichHostPort)
 
   override def run(): Unit = {
     val channel = ManagedChannelBuilder
-      .forAddress(driverHostPort.host, driverHostPort.port)
+      .forAddress(driverHostPort.host, driverHostPort.port.toInt)
       .usePlaintext().build()
 
     val stub = JobManagementProtocolGrpc.stub(channel)
@@ -43,7 +43,7 @@ case class LocalRunnable(taskManager: TaskManager, driverHostPort: RichHostPort)
 
     while (taskManager.keepRunning) {
       resp.onNext(taskManager.propagateInHeartbeat.get)
-      Thread.sleep(taskManager.heartbeatInterval)
+      Thread.sleep(taskManager.heartbeatInterval * 1000)
     }
   }
 

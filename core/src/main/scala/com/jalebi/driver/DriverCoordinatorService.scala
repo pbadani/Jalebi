@@ -12,10 +12,11 @@ case class DriverCoordinatorService(jobManager: JobManager, conf: JalebiConfig) 
   override def run(): Unit = {
     jobManager.shutRunningExecutors()
 
-    val service = JobManagementServerImpl(jobManager, conf)
+    val serverHandler = JobManagementServerImpl(jobManager, conf)
+    val service = JobManagementProtocolGrpc.bindService(serverHandler, ExecutionContext.global)
     val server = ServerBuilder
-      .forPort(jobManager.driverHostPort.port)
-      .addService(JobManagementProtocolGrpc.bindService(service, ExecutionContext.global))
+      .forPort(jobManager.driverHostPort.port.toInt)
+      .addService(service)
       .build()
       .start()
 

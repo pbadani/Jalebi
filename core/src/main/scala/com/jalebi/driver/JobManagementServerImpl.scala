@@ -1,6 +1,7 @@
 package com.jalebi.driver
 
 import com.jalebi.context.JalebiConfig
+import com.jalebi.context.JalebiConfig._
 import com.jalebi.proto.jobmanagement._
 import com.jalebi.utils.Logging
 import io.grpc.stub.StreamObserver
@@ -9,12 +10,10 @@ import scala.concurrent.Future
 
 case class JobManagementServerImpl(jobManager: JobManager, conf: JalebiConfig) extends JobManagementProtocolGrpc.JobManagementProtocol with Logging {
 
-  import com.jalebi.context.JalebiConfig._
-
   override def registerExecutor(request: ExecutorRequest): Future[ExecutorResponse] = {
     LOGGER.info(s"Driver side - Registering executor on server ${request.executorId}")
     jobManager.executorState.markRegistered(request.executorId)
-    Future.successful(ExecutorResponse(conf.getHeartbeatInterval().toInt))
+    Future.successful(ExecutorResponse(conf.getHeartbeatInterval().toInt, Some(conf.hdfsHostPort.get.toHostPort)))
   }
 
   override def unregisterExecutor(request: ExecutorRequest): Future[ExecutorResponse] = {
@@ -33,10 +32,9 @@ case class JobManagementServerImpl(jobManager: JobManager, conf: JalebiConfig) e
         LOGGER.info("server completed")
       }
 
-      override def onNext(value: TaskResponse): Unit = {
-        LOGGER.info(s"on next ${value.executorId}")
+      override def onNext(response: TaskResponse): Unit = {
+        LOGGER.info(s"on next $response")
       }
     }
   }
-
 }

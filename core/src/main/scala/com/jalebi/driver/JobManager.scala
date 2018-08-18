@@ -34,7 +34,6 @@ case class JobManager(context: JalebiContext) extends Logging {
     val parts = hdfsClient.listDatasetParts(name)
     val executors = executorState.listExecutorIds()
     val executorIdToParts = HashPartitioner.partition(parts, executors)
-
     true
   }
 

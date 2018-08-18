@@ -18,7 +18,7 @@ case class JalebiContext private(conf: JalebiConfig) {
   private var currentDataset: Option[String] = None
   val jobManager: JobManager = JobManager.createNew(this)
 
-  val driverHostPort = new RichHostPort(NetUtils.getLocalHostname, "8585")
+  val driverHostPort = new RichHostPort(NetUtils.getLocalHostname, 8585)
 
   @throws[DatasetNotFoundException]
   @throws[DatasetNotLoadedException]

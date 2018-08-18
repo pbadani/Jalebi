@@ -99,15 +99,17 @@ object HDFSClient {
 
   implicit class RichHostPort(hostPort: HostPort) {
 
-    def this(host: String, port: String) = this(HostPort(host, port))
+    def this(host: String, port: Long) = this(HostPort(host, port))
 
     def getAddress: String = s"$host:$port"
 
     def getHDFSPath: String = s"hdfs://$getAddress"
 
-    def port: Int = hostPort.port.toInt
+    def port: Long = hostPort.port
 
     def host: String = hostPort.host
+
+    def toHostPort: HostPort = HostPort(host, port)
   }
 
   def withLocalFileSystem(): HDFSClient = {

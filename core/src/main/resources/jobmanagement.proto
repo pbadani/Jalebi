@@ -53,5 +53,5 @@ message TaskResponse {
 
 message HostPort {
     string host = 1;
-    string port = 2;
+    int64 port = 2;
 }

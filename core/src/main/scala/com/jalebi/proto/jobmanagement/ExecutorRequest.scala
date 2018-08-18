@@ -6,9 +6,9 @@
 package com.jalebi.proto.jobmanagement
 
 @SerialVersionUID(0L)
-final case class RegisterExecutorRequest(
+final case class ExecutorRequest(
     executorId: _root_.scala.Predef.String = ""
-    ) extends scalapb.GeneratedMessage with scalapb.Message[RegisterExecutorRequest] with scalapb.lenses.Updatable[RegisterExecutorRequest] {
+    ) extends scalapb.GeneratedMessage with scalapb.Message[ExecutorRequest] with scalapb.lenses.Updatable[ExecutorRequest] {
     @transient
     private[this] var __serializedSizeCachedValue: _root_.scala.Int = 0
     private[this] def __computeSerializedValue(): _root_.scala.Int = {
@@ -32,7 +32,7 @@ final case class RegisterExecutorRequest(
         }
       };
     }
-    def mergeFrom(`_input__`: _root_.com.google.protobuf.CodedInputStream): com.jalebi.proto.jobmanagement.RegisterExecutorRequest = {
+    def mergeFrom(`_input__`: _root_.com.google.protobuf.CodedInputStream): com.jalebi.proto.jobmanagement.ExecutorRequest = {
       var __executorId = this.executorId
       var _done__ = false
       while (!_done__) {
@@ -44,11 +44,11 @@ final case class RegisterExecutorRequest(
           case tag => _input__.skipField(tag)
         }
       }
-      com.jalebi.proto.jobmanagement.RegisterExecutorRequest(
+      com.jalebi.proto.jobmanagement.ExecutorRequest(
           executorId = __executorId
       )
     }
-    def withExecutorId(__v: _root_.scala.Predef.String): RegisterExecutorRequest = copy(executorId = __v)
+    def withExecutorId(__v: _root_.scala.Predef.String): ExecutorRequest = copy(executorId = __v)
     def getFieldByNumber(__fieldNumber: _root_.scala.Int): scala.Any = {
       (__fieldNumber: @_root_.scala.unchecked) match {
         case 1 => {
@@ -64,22 +64,22 @@ final case class RegisterExecutorRequest(
       }
     }
     def toProtoString: _root_.scala.Predef.String = _root_.scalapb.TextFormat.printToUnicodeString(this)
-    def companion = com.jalebi.proto.jobmanagement.RegisterExecutorRequest
+    def companion = com.jalebi.proto.jobmanagement.ExecutorRequest
 }
 
-object RegisterExecutorRequest extends scalapb.GeneratedMessageCompanion[com.jalebi.proto.jobmanagement.RegisterExecutorRequest] {
-  implicit def messageCompanion: scalapb.GeneratedMessageCompanion[com.jalebi.proto.jobmanagement.RegisterExecutorRequest] = this
-  def fromFieldsMap(__fieldsMap: scala.collection.immutable.Map[_root_.com.google.protobuf.Descriptors.FieldDescriptor, scala.Any]): com.jalebi.proto.jobmanagement.RegisterExecutorRequest = {
+object ExecutorRequest extends scalapb.GeneratedMessageCompanion[com.jalebi.proto.jobmanagement.ExecutorRequest] {
+  implicit def messageCompanion: scalapb.GeneratedMessageCompanion[com.jalebi.proto.jobmanagement.ExecutorRequest] = this
+  def fromFieldsMap(__fieldsMap: scala.collection.immutable.Map[_root_.com.google.protobuf.Descriptors.FieldDescriptor, scala.Any]): com.jalebi.proto.jobmanagement.ExecutorRequest = {
     require(__fieldsMap.keys.forall(_.getContainingType() == javaDescriptor), "FieldDescriptor does not match message type.")
     val __fields = javaDescriptor.getFields
-    com.jalebi.proto.jobmanagement.RegisterExecutorRequest(
+    com.jalebi.proto.jobmanagement.ExecutorRequest(
       __fieldsMap.getOrElse(__fields.get(0), "").asInstanceOf[_root_.scala.Predef.String]
     )
   }
-  implicit def messageReads: _root_.scalapb.descriptors.Reads[com.jalebi.proto.jobmanagement.RegisterExecutorRequest] = _root_.scalapb.descriptors.Reads{
+  implicit def messageReads: _root_.scalapb.descriptors.Reads[com.jalebi.proto.jobmanagement.ExecutorRequest] = _root_.scalapb.descriptors.Reads{
     case _root_.scalapb.descriptors.PMessage(__fieldsMap) =>
       require(__fieldsMap.keys.forall(_.containingMessage == scalaDescriptor), "FieldDescriptor does not match message type.")
-      com.jalebi.proto.jobmanagement.RegisterExecutorRequest(
+      com.jalebi.proto.jobmanagement.ExecutorRequest(
         __fieldsMap.get(scalaDescriptor.findFieldByNumber(1).get).map(_.as[_root_.scala.Predef.String]).getOrElse("")
       )
     case _ => throw new RuntimeException("Expected PMessage")
@@ -89,9 +89,9 @@ object RegisterExecutorRequest extends scalapb.GeneratedMessageCompanion[com.jal
   def messageCompanionForFieldNumber(__number: _root_.scala.Int): _root_.scalapb.GeneratedMessageCompanion[_] = throw new MatchError(__number)
   lazy val nestedMessagesCompanions: Seq[_root_.scalapb.GeneratedMessageCompanion[_]] = Seq.empty
   def enumCompanionForFieldNumber(__fieldNumber: _root_.scala.Int): _root_.scalapb.GeneratedEnumCompanion[_] = throw new MatchError(__fieldNumber)
-  lazy val defaultInstance = com.jalebi.proto.jobmanagement.RegisterExecutorRequest(
+  lazy val defaultInstance = com.jalebi.proto.jobmanagement.ExecutorRequest(
   )
-  implicit class RegisterExecutorRequestLens[UpperPB](_l: _root_.scalapb.lenses.Lens[UpperPB, com.jalebi.proto.jobmanagement.RegisterExecutorRequest]) extends _root_.scalapb.lenses.ObjectLens[UpperPB, com.jalebi.proto.jobmanagement.RegisterExecutorRequest](_l) {
+  implicit class ExecutorRequestLens[UpperPB](_l: _root_.scalapb.lenses.Lens[UpperPB, com.jalebi.proto.jobmanagement.ExecutorRequest]) extends _root_.scalapb.lenses.ObjectLens[UpperPB, com.jalebi.proto.jobmanagement.ExecutorRequest](_l) {
     def executorId: _root_.scalapb.lenses.Lens[UpperPB, _root_.scala.Predef.String] = field(_.executorId)((c_, f_) => c_.copy(executorId = f_))
   }
   final val EXECUTORID_FIELD_NUMBER = 1

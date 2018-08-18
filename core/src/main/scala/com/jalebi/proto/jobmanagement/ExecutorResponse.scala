@@ -6,9 +6,9 @@
 package com.jalebi.proto.jobmanagement
 
 @SerialVersionUID(0L)
-final case class RegisterExecutorResponse(
+final case class ExecutorResponse(
     heartbeatInterval: _root_.scala.Long = 0L
-    ) extends scalapb.GeneratedMessage with scalapb.Message[RegisterExecutorResponse] with scalapb.lenses.Updatable[RegisterExecutorResponse] {
+    ) extends scalapb.GeneratedMessage with scalapb.Message[ExecutorResponse] with scalapb.lenses.Updatable[ExecutorResponse] {
     @transient
     private[this] var __serializedSizeCachedValue: _root_.scala.Int = 0
     private[this] def __computeSerializedValue(): _root_.scala.Int = {
@@ -32,7 +32,7 @@ final case class RegisterExecutorResponse(
         }
       };
     }
-    def mergeFrom(`_input__`: _root_.com.google.protobuf.CodedInputStream): com.jalebi.proto.jobmanagement.RegisterExecutorResponse = {
+    def mergeFrom(`_input__`: _root_.com.google.protobuf.CodedInputStream): com.jalebi.proto.jobmanagement.ExecutorResponse = {
       var __heartbeatInterval = this.heartbeatInterval
       var _done__ = false
       while (!_done__) {
@@ -44,11 +44,11 @@ final case class RegisterExecutorResponse(
           case tag => _input__.skipField(tag)
         }
       }
-      com.jalebi.proto.jobmanagement.RegisterExecutorResponse(
+      com.jalebi.proto.jobmanagement.ExecutorResponse(
           heartbeatInterval = __heartbeatInterval
       )
     }
-    def withHeartbeatInterval(__v: _root_.scala.Long): RegisterExecutorResponse = copy(heartbeatInterval = __v)
+    def withHeartbeatInterval(__v: _root_.scala.Long): ExecutorResponse = copy(heartbeatInterval = __v)
     def getFieldByNumber(__fieldNumber: _root_.scala.Int): scala.Any = {
       (__fieldNumber: @_root_.scala.unchecked) match {
         case 1 => {
@@ -64,22 +64,22 @@ final case class RegisterExecutorResponse(
       }
     }
     def toProtoString: _root_.scala.Predef.String = _root_.scalapb.TextFormat.printToUnicodeString(this)
-    def companion = com.jalebi.proto.jobmanagement.RegisterExecutorResponse
+    def companion = com.jalebi.proto.jobmanagement.ExecutorResponse
 }
 
-object RegisterExecutorResponse extends scalapb.GeneratedMessageCompanion[com.jalebi.proto.jobmanagement.RegisterExecutorResponse] {
-  implicit def messageCompanion: scalapb.GeneratedMessageCompanion[com.jalebi.proto.jobmanagement.RegisterExecutorResponse] = this
-  def fromFieldsMap(__fieldsMap: scala.collection.immutable.Map[_root_.com.google.protobuf.Descriptors.FieldDescriptor, scala.Any]): com.jalebi.proto.jobmanagement.RegisterExecutorResponse = {
+object ExecutorResponse extends scalapb.GeneratedMessageCompanion[com.jalebi.proto.jobmanagement.ExecutorResponse] {
+  implicit def messageCompanion: scalapb.GeneratedMessageCompanion[com.jalebi.proto.jobmanagement.ExecutorResponse] = this
+  def fromFieldsMap(__fieldsMap: scala.collection.immutable.Map[_root_.com.google.protobuf.Descriptors.FieldDescriptor, scala.Any]): com.jalebi.proto.jobmanagement.ExecutorResponse = {
     require(__fieldsMap.keys.forall(_.getContainingType() == javaDescriptor), "FieldDescriptor does not match message type.")
     val __fields = javaDescriptor.getFields
-    com.jalebi.proto.jobmanagement.RegisterExecutorResponse(
+    com.jalebi.proto.jobmanagement.ExecutorResponse(
       __fieldsMap.getOrElse(__fields.get(0), 0L).asInstanceOf[_root_.scala.Long]
     )
   }
-  implicit def messageReads: _root_.scalapb.descriptors.Reads[com.jalebi.proto.jobmanagement.RegisterExecutorResponse] = _root_.scalapb.descriptors.Reads{
+  implicit def messageReads: _root_.scalapb.descriptors.Reads[com.jalebi.proto.jobmanagement.ExecutorResponse] = _root_.scalapb.descriptors.Reads{
     case _root_.scalapb.descriptors.PMessage(__fieldsMap) =>
       require(__fieldsMap.keys.forall(_.containingMessage == scalaDescriptor), "FieldDescriptor does not match message type.")
-      com.jalebi.proto.jobmanagement.RegisterExecutorResponse(
+      com.jalebi.proto.jobmanagement.ExecutorResponse(
         __fieldsMap.get(scalaDescriptor.findFieldByNumber(1).get).map(_.as[_root_.scala.Long]).getOrElse(0L)
       )
     case _ => throw new RuntimeException("Expected PMessage")
@@ -89,9 +89,9 @@ object RegisterExecutorResponse extends scalapb.GeneratedMessageCompanion[com.ja
   def messageCompanionForFieldNumber(__number: _root_.scala.Int): _root_.scalapb.GeneratedMessageCompanion[_] = throw new MatchError(__number)
   lazy val nestedMessagesCompanions: Seq[_root_.scalapb.GeneratedMessageCompanion[_]] = Seq.empty
   def enumCompanionForFieldNumber(__fieldNumber: _root_.scala.Int): _root_.scalapb.GeneratedEnumCompanion[_] = throw new MatchError(__fieldNumber)
-  lazy val defaultInstance = com.jalebi.proto.jobmanagement.RegisterExecutorResponse(
+  lazy val defaultInstance = com.jalebi.proto.jobmanagement.ExecutorResponse(
   )
-  implicit class RegisterExecutorResponseLens[UpperPB](_l: _root_.scalapb.lenses.Lens[UpperPB, com.jalebi.proto.jobmanagement.RegisterExecutorResponse]) extends _root_.scalapb.lenses.ObjectLens[UpperPB, com.jalebi.proto.jobmanagement.RegisterExecutorResponse](_l) {
+  implicit class ExecutorResponseLens[UpperPB](_l: _root_.scalapb.lenses.Lens[UpperPB, com.jalebi.proto.jobmanagement.ExecutorResponse]) extends _root_.scalapb.lenses.ObjectLens[UpperPB, com.jalebi.proto.jobmanagement.ExecutorResponse](_l) {
     def heartbeatInterval: _root_.scalapb.lenses.Lens[UpperPB, _root_.scala.Long] = field(_.heartbeatInterval)((c_, f_) => c_.copy(heartbeatInterval = f_))
   }
   final val HEARTBEATINTERVAL_FIELD_NUMBER = 1

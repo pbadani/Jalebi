@@ -11,10 +11,16 @@ case class JobManagementServerImpl(jobManager: JobManager, conf: JalebiConfig) e
 
   import com.jalebi.context.JalebiConfig._
 
-  override def registerExecutor(request: RegisterExecutorRequest): Future[RegisterExecutorResponse] = {
+  override def registerExecutor(request: ExecutorRequest): Future[ExecutorResponse] = {
     LOGGER.info(s"Driver side - Registering executor on server ${request.executorId}")
     jobManager.executorState.markRegistered(request.executorId)
-    Future.successful(RegisterExecutorResponse(conf.getHeartbeatInterval().toInt))
+    Future.successful(ExecutorResponse(conf.getHeartbeatInterval().toInt))
+  }
+
+  override def unregisterExecutor(request: ExecutorRequest): Future[ExecutorResponse] = {
+    LOGGER.info(s"Driver side - Unregistering executor on server ${request.executorId}")
+    jobManager.executorState.markUnregistered(request.executorId)
+    Future.successful(ExecutorResponse(conf.getHeartbeatInterval().toInt))
   }
 
   override def startTalk(requestObserver: StreamObserver[TaskResponse]): StreamObserver[TaskRequest] = {

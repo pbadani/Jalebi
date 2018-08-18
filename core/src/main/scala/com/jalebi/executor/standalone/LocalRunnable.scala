@@ -1,8 +1,7 @@
 package com.jalebi.executor.standalone
 
-import com.jalebi.executor.JobManagementClientImpl
 import com.jalebi.hdfs.HostPort
-import com.jalebi.proto.jobmanagement.{JobManagementProtocolGrpc, RegisterExecutorRequest, TaskResponse}
+import com.jalebi.proto.jobmanagement.{ExecutorRequest, JobManagementProtocolGrpc, TaskResponse}
 import com.jalebi.utils.Logging
 import io.grpc.ManagedChannelBuilder
 import io.grpc.stub.StreamObserver
@@ -10,7 +9,7 @@ import io.grpc.stub.StreamObserver
 case class LocalRunnable(threadId: String, driverHostPort: HostPort) extends Runnable with Logging {
 
   private var running = true
-  private val jobManagementClient = new JobManagementClientImpl()
+//  private val jobManagementClient = new JobManagementClientImpl()
 
   override def run(): Unit = {
     val channel = ManagedChannelBuilder
@@ -18,9 +17,9 @@ case class LocalRunnable(threadId: String, driverHostPort: HostPort) extends Run
       .usePlaintext().build()
 
     val stub = JobManagementProtocolGrpc.stub(channel)
-    LOGGER.info(s"Registering executor $threadId.")
 
-    val response = stub.registerExecutor(RegisterExecutorRequest(threadId))
+    LOGGER.info(s"Registering executor $threadId.")
+    val response = stub.registerExecutor(ExecutorRequest(threadId))
     LOGGER.info(s"Registered executor $threadId.")
 
     stub.startTalk(new StreamObserver[TaskResponse] {

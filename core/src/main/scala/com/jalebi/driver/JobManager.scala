@@ -10,20 +10,20 @@ import com.jalebi.yarn.YarnScheduler
 
 case class JobManager(context: JalebiContext) extends Logging {
 
-  private val numOfExecutors = context.conf.options.getNumberOfExecutors().toInt
+  private val numOfExecutors = context.conf.getNumberOfExecutors().toInt
   private val scheduler = if (context.onLocalMaster) LocalScheduler(context) else YarnScheduler(context)
   private val driverCoordinatorService = DriverCoordinatorService(this, context.conf)
-  val executorState: ExecutorState = {
+  val executorState: ExecutorStateManager = {
     (0 until numOfExecutors)
-      .foldLeft(ExecutorState())((acc, _) => acc.addExecutorId(context.newExecutorId()))
+      .foldLeft(ExecutorStateManager())((acc, _) => acc.addExecutorId(context.newExecutorId()))
   }
 
   def ensureInitialized(): Unit = synchronized {
-    if (!executorState.isInitalized) {
+    if (!executorState.isInitialized) {
       driverCoordinatorService.start()
       LOGGER.info(s"Starting executors: [${executorState.listExecutorIds().mkString(", ")}]")
       scheduler.startExecutors(executorState.listExecutorIds())
-      executorState.initalize()
+      executorState.initialize()
     }
   }
 

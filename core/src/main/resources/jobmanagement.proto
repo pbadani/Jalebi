@@ -3,7 +3,8 @@ syntax = "proto3";
 package com.jalebi.proto;
 
 service JobManagementProtocol {
-    rpc registerExecutor (RegisterExecutorRequest) returns (RegisterExecutorResponse) {}
+    rpc registerExecutor (ExecutorRequest) returns (ExecutorResponse) {}
+    rpc unregisterExecutor (ExecutorRequest) returns (ExecutorResponse) {}
     rpc heartbeat (HeartbeatRequest) returns (HeartbeatResponse) {}
     rpc startTalk (stream TaskRequest) returns (stream TaskResponse) {}
 }
@@ -17,11 +18,11 @@ enum ExecutorState {
     ASSUMED_DEAD = 5;
 }
 
-message RegisterExecutorRequest {
+message ExecutorRequest {
     string executorId = 1;
 }
 
-message RegisterExecutorResponse {
+message ExecutorResponse {
     int64 heartbeatInterval = 1;
 }
 

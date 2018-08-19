@@ -2,7 +2,7 @@ package com.jalebi.executor
 
 import com.jalebi.api.Jalebi
 import com.jalebi.exception.DatasetCorruptException
-import com.jalebi.proto.jobmanagement.DatasetState.{LOADED, LOADING, NONE}
+import com.jalebi.proto.jobmanagement.DatasetState._
 import com.jalebi.proto.jobmanagement.ExecutorState._
 import com.jalebi.proto.jobmanagement._
 import com.jalebi.utils.Logging

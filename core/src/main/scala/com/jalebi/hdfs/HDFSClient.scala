@@ -1,5 +1,6 @@
 package com.jalebi.hdfs
 
+import java.io.ByteArrayOutputStream
 import java.net.URI
 
 import com.jalebi.api.{Jalebi, Triplets}
@@ -8,6 +9,7 @@ import com.jalebi.proto.jobmanagement.HostPort
 import com.jalebi.utils.Logging
 import com.sksamuel.avro4s.{AvroInputStream, AvroOutputStream}
 import org.apache.hadoop.fs.{FileSystem, Path}
+import org.apache.hadoop.io.IOUtils
 import org.apache.hadoop.yarn.conf.YarnConfiguration
 
 import scala.collection.mutable.ListBuffer
@@ -20,7 +22,7 @@ case class HDFSClient(fs: FileSystem) extends Logging {
     if (doesDatasetExists(name)) {
       throw new DuplicateDatasetException(s"Dataset '$name' is already present at $filePath.")
     }
-    LOGGER.info(s"Creating Dataset '$name' at location $filePath.")
+    LOGGER.info(s"Creating Dataset '$name' at $filePath.")
     triplets.zipWithIndex.foreach {
       case (t, index) =>
         val partFileName = s"part-$index"
@@ -36,16 +38,21 @@ case class HDFSClient(fs: FileSystem) extends Logging {
   @throws[DatasetCorruptException]
   def loadDataset(name: String, parts: Set[String]): Jalebi = {
     val existingParts = listDatasetParts(name)
-    val filePath = s"${HDFSClientConstants.datasetParentDirectory}$name"
-    val missingParts = parts.map(part => !existingParts.contains(part))
+    val missingParts = parts.diff(existingParts)
     if (missingParts.nonEmpty) {
       throw new DatasetCorruptException(s"Missing parts ${missingParts.mkString(", ")}")
     }
+    val filePath = s"${HDFSClientConstants.datasetParentDirectory}$name"
     Jalebi(name, parts.flatMap(partFileName => {
-      val inputStream = AvroInputStream.data[Triplets](Seq(filePath, partFileName).mkString("/"))
+      val is = fs.open(new Path(Seq(filePath, partFileName).mkString("/")))
+      val os = new ByteArrayOutputStream()
+      IOUtils.copyBytes(is, os, 4096, false)
       LOGGER.info(s"Reading $partFileName for Dataset '$name' at $filePath.")
+      val inputStream = AvroInputStream.data[Triplets](os.toByteArray)
       val triplets = inputStream.iterator.toSet
       inputStream.close()
+      is.close()
+      os.close()
       triplets
     }))
   }
@@ -56,8 +63,7 @@ case class HDFSClient(fs: FileSystem) extends Logging {
   }
 
   def doesDatasetExists(name: String, actionIfNotExists: => Option[() => Unit] = None): Boolean = {
-    val filePath = s"${HDFSClientConstants.datasetParentDirectory}$name"
-    val fileExists = fs.exists(new Path(filePath))
+    val fileExists = fs.exists(new Path(s"${HDFSClientConstants.datasetParentDirectory}$name"))
     LOGGER.info(s"Dataset '$name' ${if (fileExists) "exists." else "doesn't exist."}")
     if (!fileExists && actionIfNotExists.isDefined) {
       actionIfNotExists.get()
@@ -77,8 +83,9 @@ case class HDFSClient(fs: FileSystem) extends Logging {
   @throws[DatasetNotFoundException]
   def listDatasetParts(name: String): Set[String] = {
     ensureDatasetExists(name)
-    LOGGER.info(s"Listing parts for Dataset $name.")
-    listDirectory(new Path(s"${HDFSClientConstants.datasetParentDirectory}$name"))
+    val parts = listDirectory(new Path(s"${HDFSClientConstants.datasetParentDirectory}$name"))
+    LOGGER.info(s"Listing parts for Dataset '$name' - [${parts.mkString(", ")}].")
+    parts
   }
 
   private def listDirectory(path: Path): Set[String] = {

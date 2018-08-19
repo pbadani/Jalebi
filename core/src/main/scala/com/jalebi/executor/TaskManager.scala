@@ -44,6 +44,7 @@ case class TaskManager(executorId: String) extends Logging {
 
   def markRegistered(taskConfig: TaskConfig): Unit = {
     executorState = REGISTERED
+    LOGGER.info(s"Task config - $taskConfig")
     this.taskConfig = Some(taskConfig)
   }
 
@@ -59,7 +60,7 @@ case class TaskManager(executorId: String) extends Logging {
         require(taskRequest.parts.nonEmpty, "No parts to load.")
         require(executorState != NEW && executorState != UNREGISTERED, s"Executor should not be in $executorState.")
         try {
-          LOGGER.info(s"Loading dataset ${taskRequest.dataset}")
+          LOGGER.info(s"Loading dataset ${taskRequest.dataset}, parts [${taskRequest.parts.mkString(", ")}]")
           setStates(datasetState = LOADING, executorState = RUNNING_JOB)
           currentJalebi = Some(loadDataset(taskRequest.dataset, taskRequest.parts.toSet))
           setStates(datasetState = LOADED, executorState = RUNNABLE)

@@ -25,19 +25,22 @@ case class JobManagementServerImpl(jobManager: JobManager, conf: JalebiConfig) e
   override def startTalk(requestObserver: StreamObserver[TaskRequest]): StreamObserver[TaskResponse] = {
     new StreamObserver[TaskResponse] {
       override def onError(t: Throwable): Unit = {
-        LOGGER.error("server error")
-        LOGGER.error(t.getMessage)
+        LOGGER.error(s"on error - Driver ${t.getMessage} ${t.getCause}")
       }
 
       override def onCompleted(): Unit = {
-        LOGGER.info("server completed")
+        LOGGER.info("on completed - Driver")
       }
 
       override def onNext(response: TaskResponse): Unit = {
-        val current = System.currentTimeMillis()
         val executorId = response.executorId
-        jobManager.executorState.updateLastHeartbeat(executorId, response.executorState, response.datasetState, current)
-//        requestObserver.onNext()
+        val executorState = jobManager.executorState
+        executorState.updateLastHeartbeat(executorId, response.executorState, response.datasetState, System.currentTimeMillis())
+        val nextTask = executorState.consumeNextTask(executorId)
+        if (nextTask.isDefined) {
+          LOGGER.info(s"Issuing new task $nextTask to executor $executorId")
+          requestObserver.onNext(nextTask.get)
+        }
         LOGGER.info(s"on next $response")
       }
     }

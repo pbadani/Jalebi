@@ -6,6 +6,8 @@ import com.jalebi.executor.local.LocalScheduler
 import com.jalebi.hdfs.HDFSClient
 import com.jalebi.hdfs.HDFSClient.RichHostPort
 import com.jalebi.partitioner.HashPartitioner
+import com.jalebi.proto.jobmanagement.TaskRequest
+import com.jalebi.proto.jobmanagement.TaskType.LOAD_DATASET
 import com.jalebi.utils.Logging
 import com.jalebi.yarn.YarnScheduler
 
@@ -16,7 +18,7 @@ case class JobManager(context: JalebiContext) extends Logging {
   private val driverCoordinatorService = DriverCoordinatorService(this, context.conf)
   val executorState: ExecutorStateManager = {
     (0 until numOfExecutors)
-      .foldLeft(ExecutorStateManager(context.conf))((acc, _) => acc.addExecutorId(context.newExecutorId()))
+      .foldLeft(ExecutorStateManager(context.conf))((acc, _) => acc.addExecutor(context.newExecutorId()))
   }
 
   def ensureInitialized(): Unit = synchronized {
@@ -33,13 +35,13 @@ case class JobManager(context: JalebiContext) extends Logging {
     ensureInitialized()
     val parts = hdfsClient.listDatasetParts(name)
     val executors = executorState.listExecutorIds()
-    executorState.clearAndAssignPartsToExecutors(HashPartitioner.partition(parts, executors))
-
+    val executorIdToParts = HashPartitioner.partition(parts, executors)
+    executorState.clearAndAssignPartsToExecutors(executorIdToParts, name)
     true
   }
 
   def shutRunningExecutors(): Unit = {
-    LOGGER.info("Shutting All executors.")
+    LOGGER.info("Shutting all executors.")
     scheduler.shutAllExecutors()
   }
 

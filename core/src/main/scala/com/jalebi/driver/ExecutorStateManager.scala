@@ -3,50 +3,74 @@ package com.jalebi.driver
 import com.jalebi.context.JalebiConfig
 import com.jalebi.proto.jobmanagement.DatasetState.NONE
 import com.jalebi.proto.jobmanagement.ExecutorState._
-import com.jalebi.proto.jobmanagement.{DatasetState, ExecutorState, TaskType}
+import com.jalebi.proto.jobmanagement.TaskType.LOAD_DATASET
+import com.jalebi.proto.jobmanagement.{DatasetState, ExecutorState, TaskRequest}
 import com.jalebi.utils.Logging
 
 import scala.collection.mutable
 
 case class ExecutorStateManager(conf: JalebiConfig) extends Logging {
 
-  case class State(parts: Set[String], executorState: ExecutorState, datasetState: DatasetState)
+  case class State(parts: Set[String], executorState: ExecutorState, datasetState: DatasetState, nextAction: Option[TaskRequest])
 
-  private val default = State(parts = Set.empty, executorState = NEW, datasetState = NONE)
+  private val default = State(parts = Set.empty, executorState = NEW, datasetState = NONE, nextAction = None)
 
   private var initializationState = false
-
-  private val nextAction = mutable.HashMap[String, TaskType]()
 
   private val executorIdToState = mutable.HashMap[String, State]().withDefaultValue(default)
 
   private val executorIdToLastHeartbeat = mutable.HashMap[String, Long]()
 
   def initialize(): Unit = {
+    waitForAllExecutorsToBeRegistered()
     initializationState = true
   }
 
   def isInitialized: Boolean = initializationState
 
-  def clearAndAssignPartsToExecutors(executorIdToParts: Map[String, Set[String]]): Unit = {
-    clearParts()
-    executorIdToParts.foreach {
-      case (e, p) => assignPartsToExecutor(e, p)
+  def waitForAllExecutorsToBeRegistered(): Unit = {
+    while (executorIdToState.exists {
+      case (_, state) => state.executorState == NEW
+    }) {
+      Thread.sleep(1000)
     }
   }
 
-  def assignPartsToExecutor(executorId: String, parts: Set[String]): Unit = {
-    LOGGER.info(s"Assigned parts ${parts.mkString(",")} to Executor $executorId")
-    updateState(executorId, state => state.copy(parts = state.parts ++ parts))
+  def clearAndAssignPartsToExecutors(executorIdToParts: Map[String, Set[String]], name: String): Unit = {
+    clearParts()
+    executorIdToParts.foreach {
+      case (e, p) => assignPartsToExecutor(e, p, name)
+    }
+  }
+
+  def assignNewTask(taskRequest: TaskRequest): Unit = {
+    LOGGER.info(s"Inside Ass")
+    executorIdToState.mapValues(state => {
+      val requestForCurrentExecutor = taskRequest.copy(parts = state.parts.toSeq)
+      state.copy(nextAction = Some(requestForCurrentExecutor))
+    })
+  }
+
+  def consumeNextTask(executorId: String): Option[TaskRequest] = {
+    val next = executorIdToState(executorId).nextAction
+    if (next.isDefined) {
+      updateState(executorId, state => state.copy(nextAction = None))
+    }
+    next
+  }
+
+  def assignPartsToExecutor(executorId: String, parts: Set[String], name: String): Unit = {
+    LOGGER.info(s"Assigned parts [${parts.mkString(",")}] to executor $executorId")
+    updateState(executorId, state => state.copy(parts = parts, nextAction = Some(TaskRequest(LOAD_DATASET, name, parts.toSeq))))
   }
 
   def removePartsFromExecutor(executorId: String, parts: Set[String]): Unit = {
-    LOGGER.info(s"Removed parts ${parts.mkString(",")} from Executor $executorId")
+    LOGGER.info(s"Removed parts ${parts.mkString(",")} from executor $executorId")
     updateState(executorId, state => state.copy(parts = state.parts -- parts))
   }
 
   def markRegistered(executorId: String): Unit = {
-    LOGGER.info(s"Registering $executorId")
+    LOGGER.info(s"marking registered $executorId")
     updateState(executorId, state => state.copy(executorState = REGISTERED))
   }
 
@@ -60,13 +84,13 @@ case class ExecutorStateManager(conf: JalebiConfig) extends Logging {
     executorIdToLastHeartbeat(executorId) = heartbeat
   }
 
-  def addExecutorId(executorId: String): ExecutorStateManager = {
+  def addExecutor(executorId: String): ExecutorStateManager = {
     LOGGER.info(s"Adding executor $executorId")
     executorIdToState += (executorId -> default)
     this
   }
 
-  def removeExecutorId(executorId: String): ExecutorStateManager = {
+  def removeExecutor(executorId: String): ExecutorStateManager = {
     LOGGER.info(s"Removing executor $executorId")
     executorIdToState.remove(executorId)
     this
@@ -84,7 +108,7 @@ case class ExecutorStateManager(conf: JalebiConfig) extends Logging {
   }
 
   def clearParts(): Unit = {
-    executorIdToState.mapValues(state => state.copy(parts = Set.empty, datasetState = NONE))
+    executorIdToState.mapValues(state => state.copy(parts = Set.empty, datasetState = NONE, nextAction = None))
   }
 
   def getMissingHeartbeatExecutors: Set[String] = {

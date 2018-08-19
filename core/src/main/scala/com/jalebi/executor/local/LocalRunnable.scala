@@ -7,6 +7,8 @@ import com.jalebi.utils.Logging
 import io.grpc.ManagedChannelBuilder
 import io.grpc.stub.StreamObserver
 
+import scala.concurrent.ExecutionContext.Implicits.global
+
 case class LocalRunnable(taskManager: TaskManager, driverHostPort: RichHostPort) extends Runnable with Logging {
 
   //  private val jobManagementClient = new JobManagementClientImpl()
@@ -17,9 +19,6 @@ case class LocalRunnable(taskManager: TaskManager, driverHostPort: RichHostPort)
       .usePlaintext().build()
 
     val stub = JobManagementProtocolGrpc.stub(channel)
-
-    import scala.concurrent.ExecutionContext.Implicits.global
-    LOGGER.info(s"Registering executor ${taskManager.executorId}.")
     stub.registerExecutor(ExecutorRequest(taskManager.executorId)).onComplete(r => {
       taskManager.markRegistered(TaskConfig(r.get))
     })
@@ -28,16 +27,16 @@ case class LocalRunnable(taskManager: TaskManager, driverHostPort: RichHostPort)
     val resp: StreamObserver[TaskResponse] = stub.startTalk(
       new StreamObserver[TaskRequest] {
         override def onError(t: Throwable): Unit = {
-          LOGGER.info(s"On Error ${taskManager.executorId}")
+          LOGGER.info(s"on error - Executor ${taskManager.executorId} ${t.getMessage} ${t.getCause}")
         }
 
         override def onCompleted(): Unit = {
-          LOGGER.info(s"On Complete ${taskManager.executorId}")
+          LOGGER.info(s"on Complete - Executor ${taskManager.executorId}")
         }
 
         override def onNext(taskRequest: TaskRequest): Unit = {
+          LOGGER.info(s"on next - Executor ${taskManager.executorId} $taskRequest")
           taskManager.execute(taskRequest)
-          LOGGER.info(s"On Next ${taskManager.executorId}")
         }
       })
 

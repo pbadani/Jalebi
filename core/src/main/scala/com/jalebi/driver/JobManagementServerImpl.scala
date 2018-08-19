@@ -35,7 +35,9 @@ case class JobManagementServerImpl(jobManager: JobManager, conf: JalebiConfig) e
 
       override def onNext(response: TaskResponse): Unit = {
         val current = System.currentTimeMillis()
-        jobManager.executorState.updateLastHeartbeat(response.executorId, response.executorState, response.datasetState, current)
+        val executorId = response.executorId
+        jobManager.executorState.updateLastHeartbeat(executorId, response.executorState, response.datasetState, current)
+//        requestObserver.onNext()
         LOGGER.info(s"on next $response")
       }
     }

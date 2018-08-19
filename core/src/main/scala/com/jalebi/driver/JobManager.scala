@@ -33,15 +33,13 @@ case class JobManager(context: JalebiContext) extends Logging {
     ensureInitialized()
     val parts = hdfsClient.listDatasetParts(name)
     val executors = executorState.listExecutorIds()
-    HashPartitioner.partition(parts, executors).foreach {
-      case (e, p) => executorState.assignPartsToExecutor(e, p)
-    }
+    executorState.clearAndAssignPartsToExecutors(HashPartitioner.partition(parts, executors))
 
     true
   }
 
   def shutRunningExecutors(): Unit = {
-    LOGGER.info(s"Shutting All executors.")
+    LOGGER.info("Shutting All executors.")
     scheduler.shutAllExecutors()
   }
 

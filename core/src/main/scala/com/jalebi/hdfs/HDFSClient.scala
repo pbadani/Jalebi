@@ -12,13 +12,12 @@ import org.apache.hadoop.yarn.conf.YarnConfiguration
 
 import scala.collection.mutable.ListBuffer
 
-
 case class HDFSClient(fs: FileSystem) extends Logging {
 
   @throws[DuplicateDatasetException]
   def createDataset(name: String, triplets: => Iterator[Triplets]): Unit = {
     val filePath = s"${HDFSClientConstants.datasetParentDirectory}$name"
-    if (checkDatasetExists(name)) {
+    if (doesDatasetExists(name)) {
       throw new DuplicateDatasetException(s"Dataset '$name' is already present at $filePath.")
     }
     LOGGER.info(s"Creating Dataset '$name' at location $filePath.")
@@ -53,15 +52,16 @@ case class HDFSClient(fs: FileSystem) extends Logging {
 
   @throws[DatasetNotFoundException]
   def ensureDatasetExists(name: String): Unit = {
-    if (!checkDatasetExists(name)) {
-      throw new DatasetNotFoundException(s"Dataset '$name' not found.")
-    }
+    doesDatasetExists(name, Some(throw new DatasetNotFoundException(s"Dataset '$name' not found.")))
   }
 
-  def checkDatasetExists(name: String): Boolean = {
+  def doesDatasetExists(name: String, actionIfNotExists: => Option[() => Unit] = None): Boolean = {
     val filePath = s"${HDFSClientConstants.datasetParentDirectory}$name"
     val fileExists = fs.exists(new Path(filePath))
-    LOGGER.info(s"Dataset $name ${if (fileExists) "exists." else "doesn't exist."}")
+    LOGGER.info(s"Dataset '$name' ${if (fileExists) "exists." else "doesn't exist."}")
+    if (!fileExists && actionIfNotExists.isDefined) {
+      actionIfNotExists.get()
+    }
     fileExists
   }
 
@@ -69,19 +69,14 @@ case class HDFSClient(fs: FileSystem) extends Logging {
     val filePath = new Path(HDFSClientConstants.datasetParentDirectory)
     val files = listDirectory(filePath)
     LOGGER.info(s"Listing Datasets at $filePath : ${
-      if (files.isEmpty)
-        s"No Dataset found at $filePath"
-      else
-        s"Datasets found: [${files.mkString(", ")}]"
+      if (files.isEmpty) s"No Dataset found at $filePath" else s"Datasets found: [${files.mkString(", ")}]"
     }")
     files
   }
 
   @throws[DatasetNotFoundException]
   def listDatasetParts(name: String): Set[String] = {
-    if (!checkDatasetExists(name)) {
-      throw new DatasetNotFoundException(s"Dataset '$name' not found.")
-    }
+    ensureDatasetExists(name)
     LOGGER.info(s"Listing parts for Dataset $name.")
     listDirectory(new Path(s"${HDFSClientConstants.datasetParentDirectory}$name"))
   }

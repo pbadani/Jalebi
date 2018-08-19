@@ -24,7 +24,7 @@ case class JalebiContext private(conf: JalebiConfig) {
   @throws[DatasetNotLoadedException]
   def loadDataset[V, E](name: String): Unit = {
     val hdfsClient = HDFSClient.withDistributedFileSystem(conf.hdfsHostPort)
-    if (!hdfsClient.checkDatasetExists(name)) {
+    if (!hdfsClient.doesDatasetExists(name)) {
       throw new DatasetNotFoundException(s"Dataset '$name' not found.")
     }
     if (jobManager.load(hdfsClient, name)) {

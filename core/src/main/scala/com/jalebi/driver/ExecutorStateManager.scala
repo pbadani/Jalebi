@@ -12,7 +12,7 @@ case class ExecutorStateManager(conf: JalebiConfig) extends Logging {
 
   case class State(parts: Set[String], executorState: ExecutorState, datasetState: DatasetState)
 
-  private val default = State(Set.empty, NEW, NONE)
+  private val default = State(parts = Set.empty, executorState = NEW, datasetState = NONE)
 
   private var initializationState = false
 
@@ -36,39 +36,45 @@ case class ExecutorStateManager(conf: JalebiConfig) extends Logging {
   }
 
   def assignPartsToExecutor(executorId: String, parts: Set[String]): Unit = {
-    val state = executorIdToState(executorId)
-    executorIdToState += (executorId -> state.copy(parts = state.parts ++ parts))
+    LOGGER.info(s"Assigned parts ${parts.mkString(",")} to Executor $executorId")
+    updateState(executorId, state => state.copy(parts = state.parts ++ parts))
   }
 
   def removePartsFromExecutor(executorId: String, parts: Set[String]): Unit = {
-    val state = executorIdToState(executorId)
-    executorIdToState += (executorId -> state.copy(parts = state.parts -- parts))
+    LOGGER.info(s"Removed parts ${parts.mkString(",")} from Executor $executorId")
+    updateState(executorId, state => state.copy(parts = state.parts -- parts))
   }
 
   def markRegistered(executorId: String): Unit = {
-    val state = executorIdToState(executorId)
-    executorIdToState += (executorId -> state.copy(executorState = REGISTERED))
+    LOGGER.info(s"Registering $executorId")
+    updateState(executorId, state => state.copy(executorState = REGISTERED))
   }
 
   def markUnregistered(executorId: String): Unit = {
-    val state = executorIdToState(executorId)
-    executorIdToState += (executorId -> state.copy(executorState = UNREGISTERED))
+    LOGGER.info(s"Unregistering $executorId")
+    updateState(executorId, state => state.copy(executorState = UNREGISTERED))
   }
 
   def updateLastHeartbeat(executorId: String, eState: ExecutorState, dState: DatasetState, heartbeat: Long): Unit = {
-    val state = executorIdToState(executorId)
-    executorIdToState += (executorId -> state.copy(executorState = eState, datasetState = dState))
+    updateState(executorId, state => state.copy(executorState = eState, datasetState = dState))
     executorIdToLastHeartbeat(executorId) = heartbeat
   }
 
   def addExecutorId(executorId: String): ExecutorStateManager = {
+    LOGGER.info(s"Adding executor $executorId")
     executorIdToState += (executorId -> default)
     this
   }
 
   def removeExecutorId(executorId: String): ExecutorStateManager = {
+    LOGGER.info(s"Removing executor $executorId")
     executorIdToState.remove(executorId)
     this
+  }
+
+  private def updateState(executorId: String, oldStateToNewState: State => State) = {
+    val state = executorIdToState(executorId)
+    executorIdToState += (executorId -> oldStateToNewState(state))
   }
 
   def listExecutorIds(): Set[String] = executorIdToState.keySet.toSet
@@ -78,10 +84,7 @@ case class ExecutorStateManager(conf: JalebiConfig) extends Logging {
   }
 
   def clearParts(): Unit = {
-    executorIdToState.foreach {
-      case (executorId, state) =>
-        executorIdToState += (executorId -> state.copy(parts = Set.empty, datasetState = NONE))
-    }
+    executorIdToState.mapValues(state => state.copy(parts = Set.empty, datasetState = NONE))
   }
 
   def getMissingHeartbeatExecutors: Set[String] = {
@@ -95,7 +98,9 @@ case class ExecutorStateManager(conf: JalebiConfig) extends Logging {
       case (executorId, lastHeartbeat) =>
         val missedHeartbeat = isOlderThan(lastHeartbeat, current)
         if (missedHeartbeat) {
-          LOGGER.warn(s"Executor id $executorId missed heartbeat. Current time: $current, last heartbeat time: $lastHeartbeat")
+          LOGGER.warn(s"Executor id $executorId missed heartbeat." +
+            s" Not heard since ${current - lastHeartbeat}ms" +
+            s" Current: $current, Last heartbeat: $lastHeartbeat")
         }
         missedHeartbeat
     }.toMap.keySet

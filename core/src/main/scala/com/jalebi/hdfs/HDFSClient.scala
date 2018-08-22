@@ -75,7 +75,7 @@ case class HDFSClient(fs: FileSystem) extends Logging {
     val filePath = new Path(HDFSClientConstants.datasetParentDirectory)
     val files = listDirectory(filePath)
     LOGGER.info(s"Listing Datasets at $filePath : ${
-      if (files.isEmpty) s"No Dataset found at $filePath" else s"Datasets found: [${files.mkString(", ")}]"
+      if (files.isEmpty) s"No Dataset found." else s"Datasets found: [${files.mkString(", ")}]."
     }")
     files
   }
@@ -88,6 +88,13 @@ case class HDFSClient(fs: FileSystem) extends Logging {
     parts
   }
 
+  def deleteDataset(name: String): Unit = {
+    if (doesDatasetExists(name)) {
+      LOGGER.info(s"Deleting dataset $name.")
+      fs.delete(new Path(s"${HDFSClientConstants.datasetParentDirectory}$name"), true)
+    }
+  }
+
   private def listDirectory(path: Path): Set[String] = {
     val fileIterator = fs.listFiles(path, false)
     val file = ListBuffer[String]()
@@ -95,24 +102,32 @@ case class HDFSClient(fs: FileSystem) extends Logging {
       file += fileIterator.next().getPath.getName
     file.toSet
   }
+
+  def deleteDirectory: Unit = {
+    fs.delete(new Path(HDFSClientConstants.datasetParentDirectory), true)
+  }
 }
 
 object HDFSClient {
 
   implicit class RichHostPort(hostPort: HostPort) {
 
-    def this(host: String, port: Long) = this(HostPort(host, port))
+    def this(scheme: String, host: String, port: Long) = this(HostPort(scheme, host, port))
 
-    def getAddress: String = s"$host:$port"
-
-    def getHDFSPath: String = s"hdfs://$getAddress"
+    def getURI: URI = new URI(s"$scheme://$host:$port")
 
     def port: Long = hostPort.port
 
     def host: String = hostPort.host
 
-    def toHostPort: HostPort = HostPort(host, port)
+    def scheme: String = hostPort.scheme
+
+    def toHostPort: HostPort = HostPort(scheme, host, port)
   }
+
+  //  def fileSystem(conf: JalebiConfig): HDFSClient = {
+  //
+  //  }
 
   def withLocalFileSystem(): HDFSClient = {
     new HDFSClient(FileSystem.getLocal(new YarnConfiguration()))
@@ -120,6 +135,6 @@ object HDFSClient {
 
   def withDistributedFileSystem(hostPort: Option[RichHostPort]): HDFSClient = {
     require(hostPort.isDefined, "HDFS host and port are not defined in config.")
-    new HDFSClient(FileSystem.get(new URI(hostPort.get.getHDFSPath), new YarnConfiguration()))
+    new HDFSClient(FileSystem.get(hostPort.get.getURI, new YarnConfiguration()))
   }
 }

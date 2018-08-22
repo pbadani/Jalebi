@@ -7,6 +7,7 @@ package com.jalebi.proto.jobmanagement
 
 @SerialVersionUID(0L)
 final case class HostPort(
+    scheme: _root_.scala.Predef.String = "",
     host: _root_.scala.Predef.String = "",
     port: _root_.scala.Long = 0L
     ) extends scalapb.GeneratedMessage with scalapb.Message[HostPort] with scalapb.lenses.Updatable[HostPort] {
@@ -14,8 +15,9 @@ final case class HostPort(
     private[this] var __serializedSizeCachedValue: _root_.scala.Int = 0
     private[this] def __computeSerializedValue(): _root_.scala.Int = {
       var __size = 0
-      if (host != "") { __size += _root_.com.google.protobuf.CodedOutputStream.computeStringSize(1, host) }
-      if (port != 0L) { __size += _root_.com.google.protobuf.CodedOutputStream.computeInt64Size(2, port) }
+      if (scheme != "") { __size += _root_.com.google.protobuf.CodedOutputStream.computeStringSize(1, scheme) }
+      if (host != "") { __size += _root_.com.google.protobuf.CodedOutputStream.computeStringSize(2, host) }
+      if (port != 0L) { __size += _root_.com.google.protobuf.CodedOutputStream.computeInt64Size(3, port) }
       __size
     }
     final override def serializedSize: _root_.scala.Int = {
@@ -28,19 +30,26 @@ final case class HostPort(
     }
     def writeTo(`_output__`: _root_.com.google.protobuf.CodedOutputStream): _root_.scala.Unit = {
       {
-        val __v = host
+        val __v = scheme
         if (__v != "") {
           _output__.writeString(1, __v)
         }
       };
       {
+        val __v = host
+        if (__v != "") {
+          _output__.writeString(2, __v)
+        }
+      };
+      {
         val __v = port
         if (__v != 0L) {
-          _output__.writeInt64(2, __v)
+          _output__.writeInt64(3, __v)
         }
       };
     }
     def mergeFrom(`_input__`: _root_.com.google.protobuf.CodedInputStream): com.jalebi.proto.jobmanagement.HostPort = {
+      var __scheme = this.scheme
       var __host = this.host
       var __port = this.port
       var _done__ = false
@@ -49,26 +58,34 @@ final case class HostPort(
         _tag__ match {
           case 0 => _done__ = true
           case 10 =>
+            __scheme = _input__.readString()
+          case 18 =>
             __host = _input__.readString()
-          case 16 =>
+          case 24 =>
             __port = _input__.readInt64()
           case tag => _input__.skipField(tag)
         }
       }
       com.jalebi.proto.jobmanagement.HostPort(
+          scheme = __scheme,
           host = __host,
           port = __port
       )
     }
+    def withScheme(__v: _root_.scala.Predef.String): HostPort = copy(scheme = __v)
     def withHost(__v: _root_.scala.Predef.String): HostPort = copy(host = __v)
     def withPort(__v: _root_.scala.Long): HostPort = copy(port = __v)
     def getFieldByNumber(__fieldNumber: _root_.scala.Int): scala.Any = {
       (__fieldNumber: @_root_.scala.unchecked) match {
         case 1 => {
-          val __t = host
+          val __t = scheme
           if (__t != "") __t else null
         }
         case 2 => {
+          val __t = host
+          if (__t != "") __t else null
+        }
+        case 3 => {
           val __t = port
           if (__t != 0L) __t else null
         }
@@ -77,8 +94,9 @@ final case class HostPort(
     def getField(__field: _root_.scalapb.descriptors.FieldDescriptor): _root_.scalapb.descriptors.PValue = {
       require(__field.containingMessage eq companion.scalaDescriptor)
       (__field.number: @_root_.scala.unchecked) match {
-        case 1 => _root_.scalapb.descriptors.PString(host)
-        case 2 => _root_.scalapb.descriptors.PLong(port)
+        case 1 => _root_.scalapb.descriptors.PString(scheme)
+        case 2 => _root_.scalapb.descriptors.PString(host)
+        case 3 => _root_.scalapb.descriptors.PLong(port)
       }
     }
     def toProtoString: _root_.scala.Predef.String = _root_.scalapb.TextFormat.printToUnicodeString(this)
@@ -92,7 +110,8 @@ object HostPort extends scalapb.GeneratedMessageCompanion[com.jalebi.proto.jobma
     val __fields = javaDescriptor.getFields
     com.jalebi.proto.jobmanagement.HostPort(
       __fieldsMap.getOrElse(__fields.get(0), "").asInstanceOf[_root_.scala.Predef.String],
-      __fieldsMap.getOrElse(__fields.get(1), 0L).asInstanceOf[_root_.scala.Long]
+      __fieldsMap.getOrElse(__fields.get(1), "").asInstanceOf[_root_.scala.Predef.String],
+      __fieldsMap.getOrElse(__fields.get(2), 0L).asInstanceOf[_root_.scala.Long]
     )
   }
   implicit def messageReads: _root_.scalapb.descriptors.Reads[com.jalebi.proto.jobmanagement.HostPort] = _root_.scalapb.descriptors.Reads{
@@ -100,7 +119,8 @@ object HostPort extends scalapb.GeneratedMessageCompanion[com.jalebi.proto.jobma
       require(__fieldsMap.keys.forall(_.containingMessage == scalaDescriptor), "FieldDescriptor does not match message type.")
       com.jalebi.proto.jobmanagement.HostPort(
         __fieldsMap.get(scalaDescriptor.findFieldByNumber(1).get).map(_.as[_root_.scala.Predef.String]).getOrElse(""),
-        __fieldsMap.get(scalaDescriptor.findFieldByNumber(2).get).map(_.as[_root_.scala.Long]).getOrElse(0L)
+        __fieldsMap.get(scalaDescriptor.findFieldByNumber(2).get).map(_.as[_root_.scala.Predef.String]).getOrElse(""),
+        __fieldsMap.get(scalaDescriptor.findFieldByNumber(3).get).map(_.as[_root_.scala.Long]).getOrElse(0L)
       )
     case _ => throw new RuntimeException("Expected PMessage")
   }
@@ -112,9 +132,11 @@ object HostPort extends scalapb.GeneratedMessageCompanion[com.jalebi.proto.jobma
   lazy val defaultInstance = com.jalebi.proto.jobmanagement.HostPort(
   )
   implicit class HostPortLens[UpperPB](_l: _root_.scalapb.lenses.Lens[UpperPB, com.jalebi.proto.jobmanagement.HostPort]) extends _root_.scalapb.lenses.ObjectLens[UpperPB, com.jalebi.proto.jobmanagement.HostPort](_l) {
+    def scheme: _root_.scalapb.lenses.Lens[UpperPB, _root_.scala.Predef.String] = field(_.scheme)((c_, f_) => c_.copy(scheme = f_))
     def host: _root_.scalapb.lenses.Lens[UpperPB, _root_.scala.Predef.String] = field(_.host)((c_, f_) => c_.copy(host = f_))
     def port: _root_.scalapb.lenses.Lens[UpperPB, _root_.scala.Long] = field(_.port)((c_, f_) => c_.copy(port = f_))
   }
-  final val HOST_FIELD_NUMBER = 1
-  final val PORT_FIELD_NUMBER = 2
+  final val SCHEME_FIELD_NUMBER = 1
+  final val HOST_FIELD_NUMBER = 2
+  final val PORT_FIELD_NUMBER = 3
 }

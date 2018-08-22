@@ -1,24 +1,27 @@
 package com.jalebi.driver
 
+import java.util.concurrent.atomic.AtomicLong
+
 import com.jalebi.context.JalebiContext
 import com.jalebi.exception.DatasetNotLoadedException
 import com.jalebi.executor.local.LocalScheduler
 import com.jalebi.hdfs.HDFSClient
 import com.jalebi.hdfs.HDFSClient.RichHostPort
 import com.jalebi.partitioner.HashPartitioner
-import com.jalebi.proto.jobmanagement.TaskRequest
-import com.jalebi.proto.jobmanagement.TaskType.LOAD_DATASET
 import com.jalebi.utils.Logging
 import com.jalebi.yarn.YarnScheduler
 
 case class JobManager(context: JalebiContext) extends Logging {
 
+  val applicationId: String = s"Jalebi_App_${System.currentTimeMillis()}"
+  private val jobIdCounter = new AtomicLong(0)
+  private val executorIdCounter = new AtomicLong(0)
   private val numOfExecutors = context.conf.getNumberOfExecutors().toInt
   private val scheduler = if (context.onLocalMaster) LocalScheduler(context) else YarnScheduler(context)
   private val driverCoordinatorService = DriverCoordinatorService(this, context.conf)
   val executorState: ExecutorStateManager = {
     (0 until numOfExecutors)
-      .foldLeft(ExecutorStateManager(context.conf))((acc, _) => acc.addExecutor(context.newExecutorId()))
+      .foldLeft(ExecutorStateManager(context.conf))((acc, _) => acc.addExecutor(newExecutorId()))
   }
 
   def ensureInitialized(): Unit = synchronized {
@@ -46,6 +49,10 @@ case class JobManager(context: JalebiContext) extends Logging {
   }
 
   def driverHostPort: RichHostPort = context.driverHostPort
+
+  def newJobId(): String = s"${applicationId}_Job_${jobIdCounter.getAndIncrement()}"
+
+  def newExecutorId(): String = s"${applicationId}_Executor_${executorIdCounter.getAndIncrement()}"
 }
 
 object JobManager {

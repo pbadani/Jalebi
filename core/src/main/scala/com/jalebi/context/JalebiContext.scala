@@ -1,28 +1,22 @@
 package com.jalebi.context
 
-import java.util.concurrent.atomic.AtomicLong
-
 import com.jalebi.api.{Triplet, Triplets}
 import com.jalebi.driver.JobManager
 import com.jalebi.exception.{DatasetNotFoundException, DatasetNotLoadedException, DuplicateDatasetException}
 import com.jalebi.hdfs.HDFSClient
 import com.jalebi.hdfs.HDFSClient.RichHostPort
-import com.jalebi.proto.jobmanagement.HostPort
 import org.apache.hadoop.net.NetUtils
 
 case class JalebiContext private(conf: JalebiConfig) {
 
-  val applicationId = s"Jalebi_App_${System.currentTimeMillis()}"
-  private val jobIdCounter = new AtomicLong(0)
-  private val executorIdCounter = new AtomicLong(0)
+  val driverHostPort: RichHostPort = new RichHostPort("http", NetUtils.getLocalHostname, 8585)
+
   private var currentDataset: Option[String] = None
   val jobManager: JobManager = JobManager.createNew(this)
 
-  val driverHostPort = new RichHostPort(NetUtils.getLocalHostname, 8585)
-
   @throws[DatasetNotFoundException]
   @throws[DatasetNotLoadedException]
-  def loadDataset[V, E](name: String): Unit = {
+  def loadDataset(name: String): Unit = {
     val hdfsClient = HDFSClient.withDistributedFileSystem(conf.hdfsHostPort)
     if (!hdfsClient.doesDatasetExists(name)) {
       throw new DatasetNotFoundException(s"Dataset '$name' not found.")
@@ -30,6 +24,10 @@ case class JalebiContext private(conf: JalebiConfig) {
     if (jobManager.load(hdfsClient, name)) {
       currentDataset = Some(name)
     }
+  }
+
+  def deleteDataset(name: String): Unit = {
+    HDFSClient.withDistributedFileSystem(conf.hdfsHostPort).deleteDataset(name)
   }
 
   @throws[DuplicateDatasetException]
@@ -43,10 +41,6 @@ case class JalebiContext private(conf: JalebiConfig) {
   }
 
   def onLocalMaster: Boolean = conf.master == "local"
-
-  def newJobId(): String = s"${applicationId}_Job_${jobIdCounter.getAndIncrement()}"
-
-  def newExecutorId(): String = s"${applicationId}_Executor_${executorIdCounter.getAndIncrement()}"
 }
 
 object JalebiContext {

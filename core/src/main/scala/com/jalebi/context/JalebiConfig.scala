@@ -23,9 +23,10 @@ object JalebiConfig {
       }
     }
 
-    def withHDFSFileSystem(host: String, port: Long): JalebiConfigBuilder = {
+    def withHDFSFileSystem(scheme: String, host: String, port: Long): JalebiConfigBuilder = {
+      require(scheme.nonEmpty)
       require(host.nonEmpty)
-      this.copy(hdfsHostPort = Some(new RichHostPort(host, port)))
+      this.copy(hdfsHostPort = Some(new RichHostPort(scheme, host, port)))
     }
 
     def withOptions(options: Map[String, String]): JalebiConfigBuilder = {

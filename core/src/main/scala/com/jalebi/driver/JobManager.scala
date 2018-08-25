@@ -2,12 +2,14 @@ package com.jalebi.driver
 
 import java.util.concurrent.atomic.AtomicLong
 
-import com.jalebi.context.JalebiContext
+import com.jalebi.api.{Vertex, VertexID}
+import com.jalebi.context.{Dataset, JalebiContext}
 import com.jalebi.exception.DatasetNotLoadedException
 import com.jalebi.executor.local.LocalScheduler
 import com.jalebi.hdfs.HDFSClient
 import com.jalebi.hdfs.HDFSClient.RichHostPort
 import com.jalebi.partitioner.HashPartitioner
+import com.jalebi.proto.jobmanagement.{TaskRequest, TaskType}
 import com.jalebi.utils.Logging
 import com.jalebi.yarn.YarnScheduler
 
@@ -34,13 +36,26 @@ case class JobManager(context: JalebiContext) extends Logging {
   }
 
   @throws[DatasetNotLoadedException]
-  def load(hdfsClient: HDFSClient, name: String): Boolean = {
+  def ensureDatasetLoaded(): Unit = {
+    if (!context.isLoaded) {
+      throw new DatasetNotLoadedException(s"No dataset is loaded currently.")
+    }
+  }
+
+  @throws[DatasetNotLoadedException]
+  def load(hdfsClient: HDFSClient, name: String): Dataset = {
     ensureInitialized()
     val parts = hdfsClient.listDatasetParts(name)
     val executors = executorState.listExecutorIds()
     val executorIdToParts = HashPartitioner.partition(parts, executors)
     executorState.clearAndAssignPartsToExecutors(executorIdToParts, name)
-    true
+    Dataset(name, this)
+  }
+
+
+  def findVertex(vertexId: VertexID): Set[Vertex] = {
+    ensureDatasetLoaded()
+    executorState.assignNewTask(TaskRequest(TaskType.SEARCH_VERTEX, context.getCurrentDatasetName, Nil))
   }
 
   def shutRunningExecutors(): Unit = {

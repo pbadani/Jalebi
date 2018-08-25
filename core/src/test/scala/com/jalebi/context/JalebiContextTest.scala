@@ -8,7 +8,7 @@ class JalebiContextTest extends FlatSpec with Matchers {
 
   private val hdfsClient = HDFSClient.withLocalFileSystem()
 
-  hdfsClient.deleteDirectory
+  hdfsClient.deleteDirectory()
 
   private val conf = JalebiConfig
     .withAppName("TestApp")
@@ -28,7 +28,7 @@ class JalebiContextTest extends FlatSpec with Matchers {
       override def datasetName: String = "TestDataset"
 
       override def edges[E]: Seq[Edge] = Seq(
-        Edge(VertexID(1), VertexID(2), Map("TestKey3" -> "TestValue3", "TestKey4" -> "TestValue4"), false)
+        Edge(VertexID(1), VertexID(2), Map("TestKey3" -> "TestValue3", "TestKey4" -> "TestValue4"), isDirected = false)
       )
     }
 

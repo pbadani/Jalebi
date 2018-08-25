@@ -3,7 +3,7 @@ package com.jalebi.utils
 import org.apache.hadoop.security.UserGroupInformation
 import org.apache.hadoop.yarn.api.ApplicationConstants
 
-import scala.collection.mutable.HashMap
+import scala.collection.mutable
 
 object JalebiUtils {
 
@@ -16,13 +16,12 @@ object JalebiUtils {
     s"jalebi/$applicationId/$resource"
   }
 
-  def addPathToEnvironment(env: HashMap[String, String], key: String, value: String): Unit = {
-    val newValue =
-      if (env.contains(key)) {
-        env(key) + ApplicationConstants.CLASS_PATH_SEPARATOR + value
-      } else {
-        value
-      }
+  def addPathToEnvironment(env: mutable.HashMap[String, String], key: String, value: String): Unit = {
+    val newValue = if (env.contains(key)) {
+      env(key) + ApplicationConstants.CLASS_PATH_SEPARATOR + value
+    } else {
+      value
+    }
     env.put(key, newValue)
   }
 

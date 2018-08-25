@@ -64,7 +64,7 @@ case class HDFSClient(fs: FileSystem) extends Logging {
 
   def doesDatasetExists(name: String, actionIfNotExists: => Option[() => Unit] = None): Boolean = {
     val fileExists = fs.exists(new Path(s"${HDFSClientConstants.datasetParentDirectory}$name"))
-    LOGGER.info(s"Dataset '$name' ${if (fileExists) "exists." else "doesn't exist."}")
+    LOGGER.debug(s"Dataset '$name' ${if (fileExists) "exists." else "doesn't exist."}")
     if (!fileExists && actionIfNotExists.isDefined) {
       actionIfNotExists.get()
     }
@@ -72,7 +72,7 @@ case class HDFSClient(fs: FileSystem) extends Logging {
   }
 
   def listDatasets(): Set[String] = {
-    val filePath = new Path(HDFSClientConstants.datasetParentDirectory)
+    val filePath = new Path(s"${HDFSClientConstants.datasetParentDirectory}/")
     val files = listDirectory(filePath)
     LOGGER.info(s"Listing Datasets at $filePath : ${
       if (files.isEmpty) s"No Dataset found." else s"Datasets found: [${files.mkString(", ")}]."
@@ -90,7 +90,7 @@ case class HDFSClient(fs: FileSystem) extends Logging {
 
   def deleteDataset(name: String): Unit = {
     if (doesDatasetExists(name)) {
-      LOGGER.info(s"Deleting dataset $name.")
+      LOGGER.info(s"Deleting dataset '$name'.")
       fs.delete(new Path(s"${HDFSClientConstants.datasetParentDirectory}$name"), true)
     }
   }
@@ -103,7 +103,7 @@ case class HDFSClient(fs: FileSystem) extends Logging {
     file.toSet
   }
 
-  def deleteDirectory: Unit = {
+  def deleteDirectory(): Unit = {
     fs.delete(new Path(HDFSClientConstants.datasetParentDirectory), true)
   }
 }

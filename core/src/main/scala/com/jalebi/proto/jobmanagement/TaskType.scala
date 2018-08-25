@@ -8,6 +8,7 @@ package com.jalebi.proto.jobmanagement
 sealed trait TaskType extends _root_.scalapb.GeneratedEnum {
   type EnumType = TaskType
   def isLoadDataset: _root_.scala.Boolean = false
+  def isSearchVertex: _root_.scala.Boolean = false
   def isBreadthFirst: _root_.scala.Boolean = false
   def isDepthFirst: _root_.scala.Boolean = false
   def companion: _root_.scalapb.GeneratedEnumCompanion[TaskType] = com.jalebi.proto.jobmanagement.TaskType
@@ -24,17 +25,25 @@ object TaskType extends _root_.scalapb.GeneratedEnumCompanion[TaskType] {
   }
   
   @SerialVersionUID(0L)
-  case object BREADTH_FIRST extends TaskType {
+  case object SEARCH_VERTEX extends TaskType {
     val value = 1
     val index = 1
+    val name = "SEARCH_VERTEX"
+    override def isSearchVertex: _root_.scala.Boolean = true
+  }
+  
+  @SerialVersionUID(0L)
+  case object BREADTH_FIRST extends TaskType {
+    val value = 2
+    val index = 2
     val name = "BREADTH_FIRST"
     override def isBreadthFirst: _root_.scala.Boolean = true
   }
   
   @SerialVersionUID(0L)
   case object DEPTH_FIRST extends TaskType {
-    val value = 2
-    val index = 2
+    val value = 3
+    val index = 3
     val name = "DEPTH_FIRST"
     override def isDepthFirst: _root_.scala.Boolean = true
   }
@@ -42,11 +51,12 @@ object TaskType extends _root_.scalapb.GeneratedEnumCompanion[TaskType] {
   @SerialVersionUID(0L)
   final case class Unrecognized(value: _root_.scala.Int) extends TaskType with _root_.scalapb.UnrecognizedEnum
   
-  lazy val values = scala.collection.Seq(LOAD_DATASET, BREADTH_FIRST, DEPTH_FIRST)
+  lazy val values = scala.collection.Seq(LOAD_DATASET, SEARCH_VERTEX, BREADTH_FIRST, DEPTH_FIRST)
   def fromValue(value: _root_.scala.Int): TaskType = value match {
     case 0 => LOAD_DATASET
-    case 1 => BREADTH_FIRST
-    case 2 => DEPTH_FIRST
+    case 1 => SEARCH_VERTEX
+    case 2 => BREADTH_FIRST
+    case 3 => DEPTH_FIRST
     case __other => Unrecognized(__other)
   }
   def javaDescriptor: _root_.com.google.protobuf.Descriptors.EnumDescriptor = JobmanagementProto.javaDescriptor.getEnumTypes.get(2)

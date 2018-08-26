@@ -35,10 +35,10 @@ case class ExecutorStateManager(conf: JalebiConfig) extends Logging {
     }
   }
 
-  def clearAndAssignPartsToExecutors(executorIdToParts: Map[String, Set[String]], name: String): Unit = {
+  def clearAndAssignPartsToExecutors(jobId: String, executorIdToParts: Map[String, Set[String]], name: String): Unit = {
     clearParts()
     executorIdToParts.foreach {
-      case (e, p) => assignPartsToExecutor(e, p, name)
+      case (e, p) => assignPartsToExecutor(jobId, e, p, name)
     }
   }
 
@@ -57,10 +57,10 @@ case class ExecutorStateManager(conf: JalebiConfig) extends Logging {
     next
   }
 
-  def assignPartsToExecutor(executorId: String, parts: Set[String], name: String): Unit = {
+  private def assignPartsToExecutor(jobId: String, executorId: String, parts: Set[String], name: String): Unit = {
     LOGGER.info(s"Assigned parts [${parts.mkString(",")}] to executor $executorId")
     updateState(executorId, state => {
-      val request = TaskRequestBuilder.loadDatasetRequest(name, parts.toSeq)
+      val request = TaskRequestBuilder.loadDatasetRequest(jobId, name, parts.toSeq)
       state.copy(parts = parts, nextAction = Some(request))
     })
   }

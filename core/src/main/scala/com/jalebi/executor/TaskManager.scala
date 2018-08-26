@@ -1,6 +1,6 @@
 package com.jalebi.executor
 
-import com.jalebi.api.Jalebi
+import com.jalebi.api.{Jalebi, VertexID}
 import com.jalebi.exception.DatasetCorruptException
 import com.jalebi.proto.jobmanagement.DatasetState._
 import com.jalebi.proto.jobmanagement.ExecutorState._
@@ -61,16 +61,22 @@ case class TaskManager(executorId: String) extends Logging {
         require(executorState != NEW && executorState != UNREGISTERED, s"Executor should not be in $executorState.")
         try {
           LOGGER.info(s"Loading dataset ${taskRequest.dataset}, parts [${taskRequest.parts.mkString(", ")}]")
-          setStates(datasetState = LOADING, executorState = RUNNING_JOB)
+          setStates(datasetState = Some(LOADING), executorState = Some(RUNNING_JOB))
           currentJalebi = Some(loadDataset(taskRequest.dataset, taskRequest.parts.toSet))
-          setStates(datasetState = LOADED, executorState = RUNNABLE)
+          setStates(datasetState = Some(LOADED), executorState = Some(RUNNABLE))
         } catch {
           case e: DatasetCorruptException =>
             currentJalebi = None
-            setStates(datasetState = NONE, executorState = RUNNABLE)
+            setStates(datasetState = Some(NONE), executorState = Some(RUNNABLE))
             propagateInHeartbeat.put(TaskResponse("", executorId, executorState, datasetState))
             LOGGER.error(e.getMessage)
         }
+
+      case TaskType.SEARCH_VERTEX =>
+        require(currentJalebi.isDefined)
+        require(currentJalebi.get.name == taskRequest.dataset, s"Dataset mismatch. Expected ${currentJalebi.get.name}, Actual: ${taskRequest.dataset}")
+        setStates(None, executorState = Some(RUNNING_JOB))
+        val result = currentJalebi.get.searchVertex(VertexID(taskRequest.startVertexId))
 
       case TaskType.BREADTH_FIRST =>
         require(currentJalebi.isDefined)
@@ -79,8 +85,12 @@ case class TaskManager(executorId: String) extends Logging {
     }
   }
 
-  private def setStates(datasetState: DatasetState, executorState: ExecutorState): Unit = {
-    this.datasetState = datasetState
-    this.executorState = executorState
+  private def setStates(datasetState: Option[DatasetState] = None, executorState: Option[ExecutorState] = None): Unit = {
+    if (datasetState.isDefined) {
+      this.datasetState = datasetState.get
+    }
+    if (executorState.isDefined) {
+      this.executorState = executorState.get
+    }
   }
 }

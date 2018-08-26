@@ -50,14 +50,14 @@ case class JobManager(context: JalebiContext) extends Logging {
     val parts = hdfsClient.listDatasetParts(name)
     val executors = executorState.listExecutorIds()
     val executorIdToParts = HashPartitioner.partition(parts, executors)
-    executorState.clearAndAssignPartsToExecutors(executorIdToParts, name)
+    executorState.clearAndAssignPartsToExecutors(newJobId(), executorIdToParts, name)
     Dataset(name, this)
   }
 
 
   def findVertex(vertexId: VertexID, name: String): Set[Vertex] = {
     ensureDatasetLoaded(name)
-    val request = TaskRequestBuilder.searchRequest(vertexId, name)
+    val request = TaskRequestBuilder.searchRequest(newJobId(), vertexId, name)
     executorState.assignNewTask(request)
   }
 
@@ -68,9 +68,9 @@ case class JobManager(context: JalebiContext) extends Logging {
 
   def driverHostPort: RichHostPort = context.driverHostPort
 
-  def newJobId(): String = s"${applicationId}_Job_${jobIdCounter.getAndIncrement()}"
+  def newJobId(): String = s"$applicationId-Job-${jobIdCounter.getAndIncrement()}"
 
-  def newExecutorId(): String = s"${applicationId}_Executor_${executorIdCounter.getAndIncrement()}"
+  def newExecutorId(): String = s"$applicationId-Executor-${executorIdCounter.getAndIncrement()}"
 }
 
 object JobManager {

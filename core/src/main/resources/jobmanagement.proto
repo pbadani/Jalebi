@@ -40,10 +40,12 @@ message ExecutorResponse {
 }
 
 message TaskRequest {
-    TaskType taskType = 1;
-    int64 startVertexId = 2;
-    string dataset = 3;
-    repeated string parts = 4;
+    string jobId = 1;
+    TaskType taskType = 2;
+    int64 startVertexId = 3;
+    string dataset = 4;
+    repeated string parts = 5;
+    int64 limit = 6;
 }
 
 message TaskResponse {

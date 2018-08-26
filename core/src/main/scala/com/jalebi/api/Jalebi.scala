@@ -16,9 +16,9 @@ case class Jalebi(name: String, triplets: Set[Triplets]) {
     edge.setTargetRef(targetRef)
   })
 
-  //  def breadthFirst(startAt: VertexID): Unit = {
-  //    context.jobManager.breadthFirst(verticesToSearch, edgesToTraverse)
-  //  }
+  def searchVertex(vertexId: VertexID): Option[Vertex] = {
+    vertices.get(vertexId)
+  }
 
   //
   //  def searchDepthFirst(verticesToSearch: MatchCriteria[V], edgesToTraverse: MatchCriteria[E]): Unit = {

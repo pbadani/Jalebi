@@ -8,4 +8,8 @@ class VertexMap {
   def add(id: VertexID, element: Vertex): Vertex = {
     vertices.getOrElseUpdate(id, element)
   }
+
+  def get(id: VertexID): Option[Vertex] = {
+    vertices.get(id)
+  }
 }

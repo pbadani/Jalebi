@@ -3,7 +3,6 @@ package com.jalebi.driver
 import com.jalebi.context.JalebiConfig
 import com.jalebi.proto.jobmanagement.DatasetState.NONE
 import com.jalebi.proto.jobmanagement.ExecutorState._
-import com.jalebi.proto.jobmanagement.TaskType.LOAD_DATASET
 import com.jalebi.proto.jobmanagement.{DatasetState, ExecutorState, TaskRequest}
 import com.jalebi.utils.Logging
 
@@ -60,7 +59,10 @@ case class ExecutorStateManager(conf: JalebiConfig) extends Logging {
 
   def assignPartsToExecutor(executorId: String, parts: Set[String], name: String): Unit = {
     LOGGER.info(s"Assigned parts [${parts.mkString(",")}] to executor $executorId")
-    updateState(executorId, state => state.copy(parts = parts, nextAction = Some(TaskRequest(LOAD_DATASET, name, parts.toSeq))))
+    updateState(executorId, state => {
+      val request = TaskRequestBuilder.loadDatasetRequest(name, parts.toSeq)
+      state.copy(parts = parts, nextAction = Some(request))
+    })
   }
 
   def removePartsFromExecutor(executorId: String, parts: Set[String]): Unit = {
@@ -69,7 +71,7 @@ case class ExecutorStateManager(conf: JalebiConfig) extends Logging {
   }
 
   def markRegistered(executorId: String): Unit = {
-    LOGGER.info(s"marking registered $executorId")
+    LOGGER.info(s"Registering $executorId")
     updateState(executorId, state => state.copy(executorState = REGISTERED))
   }
 

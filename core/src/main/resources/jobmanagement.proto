@@ -25,8 +25,9 @@ enum DatasetState {
 
 enum TaskType {
     LOAD_DATASET = 0;
-    BREADTH_FIRST = 1;
-    DEPTH_FIRST = 2;
+    SEARCH_VERTEX = 1;
+    BREADTH_FIRST = 2;
+    DEPTH_FIRST = 3;
 }
 
 message ExecutorRequest {
@@ -40,8 +41,9 @@ message ExecutorResponse {
 
 message TaskRequest {
     TaskType taskType = 1;
-    string dataset = 2;
-    repeated string parts = 3;
+    int64 startVertexId = 2;
+    string dataset = 3;
+    repeated string parts = 4;
 }
 
 message TaskResponse {
@@ -49,6 +51,19 @@ message TaskResponse {
     string executorId = 2;
     ExecutorState executorState = 3;
     DatasetState datasetState = 4;
+    repeated Vertex vertexResults = 5;
+    repeated Edge edgeResults = 6;
+}
+
+message Vertex {
+    int64 vertexId = 1;
+    map<string, string> data = 2;
+}
+
+message Edge {
+    int64 sourceVertexId = 1;
+    int64 targetVertexId = 2;
+    map<string, string> data = 3;
 }
 
 message HostPort {

@@ -9,7 +9,6 @@ import com.jalebi.executor.local.LocalScheduler
 import com.jalebi.hdfs.HDFSClient
 import com.jalebi.hdfs.HDFSClient.RichHostPort
 import com.jalebi.partitioner.HashPartitioner
-import com.jalebi.proto.jobmanagement.{TaskRequest, TaskType}
 import com.jalebi.utils.Logging
 import com.jalebi.yarn.YarnScheduler
 
@@ -36,9 +35,12 @@ case class JobManager(context: JalebiContext) extends Logging {
   }
 
   @throws[DatasetNotLoadedException]
-  def ensureDatasetLoaded(): Unit = {
+  def ensureDatasetLoaded(name: String): Unit = {
     if (!context.isLoaded) {
       throw new DatasetNotLoadedException(s"No dataset is loaded currently.")
+    }
+    if (context.getCurrentDatasetName != name) {
+      throw new DatasetNotLoadedException(s"Currently loaded dataset ${context.getCurrentDatasetName} is not same as $name")
     }
   }
 
@@ -53,9 +55,10 @@ case class JobManager(context: JalebiContext) extends Logging {
   }
 
 
-  def findVertex(vertexId: VertexID): Set[Vertex] = {
-    ensureDatasetLoaded()
-    executorState.assignNewTask(TaskRequest(TaskType.SEARCH_VERTEX, context.getCurrentDatasetName, Nil))
+  def findVertex(vertexId: VertexID, name: String): Set[Vertex] = {
+    ensureDatasetLoaded(name)
+    val request = TaskRequestBuilder.searchRequest(vertexId, name)
+    executorState.assignNewTask(request)
   }
 
   def shutRunningExecutors(): Unit = {

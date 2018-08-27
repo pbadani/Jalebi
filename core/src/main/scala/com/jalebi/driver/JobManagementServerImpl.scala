@@ -36,11 +36,10 @@ case class JobManagementServerImpl(jobManager: JobManager, conf: JalebiConfig) e
         val executorId = response.executorId
         val executorState = jobManager.executorState
         executorState.updateLastHeartbeat(executorId, response.executorState, response.datasetState, System.currentTimeMillis())
-        val nextTask = executorState.consumeNextTask(executorId)
-        if (nextTask.isDefined) {
-          LOGGER.info(s"Issuing new task $nextTask to executor $executorId")
-          requestObserver.onNext(nextTask.get)
-        }
+        executorState.consumeNextTask(executorId).foreach(request => {
+          LOGGER.info(s"Issuing new task $request to executor $executorId")
+          requestObserver.onNext(request)
+        })
         LOGGER.info(s"on next $response")
       }
     }

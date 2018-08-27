@@ -5,7 +5,7 @@ import scala.collection.mutable.ListBuffer
 
 case class VertexID(id: Long)
 
-case class Vertex(id: VertexID, data: Map[String, String]) {
+case class Vertex(vertexId: VertexID, data: Map[String, String]) {
 
   private val relations = ListBuffer[Edge]()
 
@@ -26,15 +26,17 @@ case class Vertex(id: VertexID, data: Map[String, String]) {
   }
 
   def getOutgoing: Seq[Edge] = {
-    relations.filter(e => (e.isDirected && e.isSource(this.id))
+    relations.filter(e => (e.isDirected && e.isSource(this.vertexId))
       || (!e.isDirected))
   }
 
   def getIncoming: Seq[Edge] = {
-    relations.filter(e => (e.isDirected && e.isTarget(this.id))
+    relations.filter(e => (e.isDirected && e.isTarget(this.vertexId))
       || (!e.isDirected))
   }
 
-  override def toString: String = s"VertexID: $id"
+  def getId: Long = vertexId.id
+
+  override def toString: String = s"VertexID: $vertexId"
 }
 

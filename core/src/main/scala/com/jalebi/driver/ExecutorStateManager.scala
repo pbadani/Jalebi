@@ -44,16 +44,13 @@ case class ExecutorStateManager(conf: JalebiConfig) extends Logging {
 
   def assignNewTask(taskRequest: TaskRequest): Unit = {
     executorIdToState.mapValues(state => {
-      val requestForExecutor = taskRequest.copy(parts = state.parts.toSeq)
-      state.copy(nextAction = Some(requestForExecutor))
+      state.copy(nextAction = Some(taskRequest.copy(parts = state.parts.toSeq)))
     })
   }
 
   def consumeNextTask(executorId: String): Option[TaskRequest] = {
     val next = executorIdToState(executorId).nextAction
-    if (next.isDefined) {
-      updateState(executorId, state => state.copy(nextAction = None))
-    }
+    next.foreach(_ => updateState(executorId, state => state.copy(nextAction = None)))
     next
   }
 
@@ -97,9 +94,9 @@ case class ExecutorStateManager(conf: JalebiConfig) extends Logging {
     this
   }
 
-  private def updateState(executorId: String, oldStateToNewState: State => State) = {
+  private def updateState(executorId: String, oldToNewState: State => State) = {
     val state = executorIdToState(executorId)
-    executorIdToState += (executorId -> oldStateToNewState(state))
+    executorIdToState += (executorId -> oldToNewState(state))
   }
 
   def listExecutorIds(): Set[String] = executorIdToState.keySet.toSet

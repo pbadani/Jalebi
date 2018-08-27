@@ -30,7 +30,7 @@ case class JalebiContext private(conf: JalebiConfig) {
 
   @throws[DuplicateDatasetException]
   def createDataset(input: JalebiWriter): Unit = {
-    val verticesMap = input.vertices.map(v => (v.id, v)).toMap
+    val verticesMap = input.vertices.map(v => (v.vertexId, v)).toMap
     val triplets = input.edges.map(edge => {
       Triplet(verticesMap(edge.source), edge, verticesMap(edge.target))
     }).grouped(conf.options.getPartitionSize().toInt)

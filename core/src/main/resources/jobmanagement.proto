@@ -53,16 +53,16 @@ message TaskResponse {
     string executorId = 2;
     ExecutorState executorState = 3;
     DatasetState datasetState = 4;
-    repeated Vertex vertexResults = 5;
-    repeated Edge edgeResults = 6;
+    repeated VertexResult vertexResults = 5;
+    repeated EdgeResult edgeResults = 6;
 }
 
-message Vertex {
+message VertexResult {
     int64 vertexId = 1;
     map<string, string> data = 2;
 }
 
-message Edge {
+message EdgeResult {
     int64 sourceVertexId = 1;
     int64 targetVertexId = 2;
     map<string, string> data = 3;

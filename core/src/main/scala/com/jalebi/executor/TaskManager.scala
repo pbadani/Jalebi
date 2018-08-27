@@ -35,11 +35,7 @@ case class TaskManager(executorId: String) extends Logging {
   def keepRunning: Boolean = running
 
   def heartbeatInterval: Long = {
-    if (taskConfig.isDefined) {
-      taskConfig.get.heartbeatInterval
-    } else {
-      5
-    }
+    taskConfig.map(conf => conf.heartbeatInterval).getOrElse(5)
   }
 
   def markRegistered(taskConfig: TaskConfig): Unit = {
@@ -77,6 +73,9 @@ case class TaskManager(executorId: String) extends Logging {
         require(currentJalebi.get.name == taskRequest.dataset, s"Dataset mismatch. Expected ${currentJalebi.get.name}, Actual: ${taskRequest.dataset}")
         setStates(None, executorState = Some(RUNNING_JOB))
         val result = currentJalebi.get.searchVertex(VertexID(taskRequest.startVertexId))
+        val vertexResult = ResultConverter.convertVertex(result)
+        propagateInHeartbeat.put(TaskResponse(taskRequest.jobId, executorId, executorState, datasetState, vertexResult, Nil))
+        setStates(None, executorState = Some(RUNNABLE))
 
       case TaskType.BREADTH_FIRST =>
         require(currentJalebi.isDefined)

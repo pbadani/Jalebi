@@ -12,13 +12,13 @@ case class Edge(source: VertexID, target: VertexID, data: Map[String, String], i
 
   def setSourceRef(vertex: Vertex): Unit = {
     require(sourceRef.isEmpty, s"Source already referring to $sourceRef.")
-    require(vertex.id == source, s"Source id $source does not match this vertex id ${vertex.id}")
+    require(vertex.vertexId == source, s"Source id $source does not match this vertex id ${vertex.vertexId}")
     sourceRef = Some(vertex)
   }
 
   def setTargetRef(vertex: Vertex): Unit = {
     require(targetRef.isEmpty, s"Target already referring to $targetRef.")
-    require(vertex.id == target, s"Target id $target does not match this vertex id ${vertex.id}")
+    require(vertex.vertexId == target, s"Target id $target does not match this vertex id ${vertex.vertexId}")
     targetRef = Some(vertex)
   }
 }

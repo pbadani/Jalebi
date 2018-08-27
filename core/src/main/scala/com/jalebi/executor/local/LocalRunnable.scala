@@ -27,7 +27,7 @@ case class LocalRunnable(taskManager: TaskManager, driverHostPort: RichHostPort)
     val resp: StreamObserver[TaskResponse] = stub.startTalk(
       new StreamObserver[TaskRequest] {
         override def onError(t: Throwable): Unit = {
-          LOGGER.info(s"on error - Executor ${taskManager.executorId} ${t.getMessage} ${t.getCause}")
+          LOGGER.error(s"on error - Executor ${taskManager.executorId} ${t.getMessage} ${t.getCause} ${t.getStackTrace}")
         }
 
         override def onCompleted(): Unit = {

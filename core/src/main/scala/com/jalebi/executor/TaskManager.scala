@@ -81,6 +81,9 @@ case class TaskManager(executorId: String) extends Logging {
         require(currentJalebi.isDefined)
       case TaskType.DEPTH_FIRST =>
         require(currentJalebi.isDefined)
+
+      case _ =>
+        throw new IllegalStateException()
     }
   }
 

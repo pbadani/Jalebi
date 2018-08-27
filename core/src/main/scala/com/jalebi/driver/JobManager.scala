@@ -3,13 +3,13 @@ package com.jalebi.driver
 import java.util.concurrent.atomic.AtomicLong
 
 import com.jalebi.api.{Vertex, VertexID}
-import com.jalebi.common.Logging
+import com.jalebi.common.{Logging, ResultConverter}
 import com.jalebi.context.{Dataset, JalebiContext}
 import com.jalebi.exception.DatasetNotLoadedException
 import com.jalebi.executor.local.LocalScheduler
 import com.jalebi.hdfs.HDFSClient
 import com.jalebi.hdfs.HDFSClient.RichHostPort
-import com.jalebi.partitioner.HashPartitioner
+import com.jalebi.proto.jobmanagement.TaskResponse
 import com.jalebi.yarn.YarnScheduler
 
 case class JobManager(context: JalebiContext) extends Logging {
@@ -48,20 +48,20 @@ case class JobManager(context: JalebiContext) extends Logging {
   @throws[DatasetNotLoadedException]
   def load(hdfsClient: HDFSClient, name: String): Dataset = {
     ensureInitialized()
+    val jobId = newJobId()
     val parts = hdfsClient.listDatasetParts(name)
     val executors = executorState.listExecutorIds()
-    val executorIdToParts = HashPartitioner.partition(parts, executors)
-    executorState.clearAndAssignPartsToExecutors(newJobId(), executorIdToParts, name)
+    executorState.loadPartsToExecutors(jobId, parts, name)
+    resultAggregator.waitForJobToBeCompleted(jobId, executors)
     Dataset(name, this)
   }
 
-
-  def findVertex(vertexId: VertexID, name: String): Set[Vertex] = {
+  def findVertex(vertexId: VertexID, name: String): Seq[Vertex] = {
     ensureDatasetLoaded(name)
     val jobId = newJobId()
-    val request = TaskRequestBuilder.searchRequest(jobId, vertexId, name)
-    executorState.assignNewTask(request)
-    resultAggregator.getResultForJobId(jobId, response => response.vertexResults)
+    executorState.assignNewTask(TaskRequestBuilder.searchRequest(jobId, vertexId, name))
+    val responseToVertexes: TaskResponse => Seq[Vertex] = response => ResultConverter.convertFromVertices(response.vertexResults)
+    resultAggregator.getResultForJobId(jobId, responseToVertexes)
   }
 
   def shutRunningExecutors(): Unit = {

@@ -2,6 +2,7 @@ package com.jalebi.driver
 
 import com.jalebi.common.Logging
 import com.jalebi.context.JalebiConfig
+import com.jalebi.partitioner.HashPartitioner
 import com.jalebi.proto.jobmanagement.DatasetState.NONE
 import com.jalebi.proto.jobmanagement.ExecutorState._
 import com.jalebi.proto.jobmanagement.{DatasetState, ExecutorState, TaskRequest}
@@ -36,9 +37,9 @@ case class ExecutorStateManager(conf: JalebiConfig) extends Logging {
     }
   }
 
-  def clearAndAssignPartsToExecutors(jobId: String, executorIdToParts: Map[String, Set[String]], name: String): Unit = {
+  def loadPartsToExecutors(jobId: String, parts: Set[String], name: String): Unit = {
     clearParts()
-    executorIdToParts.foreach {
+    HashPartitioner.partition(parts, listExecutorIds()).foreach {
       case (e, p) => assignPartsToExecutor(jobId, e, p, name)
     }
   }

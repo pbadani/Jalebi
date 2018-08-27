@@ -1,9 +1,9 @@
 package com.jalebi.executor.local
 
+import com.jalebi.common.Logging
 import com.jalebi.context.JalebiContext
 import com.jalebi.driver.Scheduler
 import com.jalebi.executor.TaskManager
-import com.jalebi.utils.Logging
 
 import scala.collection.mutable
 

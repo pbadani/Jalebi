@@ -2,7 +2,7 @@ package com.jalebi.yarn
 
 import java.util.Collections
 
-import com.jalebi.utils.{JalebiUtils, Logging, URIBuilder, YarnUtils}
+import com.jalebi.common.{JalebiUtils, Logging, URIBuilder, YarnUtils}
 import org.apache.hadoop.fs.{FileSystem, Path}
 import org.apache.hadoop.yarn.api.ApplicationConstants
 import org.apache.hadoop.yarn.api.records._

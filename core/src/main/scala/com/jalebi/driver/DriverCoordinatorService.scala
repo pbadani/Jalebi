@@ -1,8 +1,8 @@
 package com.jalebi.driver
 
+import com.jalebi.common.Logging
 import com.jalebi.context.JalebiConfig
 import com.jalebi.proto.jobmanagement.JobManagementProtocolGrpc
-import com.jalebi.utils.Logging
 import io.grpc.ServerBuilder
 
 import scala.concurrent.ExecutionContext

@@ -1,4 +1,4 @@
-package com.jalebi.utils
+package com.jalebi.common
 
 import com.jalebi.yarn.JalebiAppConstants
 import org.apache.hadoop.fs.{FileSystem, Path}

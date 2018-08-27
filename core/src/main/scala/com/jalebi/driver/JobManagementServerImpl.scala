@@ -1,9 +1,9 @@
 package com.jalebi.driver
 
+import com.jalebi.common.Logging
 import com.jalebi.context.JalebiConfig
 import com.jalebi.context.JalebiConfig._
 import com.jalebi.proto.jobmanagement._
-import com.jalebi.utils.Logging
 import io.grpc.stub.StreamObserver
 
 import scala.concurrent.Future
@@ -36,6 +36,7 @@ case class JobManagementServerImpl(jobManager: JobManager, conf: JalebiConfig) e
         val executorId = response.executorId
         val executorState = jobManager.executorState
         executorState.updateLastHeartbeat(executorId, response.executorState, response.datasetState, System.currentTimeMillis())
+        jobManager.resultAggregator.saveTaskResult(response)
         executorState.consumeNextTask(executorId).foreach(request => {
           LOGGER.info(s"Issuing new task $request to executor $executorId")
           requestObserver.onNext(request)

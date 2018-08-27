@@ -6,7 +6,7 @@ import java.util
 import java.util.Collections
 import java.util.concurrent.atomic.AtomicLong
 
-import com.jalebi.utils.{JalebiUtils, Logging, YarnUtils}
+import com.jalebi.common.{JalebiUtils, Logging, YarnUtils}
 import com.jalebi.yarn.handler.{AMRMCallbackHandler, NMCallbackHandler}
 import org.apache.hadoop.fs.{FileSystem, Path}
 import org.apache.hadoop.net.NetUtils

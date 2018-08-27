@@ -2,7 +2,7 @@ package com.jalebi.yarn.handler
 
 import java.util
 
-import com.jalebi.utils.Logging
+import com.jalebi.common.Logging
 import com.jalebi.yarn.{ApplicationMaster, ContainerStateManager}
 import org.apache.hadoop.yarn.api.records.{Container, ContainerStatus, NodeReport, UpdatedContainer}
 import org.apache.hadoop.yarn.client.api.async.AMRMClientAsync.AbstractCallbackHandler

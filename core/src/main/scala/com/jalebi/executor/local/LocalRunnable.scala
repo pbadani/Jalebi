@@ -1,9 +1,9 @@
 package com.jalebi.executor.local
 
+import com.jalebi.common.Logging
 import com.jalebi.executor.{TaskConfig, TaskManager}
 import com.jalebi.hdfs.HDFSClient.RichHostPort
 import com.jalebi.proto.jobmanagement._
-import com.jalebi.utils.Logging
 import io.grpc.ManagedChannelBuilder
 import io.grpc.stub.StreamObserver
 

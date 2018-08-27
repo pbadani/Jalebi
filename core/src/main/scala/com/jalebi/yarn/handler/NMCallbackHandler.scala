@@ -3,7 +3,7 @@ package com.jalebi.yarn.handler
 import java.nio.ByteBuffer
 import java.util
 
-import com.jalebi.utils.Logging
+import com.jalebi.common.Logging
 import com.jalebi.yarn.{ApplicationMaster, ContainerStateManager}
 import org.apache.hadoop.yarn.api.records.{ContainerId, ContainerStatus, Resource}
 import org.apache.hadoop.yarn.client.api.async.NMClientAsync.AbstractCallbackHandler

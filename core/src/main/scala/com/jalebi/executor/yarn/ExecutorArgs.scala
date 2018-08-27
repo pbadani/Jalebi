@@ -1,6 +1,6 @@
 package com.jalebi.executor.yarn
 
-import com.jalebi.utils.Logging
+import com.jalebi.common.Logging
 import com.jalebi.yarn.CommandConstants
 
 case class ExecutorArgs(args: Map[String, String]) {

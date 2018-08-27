@@ -1,6 +1,6 @@
 package com.jalebi.yarn
 
-import com.jalebi.utils.Logging
+import com.jalebi.common.Logging
 
 case class ApplicationMasterArgs(args: Map[String, String]) {
 

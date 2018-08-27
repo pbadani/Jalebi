@@ -1,4 +1,4 @@
-package com.jalebi.utils
+package com.jalebi.common
 
 object URIBuilder {
 

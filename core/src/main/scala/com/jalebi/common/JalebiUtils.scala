@@ -1,4 +1,4 @@
-package com.jalebi.utils
+package com.jalebi.common
 
 import org.apache.hadoop.security.UserGroupInformation
 import org.apache.hadoop.yarn.api.ApplicationConstants

@@ -1,10 +1,10 @@
 package com.jalebi.driver
 
+import com.jalebi.common.Logging
 import com.jalebi.context.JalebiConfig
 import com.jalebi.proto.jobmanagement.DatasetState.NONE
 import com.jalebi.proto.jobmanagement.ExecutorState._
 import com.jalebi.proto.jobmanagement.{DatasetState, ExecutorState, TaskRequest}
-import com.jalebi.utils.Logging
 
 import scala.collection.mutable
 
@@ -19,6 +19,7 @@ case class ExecutorStateManager(conf: JalebiConfig) extends Logging {
   private val executorIdToState = mutable.HashMap[String, State]().withDefaultValue(default)
 
   private val executorIdToLastHeartbeat = mutable.HashMap[String, Long]()
+
 
   def initialize(): Unit = {
     waitForAllExecutorsToBeRegistered()

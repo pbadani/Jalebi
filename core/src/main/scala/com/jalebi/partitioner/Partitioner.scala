@@ -1,6 +1,6 @@
 package com.jalebi.partitioner
 
-import com.jalebi.utils.Logging
+import com.jalebi.common.Logging
 
 trait Partitioner extends Logging {
 

@@ -3,23 +3,24 @@ package com.jalebi.driver
 import java.util.concurrent.atomic.AtomicLong
 
 import com.jalebi.api.{Vertex, VertexID}
+import com.jalebi.common.Logging
 import com.jalebi.context.{Dataset, JalebiContext}
 import com.jalebi.exception.DatasetNotLoadedException
 import com.jalebi.executor.local.LocalScheduler
 import com.jalebi.hdfs.HDFSClient
 import com.jalebi.hdfs.HDFSClient.RichHostPort
 import com.jalebi.partitioner.HashPartitioner
-import com.jalebi.utils.Logging
 import com.jalebi.yarn.YarnScheduler
 
 case class JobManager(context: JalebiContext) extends Logging {
 
-  val applicationId: String = s"Jalebi_App_${System.currentTimeMillis()}"
+  val applicationId: String = s"Jalebi-${System.currentTimeMillis()}"
   private val jobIdCounter = new AtomicLong(0)
   private val executorIdCounter = new AtomicLong(0)
   private val numOfExecutors = context.conf.getNumberOfExecutors().toInt
   private val scheduler = if (context.onLocalMaster) LocalScheduler(context) else YarnScheduler(context)
   private val driverCoordinatorService = DriverCoordinatorService(this, context.conf)
+  val resultAggregator = new ResultAggregator()
   val executorState: ExecutorStateManager = {
     (0 until numOfExecutors)
       .foldLeft(ExecutorStateManager(context.conf))((acc, _) => acc.addExecutor(newExecutorId()))
@@ -57,8 +58,10 @@ case class JobManager(context: JalebiContext) extends Logging {
 
   def findVertex(vertexId: VertexID, name: String): Set[Vertex] = {
     ensureDatasetLoaded(name)
-    val request = TaskRequestBuilder.searchRequest(newJobId(), vertexId, name)
+    val jobId = newJobId()
+    val request = TaskRequestBuilder.searchRequest(jobId, vertexId, name)
     executorState.assignNewTask(request)
+    resultAggregator.getResultForJobId(jobId, response => response.vertexResults)
   }
 
   def shutRunningExecutors(): Unit = {

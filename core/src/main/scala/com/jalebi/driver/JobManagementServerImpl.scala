@@ -41,7 +41,11 @@ case class JobManagementServerImpl(jobManager: JobManager, conf: JalebiConfig) e
           LOGGER.info(s"Issuing new task $request to executor $executorId")
           requestObserver.onNext(request)
         })
-        LOGGER.info(s"on next $response")
+        if (response.jobId.isEmpty) {
+          LOGGER.debug(s"on next $response")
+        } else {
+          LOGGER.info(s"on next $response")
+        }
       }
     }
   }

@@ -44,8 +44,10 @@ case class ExecutorStateManager(conf: JalebiConfig) extends Logging {
   }
 
   def assignNewTask(taskRequest: TaskRequest): Unit = {
-    executorIdToState.mapValues(state => {
-      state.copy(nextAction = Some(taskRequest.copy(parts = state.parts.toSeq)))
+    executorIdToState.keySet.foreach(executorId => {
+      updateState(executorId, state => {
+        state.copy(nextAction = Some(taskRequest.copy(parts = state.parts.toSeq)))
+      })
     })
   }
 

@@ -13,6 +13,7 @@ import com.jalebi.proto.jobmanagement.TaskResponse
 import com.jalebi.yarn.YarnScheduler
 
 import scala.collection.immutable.Queue
+import scala.collection.mutable
 
 case class JobManager(context: JalebiContext) extends Logging {
 
@@ -58,12 +59,13 @@ case class JobManager(context: JalebiContext) extends Logging {
     Dataset(name, this)
   }
 
-  def findVertex(vertexId: VertexID, name: String): Queue[Vertex] = {
+  def findVertex(vertexId: VertexID, name: String): mutable.Queue[Vertex] = {
     ensureDatasetLoaded(name)
     val jobId = newJobId()
     executorState.assignNewTask(TaskRequestBuilder.searchRequest(jobId, vertexId, name))
     val responseToVertexes: TaskResponse => Seq[Vertex] = response => ResultConverter.convertFromVertices(response.vertexResults)
-    resultAggregator.getResultForJobId(jobId, responseToVertexes)
+    val executors = executorState.listExecutorIds()
+    resultAggregator.getResultForJobId(jobId, executors, responseToVertexes)
   }
 
   def shutRunningExecutors(): Unit = {

@@ -21,7 +21,6 @@ case class ExecutorStateManager(conf: JalebiConfig) extends Logging {
 
   private val executorIdToLastHeartbeat = mutable.HashMap[String, Long]()
 
-
   def initialize(): Unit = {
     waitForAllExecutorsToBeRegistered()
     initializationState = true

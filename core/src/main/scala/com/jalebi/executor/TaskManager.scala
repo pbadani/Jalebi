@@ -5,7 +5,9 @@ import com.jalebi.common.{Logging, ResultConverter}
 import com.jalebi.exception.DatasetCorruptException
 import com.jalebi.proto.jobmanagement.DatasetState._
 import com.jalebi.proto.jobmanagement.ExecutorState._
+import com.jalebi.proto.jobmanagement.TaskState._
 import com.jalebi.proto.jobmanagement._
+import org.apache.commons.lang.StringUtils
 
 import scala.collection.mutable
 
@@ -27,7 +29,7 @@ case class TaskManager(executorId: String) extends Logging {
       if (queue.nonEmpty) {
         queue.dequeue()
       } else {
-        TaskResponse("", taskManager.executorId, taskManager.executorState, taskManager.datasetState)
+        TaskResponse(StringUtils.EMPTY, StringUtils.EMPTY, RUNNING, taskManager.executorId, taskManager.executorState, taskManager.datasetState)
       }
     }
   }
@@ -60,11 +62,12 @@ case class TaskManager(executorId: String) extends Logging {
           setStates(datasetState = Some(LOADING), executorState = Some(RUNNING_JOB))
           currentJalebi = Some(loadDataset(taskRequest.dataset, taskRequest.parts.toSet))
           setStates(datasetState = Some(LOADED), executorState = Some(RUNNABLE))
+          propagateInHeartbeat.put(TaskResponse(taskRequest.jobId, taskRequest.taskId, COMPLETED, executorId, executorState, datasetState))
         } catch {
           case e: DatasetCorruptException =>
             currentJalebi = None
             setStates(datasetState = Some(NONE), executorState = Some(RUNNABLE))
-            propagateInHeartbeat.put(TaskResponse("", executorId, executorState, datasetState))
+            propagateInHeartbeat.put(TaskResponse(taskRequest.jobId, taskRequest.taskId, FAILED, executorId, executorState, datasetState))
             LOGGER.error(e.getMessage)
         }
 
@@ -74,7 +77,7 @@ case class TaskManager(executorId: String) extends Logging {
         setStates(None, executorState = Some(RUNNING_JOB))
         val result = currentJalebi.get.searchVertex(VertexID(taskRequest.startVertexId))
         val vertexResult = ResultConverter.convertToVertexResult(result)
-        propagateInHeartbeat.put(TaskResponse(taskRequest.jobId, executorId, executorState, datasetState, vertexResult, Nil))
+        propagateInHeartbeat.put(TaskResponse(taskRequest.jobId, taskRequest.taskId, COMPLETED, executorId, executorState, datasetState, vertexResult, Nil))
         setStates(None, executorState = Some(RUNNABLE))
 
       case TaskType.BREADTH_FIRST =>
@@ -88,11 +91,7 @@ case class TaskManager(executorId: String) extends Logging {
   }
 
   private def setStates(datasetState: Option[DatasetState] = None, executorState: Option[ExecutorState] = None): Unit = {
-    if (datasetState.isDefined) {
-      this.datasetState = datasetState.get
-    }
-    if (executorState.isDefined) {
-      this.executorState = executorState.get
-    }
+    datasetState.foreach(state => this.datasetState = state)
+    executorState.foreach(state => this.executorState = state)
   }
 }

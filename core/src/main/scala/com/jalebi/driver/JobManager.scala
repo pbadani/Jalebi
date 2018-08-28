@@ -12,6 +12,8 @@ import com.jalebi.hdfs.HDFSClient.RichHostPort
 import com.jalebi.proto.jobmanagement.TaskResponse
 import com.jalebi.yarn.YarnScheduler
 
+import scala.collection.immutable.Queue
+
 case class JobManager(context: JalebiContext) extends Logging {
 
   val applicationId: String = s"Jalebi-${System.currentTimeMillis()}"
@@ -56,7 +58,7 @@ case class JobManager(context: JalebiContext) extends Logging {
     Dataset(name, this)
   }
 
-  def findVertex(vertexId: VertexID, name: String): Seq[Vertex] = {
+  def findVertex(vertexId: VertexID, name: String): Queue[Vertex] = {
     ensureDatasetLoaded(name)
     val jobId = newJobId()
     executorState.assignNewTask(TaskRequestBuilder.searchRequest(jobId, vertexId, name))

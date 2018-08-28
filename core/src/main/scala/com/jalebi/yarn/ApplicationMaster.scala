@@ -31,10 +31,10 @@ object ApplicationMaster extends Logging {
       applicationMaster.get.run()
       Thread.sleep(1000000)
     } finally {
-      if (applicationMaster.isDefined) {
+      applicationMaster.foreach(am => {
         LOGGER.info(s"Unregistering Application Master")
-        applicationMaster.get.finish()
-      }
+        am.finish()
+      })
     }
   }
 }

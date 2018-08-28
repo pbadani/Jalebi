@@ -16,9 +16,7 @@ object FileSystemCat {
       stream = Some(fs.open(new Path("something.txt"), 4096))
       IOUtils.copyBytes(stream.get, System.out, 4096, false)
     } finally {
-      if (stream.isDefined) {
-        IOUtils.closeStream(stream.get)
-      }
+      stream.foreach(IOUtils.closeStream(_))
     }
   }
 }

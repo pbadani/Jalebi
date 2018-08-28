@@ -23,6 +23,12 @@ enum DatasetState {
     LOADED = 2;
 }
 
+enum TaskState {
+    RUNNING = 0;
+    COMPLETED = 1;
+    FAILED = 2;
+}
+
 enum TaskType {
     LOAD_DATASET = 0;
     SEARCH_VERTEX = 1;
@@ -41,20 +47,23 @@ message ExecutorResponse {
 
 message TaskRequest {
     string jobId = 1;
-    TaskType taskType = 2;
-    int64 startVertexId = 3;
-    string dataset = 4;
-    repeated string parts = 5;
-    int64 limit = 6;
+    string taskId = 2;
+    TaskType taskType = 3;
+    int64 startVertexId = 4;
+    string dataset = 5;
+    repeated string parts = 6;
+    int64 limit = 7;
 }
 
 message TaskResponse {
     string jobId = 1;
-    string executorId = 2;
-    ExecutorState executorState = 3;
-    DatasetState datasetState = 4;
-    repeated VertexResult vertexResults = 5;
-    repeated EdgeResult edgeResults = 6;
+    string taskId = 2;
+    TaskState taskState = 3;
+    string executorId = 4;
+    ExecutorState executorState = 5;
+    DatasetState datasetState = 6;
+    repeated VertexResult vertexResults = 7;
+    repeated EdgeResult edgeResults = 8;
 }
 
 message VertexResult {

@@ -59,7 +59,8 @@ class AMRMCallbackHandler(applicationMaster: ApplicationMaster, containerStateMa
       containers.forEach(container => {
         val (launchThread, executorId) = applicationMaster.createLaunchContainerThread(container)
         println(s"Launching $executorId")
-        LOGGER.info(s"""Launching executor on a new container:" +
+        LOGGER.info(
+          s"""Launching executor on a new container:" +
           " | Jalebi Executor id: $executorId" +
           " | Container id: ${container.getId}" +
           " | Node id: ${container.getNodeId}" +
@@ -68,7 +69,7 @@ class AMRMCallbackHandler(applicationMaster: ApplicationMaster, containerStateMa
           " | Container vcores: ${container.getResource.getVirtualCores}""".stripMargin('|'))
 
         launchThread.start()
-//        applicationMaster.removeContainerRequest(container.getAllocationRequestId)
+        //        applicationMaster.removeContainerRequest(container.getAllocationRequestId)
       })
     }
   }

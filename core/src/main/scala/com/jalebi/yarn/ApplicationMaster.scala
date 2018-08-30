@@ -133,10 +133,10 @@ class ApplicationMaster(amArgs: ApplicationMasterArgs) extends Logging {
 
   private def createExecutorContext(conf: YarnConfiguration) = {
     val amContainer = Records.newRecord(classOf[ContainerLaunchContext])
-    val driverURL = s"$appMasterHostname:$appMasterHostPort"
     amContainer.setCommands(List(
       s"scala com.jalebi.yarn.executor.Executor" +
-        s" --${CommandConstants.Executor.driverURL} $driverURL" +
+        s" --${CommandConstants.Executor.driverHost} $appMasterHostname" +
+        s" --${CommandConstants.Executor.driverPort} $appMasterHostPort" +
         s" --${CommandConstants.AppMaster.applicationId} ${amArgs.getApplicationId}" +
         s" 1> ${ApplicationConstants.LOG_DIR_EXPANSION_VAR}/stdout" +
         s" 2> ${ApplicationConstants.LOG_DIR_EXPANSION_VAR}/stderr"

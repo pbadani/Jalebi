@@ -3,17 +3,16 @@ package com.jalebi.yarn
 object CommandConstants {
 
   object AppMaster {
-    val applicationId = "applicationId"
-    val jarPath = "jarPath"
+    val clientClass = "clientclass"
+    val applicationId = "applicationid"
+    val jarPath = "jarpath"
   }
 
   object Executor {
     val executorPrefix = "JalebiExecutor"
-    val driverURL = "driverURL"
+    val driverHost = "driverhost"
+    val driverPort = "driverport"
+    val executorId = "executorid"
   }
 
-  object AppClient {
-    val executorPrefix = "JalebiExecutor"
-    val driverURL = "driverURL"
-  }
 }

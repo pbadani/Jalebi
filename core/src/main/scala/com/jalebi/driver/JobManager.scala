@@ -6,13 +6,12 @@ import com.jalebi.api.{Vertex, VertexID}
 import com.jalebi.common.{Logging, ResultConverter}
 import com.jalebi.context.{Dataset, JalebiContext}
 import com.jalebi.exception.DatasetNotLoadedException
-import com.jalebi.executor.local.LocalScheduler
+import com.jalebi.executor.LocalScheduler
 import com.jalebi.hdfs.HDFSClient
 import com.jalebi.hdfs.HDFSClient.RichHostPort
 import com.jalebi.proto.jobmanagement.TaskResponse
 import com.jalebi.yarn.YarnScheduler
 
-import scala.collection.immutable.Queue
 import scala.collection.mutable
 
 case class JobManager(context: JalebiContext) extends Logging {

@@ -125,10 +125,6 @@ object HDFSClient {
     def toHostPort: HostPort = HostPort(scheme, host, port)
   }
 
-  //  def fileSystem(conf: JalebiConfig): HDFSClient = {
-  //
-  //  }
-
   def withLocalFileSystem(): HDFSClient = {
     new HDFSClient(FileSystem.getLocal(new YarnConfiguration()))
   }

@@ -20,10 +20,9 @@ object ApplicationClient extends Logging {
     conf.set("fs.defaultFS", "hdfs://localhost:8020")
     yarnClient.init(conf)
     yarnClient.start()
-    val jarPath = args(0)
-
-    val application: YarnClientApplication = yarnClient.createApplication()
-    val appContext = createApplicationSubmissionContext(application, conf, jarPath)
+    val appclientArgs: ApplicationClientArgs = ApplicationClientArgs(args)
+    val application = yarnClient.createApplication()
+    val appContext = createApplicationSubmissionContext(application, conf, appclientArgs)
     //    appContext.setApplicationTimeouts(util.Map[ApplicationTimeoutType, Long])
     LOGGER.info(s"Application ID - ${appContext.getApplicationId}")
 
@@ -33,25 +32,25 @@ object ApplicationClient extends Logging {
     //    yarnClient.signalToContainer(application, SignalContainerCommand.GRACEFUL_SHUTDOWN)
   }
 
-  private def createApplicationSubmissionContext(app: YarnClientApplication, conf: YarnConfiguration, jarPath: String) = {
+  private def createApplicationSubmissionContext(app: YarnClientApplication, conf: YarnConfiguration, appclientArgs: ApplicationClientArgs) = {
     val appContext = app.getApplicationSubmissionContext
-    val container = createApplicationMasterContext(conf, jarPath, appContext.getApplicationId.toString)
+    val container = createApplicationMasterContext(conf, appclientArgs, appContext.getApplicationId.toString)
     appContext.setApplicationName(JalebiAppConstants.applicationName)
     appContext.setAMContainerSpec(container)
     appContext.setResource(applicationMasterCapacity)
     appContext
   }
 
-  private def createApplicationMasterContext(conf: YarnConfiguration, jarPath: String, applicationId: String) = {
+  private def createApplicationMasterContext(conf: YarnConfiguration, appclientArgs: ApplicationClientArgs, applicationId: String) = {
     val amContainer = Records.newRecord(classOf[ContainerLaunchContext])
     amContainer.setCommands(List(
-      s"scala com.jalebi.yarn.ApplicationMaster " +
+      s"scala ${appclientArgs.getClientClass} " +
         s"--${CommandConstants.AppMaster.applicationId} $applicationId " +
-        s"--${CommandConstants.AppMaster.jarPath} $jarPath" +
+        s"--${CommandConstants.AppMaster.jarPath} ${appclientArgs.getJarPath}" +
         s" 1> ${ApplicationConstants.LOG_DIR_EXPANSION_VAR}/stdout" +
         s" 2> ${ApplicationConstants.LOG_DIR_EXPANSION_VAR}/stderr"
     ).asJava)
-    amContainer.setLocalResources(Collections.singletonMap(JalebiAppConstants.jalebiArtifact, createLocalResource(conf, jarPath, applicationId)))
+    amContainer.setLocalResources(Collections.singletonMap(JalebiAppConstants.jalebiArtifact, createLocalResource(conf, appclientArgs.getJarPath, applicationId)))
     amContainer.setEnvironment(YarnUtils.createEnvironmentVariables(conf).asJava)
     amContainer
   }
@@ -63,7 +62,6 @@ object ApplicationClient extends Logging {
     val destPath = new Path(fs.getHomeDirectory, JalebiUtils.getResourcePath(applicationId, JalebiAppConstants.jalebiArtifact))
     fs.copyFromLocalFile(sourcePath, destPath)
     LOGGER.info(s"Copied resource $jarPath to HDFS destination ${destPath.getParent}/${destPath.getName}")
-
     YarnUtils.createFileResource(fs, destPath)
   }
 

@@ -46,12 +46,12 @@ object ApplicationMasterArgs extends Logging {
 
     val options = nextOption(Map(), arglist)
     if (options.get(CommandConstants.AppMaster.applicationId).isEmpty) {
-      LOGGER.error(s"ApplicationId is not provided in arguments. Usage: $usage")
-      throw new IllegalArgumentException("ApplicationId not provided in arguments˚")
+      LOGGER.error(s"ApplicationId is not provided in arguments. Usage: $usage.")
+      throw new IllegalArgumentException("ApplicationId not provided in arguments.")
     }
     if (options.get(CommandConstants.AppMaster.jarPath).isEmpty) {
-      LOGGER.error(s"jarPath is not provided in arguments. Usage: $usage")
-      throw new IllegalArgumentException("jarPath not provided in arguments")
+      LOGGER.error(s"jarPath is not provided in arguments. Usage: $usage.")
+      throw new IllegalArgumentException("jarPath not provided in arguments.")
     }
     ApplicationMasterArgs(options)
   }

@@ -1,9 +1,8 @@
-package com.jalebi.executor.local
+package com.jalebi.executor
 
 import com.jalebi.common.Logging
 import com.jalebi.context.JalebiContext
 import com.jalebi.driver.Scheduler
-import com.jalebi.executor.TaskManager
 
 import scala.collection.mutable
 
@@ -13,7 +12,7 @@ case class LocalScheduler(context: JalebiContext) extends Scheduler(context) wit
 
   override def startExecutors(executorIds: Set[String]): Unit = {
     executorIds.foreach(executorId => {
-      val thread = new Thread(LocalRunnable(TaskManager(executorId), context.driverHostPort), executorId)
+      val thread = new Thread(Executor(TaskManager(executorId), context.driverHostPort), executorId)
       threads += (executorId -> thread)
       LOGGER.info(s"Starting thread for $executorId.")
       thread.start()

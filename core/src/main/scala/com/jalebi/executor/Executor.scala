@@ -1,7 +1,6 @@
-package com.jalebi.executor.local
+package com.jalebi.executor
 
 import com.jalebi.common.Logging
-import com.jalebi.executor.{TaskConfig, TaskManager}
 import com.jalebi.hdfs.HDFSClient.RichHostPort
 import com.jalebi.proto.jobmanagement._
 import io.grpc.ManagedChannelBuilder
@@ -9,9 +8,7 @@ import io.grpc.stub.StreamObserver
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
-case class LocalRunnable(taskManager: TaskManager, driverHostPort: RichHostPort) extends Runnable with Logging {
-
-  //  private val jobManagementClient = new JobManagementClientImpl()
+case class Executor(taskManager: TaskManager, driverHostPort: RichHostPort) extends Runnable with Logging {
 
   override def run(): Unit = {
     val channel = ManagedChannelBuilder
@@ -48,5 +45,14 @@ case class LocalRunnable(taskManager: TaskManager, driverHostPort: RichHostPort)
 
   def terminate(): Unit = {
     taskManager.keepRunning
+  }
+}
+
+object Executor {
+
+  def main(args: Array[String]): Unit = {
+    val executorArgs = ExecutorArgs(args)
+    val executor = Executor(TaskManager(executorArgs.getExecutorId), executorArgs.getDriverHostPort)
+    executor.run()
   }
 }

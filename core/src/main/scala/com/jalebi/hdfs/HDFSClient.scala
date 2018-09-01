@@ -125,12 +125,12 @@ object HDFSClient {
     def toHostPort: HostPort = HostPort(scheme, host, port)
   }
 
-  def withLocalFileSystem(): HDFSClient = {
-    new HDFSClient(FileSystem.getLocal(new YarnConfiguration()))
+  def withLocalFileSystem(conf: YarnConfiguration): HDFSClient = {
+    new HDFSClient(FileSystem.getLocal(conf))
   }
 
-  def withDistributedFileSystem(hostPort: Option[RichHostPort]): HDFSClient = {
+  def withDistributedFileSystem(hostPort: Option[RichHostPort], conf: YarnConfiguration): HDFSClient = {
     require(hostPort.isDefined, "HDFS host and port are not defined in config.")
-    new HDFSClient(FileSystem.get(hostPort.get.getURI, new YarnConfiguration()))
+    new HDFSClient(FileSystem.get(hostPort.get.getURI, conf))
   }
 }

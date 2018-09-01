@@ -10,11 +10,12 @@ service JobManagementProtocol {
 
 enum ExecutorState {
     NEW = 0;
-    REGISTERED = 1;
-    RUNNING_JOB = 4;
-    RUNNABLE = 5;
-    UNREGISTERED = 6;
-    ASSUMED_DEAD = 7;
+    ALLOCATED = 1;
+    REGISTERED = 2;
+    RUNNING_JOB = 3;
+    RUNNABLE = 4;
+    UNREGISTERED = 5;
+    ASSUMED_DEAD = 6;
 }
 
 enum DatasetState {

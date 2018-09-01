@@ -1,17 +1,16 @@
 package com.jalebi.yarn
 
 import java.io.IOException
-import java.security.PrivilegedExceptionAction
 import java.util
 import java.util.Collections
-import java.util.concurrent.atomic.AtomicLong
 
 import com.jalebi.common.{JalebiUtils, Logging, YarnUtils}
 import com.jalebi.context.JalebiContext
-import com.jalebi.driver.Scheduler
+import com.jalebi.driver.{ExecutorStateManager, Scheduler}
+import com.jalebi.yarn.CommandConstants.{AppMaster, ExecutorConstants}
 import com.jalebi.yarn.handler.{AMRMCallbackHandler, NMCallbackHandler}
+import org.apache.commons.lang.StringUtils
 import org.apache.hadoop.fs.{FileSystem, Path}
-import org.apache.hadoop.net.NetUtils
 import org.apache.hadoop.security.UserGroupInformation
 import org.apache.hadoop.yarn.api.ApplicationConstants
 import org.apache.hadoop.yarn.api.records._
@@ -38,7 +37,7 @@ object ApplicationMaster extends Logging {
       Thread.sleep(1000000)
     } finally {
       applicationMaster.foreach(am => {
-        LOGGER.info(s"Unregistering Application Master")
+        LOGGER.info(s"Unregistering Application Master.")
         am.finish()
       })
     }
@@ -48,23 +47,17 @@ object ApplicationMaster extends Logging {
 class ApplicationMaster(context: JalebiContext, amArgs: ApplicationMasterArgs) extends Scheduler(context) with Logging {
   val numberOfContainersNeeded = 3
   val containerStateManager = ContainerStateManager(numberOfContainersNeeded)
+  val executorState: ExecutorStateManager = ExecutorStateManager(context.conf)
 
-  val amrmClient: AMRMClientAsync[ContainerRequest] = AMRMClientAsync.createAMRMClientAsync[ContainerRequest](1000, AMRMCallbackHandler(this, containerStateManager))
-  val nmClient: NMClientAsync = NMClientAsync.createNMClientAsync(NMCallbackHandler(this, containerStateManager))
-
-  private val conf = new YarnConfiguration()
+  val amrmClient: AMRMClientAsync[ContainerRequest] = AMRMClientAsync.createAMRMClientAsync[ContainerRequest](1000, AMRMCallbackHandler(this, executorState))
+  val nmClient: NMClientAsync = NMClientAsync.createNMClientAsync(NMCallbackHandler(this, executorState))
 
   private val containerMemory = 256
   private val containerVCores = 1
 
-  private val appMasterHostname: String = NetUtils.getHostname
-  private val appMasterHostPort: Integer = 8092
+  val (driverHost, driverPort) = (context.driverHostPort.host, context.driverHostPort.port)
 
   private val launchThreads = ListBuffer[Thread]()
-  private val executorIDCounter = new AtomicLong(0)
-
-  def newExecutorId = s"${CommandConstants.ExecutorConstants.executorPrefix}_${executorIDCounter.getAndIncrement()}"
-
   lazy val amContainerId: ContainerId = {
     val containerIdString = System.getenv.get(ApplicationConstants.Environment.CONTAINER_ID.toString)
     if (containerIdString == null) {
@@ -82,26 +75,27 @@ class ApplicationMaster(context: JalebiContext, amArgs: ApplicationMasterArgs) e
     LOGGER.info(s"Current User: ${UserGroupInformation.getCurrentUser}")
     LOGGER.info(s"Current User Credentials: ${UserGroupInformation.getCurrentUser.getCredentials}")
 
-    amrmClient.init(conf)
+    amrmClient.init(context.yarnConf)
     amrmClient.start()
 
-    nmClient.init(conf)
+    nmClient.init(context.yarnConf)
     nmClient.start()
 
-    val response = amrmClient.registerApplicationMaster(appMasterHostname, appMasterHostPort, "")
-    LOGGER.info(s"Registered Application $response")
+
+    val response = amrmClient.registerApplicationMaster(driverHost, driverPort.toInt, StringUtils.EMPTY)
+    LOGGER.info(s"Registered Application $response.")
 
     val maxMemory = response.getMaximumResourceCapability.getMemorySize
     val maxCores = response.getMaximumResourceCapability.getVirtualCores
     LOGGER.info(s"Max memory: $maxMemory, Max cores: $maxCores")
 
-    (1 to numberOfContainersNeeded).foreach(_ => {
-      val resourceCapability = createResourceCapability()
-      val resourcePriority = createResourcePriority()
-      val containerRequest = new ContainerRequest(resourceCapability, null, null, resourcePriority)
-      LOGGER.info(s"Container request $containerRequest")
-      amrmClient.addContainerRequest(containerRequest)
-    })
+//    (1 to numberOfContainersNeeded).foreach(_ => {
+//      val resourceCapability = createResourceCapability()
+//      val resourcePriority = createResourcePriority()
+//      val containerRequest = new ContainerRequest(resourceCapability, null, null, resourcePriority)
+//      LOGGER.info(s"Container request $containerRequest")
+//      amrmClient.addContainerRequest(containerRequest)
+//    })
 
     1
   }
@@ -123,27 +117,29 @@ class ApplicationMaster(context: JalebiContext, amArgs: ApplicationMasterArgs) e
     })
   }
 
-  def createLaunchContainerThread(allocatedContainer: Container): (Thread, String) = {
-    val executorID = newExecutorId
+  def createLaunchContainerThread(allocatedContainer: Container, executorId: String): Thread = {
     val thread = new Thread(() => {
-      val containerLaunchContext = createExecutorContext(conf)
+      val containerLaunchContext = createExecutorContext(context.yarnConf, executorId)
       LOGGER.info(s"Starting container at: " +
+        s" | Executor id: $executorId" +
         s" | Container Id: ${allocatedContainer.getId}" +
         s" | Node Id: ${allocatedContainer.getNodeId}" +
         s" | Node Address: ${allocatedContainer.getNodeHttpAddress}".stripMargin('|'))
       nmClient.startContainerAsync(allocatedContainer, containerLaunchContext)
     })
+    thread.setName(executorId)
     launchThreads += thread
-    (thread, executorID)
+    thread
   }
 
-  private def createExecutorContext(conf: YarnConfiguration) = {
+  private def createExecutorContext(conf: YarnConfiguration, executorId: String) = {
     val amContainer = Records.newRecord(classOf[ContainerLaunchContext])
     amContainer.setCommands(List(
       s"scala com.jalebi.yarn.executor.Executor" +
-        s" --${CommandConstants.ExecutorConstants.driverHost} $appMasterHostname" +
-        s" --${CommandConstants.ExecutorConstants.driverPort} $appMasterHostPort" +
-        s" --${CommandConstants.AppMaster.applicationId} ${amArgs.getApplicationId}" +
+        s" --${ExecutorConstants.driverHost} $driverHost" +
+        s" --${ExecutorConstants.driverPort} $driverPort" +
+        s" --${ExecutorConstants.executorId} $executorId" +
+        s" --${AppMaster.applicationId} ${amArgs.getApplicationId}" +
         s" 1> ${ApplicationConstants.LOG_DIR_EXPANSION_VAR}/stdout" +
         s" 2> ${ApplicationConstants.LOG_DIR_EXPANSION_VAR}/stderr"
     ).asJava)
@@ -154,12 +150,6 @@ class ApplicationMaster(context: JalebiContext, amArgs: ApplicationMasterArgs) e
 
   private def createResourcePriority(): Priority = {
     Priority.newInstance(1)
-  }
-
-  private def doAsUser[T](fn: => T): T = {
-    UserGroupInformation.getCurrentUser.doAs(new PrivilegedExceptionAction[T]() {
-      override def run: T = fn
-    })
   }
 
   private def createLocalResource(conf: YarnConfiguration): LocalResource = {
@@ -188,7 +178,16 @@ class ApplicationMaster(context: JalebiContext, amArgs: ApplicationMasterArgs) e
     }
   }
 
-  override def startExecutors(executorIds: Set[String]): Unit = ???
+  override def startExecutors(executorIds: Set[String]): Unit = {
+    executorIds.foreach(executorId => {
+      executorState.addExecutor(executorId)
+      val resourceCapability = createResourceCapability()
+      val resourcePriority = createResourcePriority()
+      val containerRequest = new ContainerRequest(resourceCapability, null, null, resourcePriority)
+      LOGGER.info(s"Container request $containerRequest")
+      amrmClient.addContainerRequest(containerRequest)
+    })
+  }
 
   override def shutExecutors(executorIds: Set[String]): Unit = ???
 

@@ -70,13 +70,30 @@ case class ExecutorStateManager(conf: JalebiConfig) extends Logging {
     updateState(executorId, state => state.copy(parts = state.parts -- parts))
   }
 
+  def findExecutorToAllocate(): Option[String] = {
+    executorIdToState.find {
+      case (_, state) => state.executorState == NEW
+    }.map {
+      case (id, _) => id
+    }.map(id => {
+      updateState(id, state => state.copy(executorState = ALLOCATED))
+      id
+    })
+  }
+
   def markRegistered(executorId: String): Unit = {
     LOGGER.info(s"Registering $executorId")
+    if (!executorIdToState.contains(executorId)) {
+      throw new IllegalStateException(s"Executor $executorId has not been added yet.")
+    }
     updateState(executorId, state => state.copy(executorState = REGISTERED))
   }
 
   def markUnregistered(executorId: String): Unit = {
     LOGGER.info(s"Unregistering $executorId")
+    if (!executorIdToState.contains(executorId)) {
+      throw new IllegalStateException(s"Executor $executorId has not been added yet.")
+    }
     updateState(executorId, state => state.copy(executorState = UNREGISTERED))
   }
 

@@ -3,11 +3,12 @@ package com.jalebi.yarn.handler
 import java.util
 
 import com.jalebi.common.Logging
-import com.jalebi.yarn.{ApplicationMaster, ContainerStateManager}
+import com.jalebi.driver.ExecutorStateManager
+import com.jalebi.yarn.ApplicationMaster
 import org.apache.hadoop.yarn.api.records.{Container, ContainerStatus, NodeReport, UpdatedContainer}
 import org.apache.hadoop.yarn.client.api.async.AMRMClientAsync.AbstractCallbackHandler
 
-class AMRMCallbackHandler(applicationMaster: ApplicationMaster, containerStateManager: ContainerStateManager) extends AbstractCallbackHandler with Logging {
+class AMRMCallbackHandler(applicationMaster: ApplicationMaster, executorStateManager: ExecutorStateManager) extends AbstractCallbackHandler with Logging {
 
   override def onContainersUpdated(containers: util.List[UpdatedContainer]): Unit = {
     containers.forEach(container => {
@@ -31,10 +32,14 @@ class AMRMCallbackHandler(applicationMaster: ApplicationMaster, containerStateMa
         s" | Container Id: ${status.getContainerId}" +
         s" | Container Substate: ${status.getContainerSubState}".stripMargin('|'))
     })
-    containerStateManager.containersCompleted(statuses)
+    //TODO
+    //    containerStateManager.containersCompleted(statuses)
   }
 
-  override def getProgress: Float = containerStateManager.getProgress
+  override def getProgress: Float = {
+//    containerStateManager.getProgress
+    70F
+  }
 
   override def onNodesUpdated(updatedNodes: util.List[NodeReport]): Unit = {
     updatedNodes.forEach(nodeReport => {
@@ -52,13 +57,14 @@ class AMRMCallbackHandler(applicationMaster: ApplicationMaster, containerStateMa
         s" | Node address: ${container.getNodeHttpAddress}" +
         s" | Execution type: ${container.getExecutionType}".stripMargin('|'))
     })
-    if (containerStateManager.areAllContainerRequestsFulfilled()) {
-      applicationMaster.releaseContainers(containers)
-    } else {
-      containerStateManager.containersAllocated(containers)
-      containers.forEach(container => {
-        val (launchThread, executorId) = applicationMaster.createLaunchContainerThread(container)
-        println(s"Launching $executorId")
+    //    if (containerStateManager.areAllContainerRequestsFulfilled()) {
+    //      applicationMaster.releaseContainers(containers)
+    //    } else {
+    //    containerStateManager.containersAllocated(containers)
+    containers.forEach(container => {
+      val executorId = executorStateManager.findExecutorToAllocate()
+      if (executorId.isDefined) {
+        val launchThread = applicationMaster.createLaunchContainerThread(container, executorId.get)
         LOGGER.info(
           s"""Launching executor on a new container:" +
           " | Jalebi Executor id: $executorId" +
@@ -67,14 +73,22 @@ class AMRMCallbackHandler(applicationMaster: ApplicationMaster, containerStateMa
           " | Node address: ${container.getNodeHttpAddress}" +
           " | Container memory: ${container.getResource.getMemorySize}" +
           " | Container vcores: ${container.getResource.getVirtualCores}""".stripMargin('|'))
-
         launchThread.start()
-        //        applicationMaster.removeContainerRequest(container.getAllocationRequestId)
-      })
-    }
+      } else {
+        LOGGER.info(
+          s"""No executor to allocate. Removing container request:" +
+          " | Container id: ${container.getId}" +
+          " | Node id: ${container.getNodeId}" +
+          " | Node address: ${container.getNodeHttpAddress}" +
+          " | Container memory: ${container.getResource.getMemorySize}" +
+          " | Container vcores: ${container.getResource.getVirtualCores}""".stripMargin('|'))
+        applicationMaster.removeContainerRequest(container.getAllocationRequestId)
+      }
+    })
+    //    }
   }
 }
 
 object AMRMCallbackHandler {
-  def apply(applicationMaster: ApplicationMaster, containerStateManager: ContainerStateManager): AMRMCallbackHandler = new AMRMCallbackHandler(applicationMaster, containerStateManager)
+  def apply(applicationMaster: ApplicationMaster, executorStateManager: ExecutorStateManager): AMRMCallbackHandler = new AMRMCallbackHandler(applicationMaster, executorStateManager)
 }

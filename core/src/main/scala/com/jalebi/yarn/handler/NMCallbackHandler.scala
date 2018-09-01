@@ -4,11 +4,12 @@ import java.nio.ByteBuffer
 import java.util
 
 import com.jalebi.common.Logging
-import com.jalebi.yarn.{ApplicationMaster, ContainerStateManager}
+import com.jalebi.driver.ExecutorStateManager
+import com.jalebi.yarn.ApplicationMaster
 import org.apache.hadoop.yarn.api.records.{ContainerId, ContainerStatus, Resource}
 import org.apache.hadoop.yarn.client.api.async.NMClientAsync.AbstractCallbackHandler
 
-class NMCallbackHandler(applicationMaster: ApplicationMaster, containerStateManager: ContainerStateManager) extends AbstractCallbackHandler with Logging {
+class NMCallbackHandler(applicationMaster: ApplicationMaster, executorStateManager: ExecutorStateManager) extends AbstractCallbackHandler with Logging {
 
   override def onGetContainerStatusError(containerId: ContainerId, t: Throwable): Unit = ???
 
@@ -30,7 +31,8 @@ class NMCallbackHandler(applicationMaster: ApplicationMaster, containerStateMana
   override def onContainerStopped(containerId: ContainerId): Unit = {
     LOGGER.info(s"Container stopped:" +
       s" | Container Id: $containerId".stripMargin('|'))
-    containerStateManager.containerCompleted(containerId)
+    //TODO
+    //    containerStateManager.containerCompleted(containerId)
   }
 
   override def onIncreaseContainerResourceError(containerId: ContainerId, t: Throwable): Unit = {
@@ -54,7 +56,8 @@ class NMCallbackHandler(applicationMaster: ApplicationMaster, containerStateMana
 
   override def onContainerStarted(containerId: ContainerId, allServiceResponse: util.Map[String, ByteBuffer]): Unit = {
     LOGGER.info(s"Container launched $containerId")
-    containerStateManager.containerLaunched(containerId)
+    //TODO
+    //    containerStateManager.containerLaunched(containerId)
   }
 
   override def onContainerResourceUpdated(containerId: ContainerId, resource: Resource): Unit = {
@@ -66,5 +69,5 @@ class NMCallbackHandler(applicationMaster: ApplicationMaster, containerStateMana
 }
 
 object NMCallbackHandler {
-  def apply(applicationMaster: ApplicationMaster, containerStateManager: ContainerStateManager): NMCallbackHandler = new NMCallbackHandler(applicationMaster, containerStateManager)
+  def apply(applicationMaster: ApplicationMaster, executorStateManager: ExecutorStateManager): NMCallbackHandler = new NMCallbackHandler(applicationMaster, executorStateManager)
 }

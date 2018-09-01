@@ -10,7 +10,7 @@ import com.jalebi.executor.LocalScheduler
 import com.jalebi.hdfs.HDFSClient
 import com.jalebi.hdfs.HDFSClient.RichHostPort
 import com.jalebi.proto.jobmanagement.TaskResponse
-import com.jalebi.yarn.YarnScheduler
+import com.jalebi.yarn.ApplicationMaster
 
 import scala.collection.mutable
 
@@ -20,7 +20,7 @@ case class JobManager(context: JalebiContext) extends Logging {
   private val jobIdCounter = new AtomicLong(0)
   private val executorIdCounter = new AtomicLong(0)
   private val numOfExecutors = context.conf.getNumberOfExecutors().toInt
-  private val scheduler = if (context.onLocalMaster) LocalScheduler(context) else YarnScheduler(context)
+  private val scheduler = if (context.onLocalMaster) LocalScheduler(context) else ApplicationMaster(context)
   private val driverCoordinatorService = DriverCoordinatorService(this, context.conf)
   val resultAggregator = new ResultAggregator()
   val executorState: ExecutorStateManager = {

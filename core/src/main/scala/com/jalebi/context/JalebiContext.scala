@@ -6,17 +6,19 @@ import com.jalebi.exception._
 import com.jalebi.hdfs.HDFSClient
 import com.jalebi.hdfs.HDFSClient.RichHostPort
 import org.apache.hadoop.net.NetUtils
+import org.apache.hadoop.yarn.conf.YarnConfiguration
 
 case class JalebiContext private(conf: JalebiConfig) {
 
   private var currentDataset: Option[Dataset] = None
   val driverHostPort: RichHostPort = new RichHostPort("http", NetUtils.getLocalHostname, 8585)
   val jobManager: JobManager = JobManager.createNew(this)
+  val yarnConf = new YarnConfiguration()
 
   @throws[DatasetNotFoundException]
   @throws[DatasetNotLoadedException]
   def loadDataset(name: String): Dataset = {
-    val hdfsClient = HDFSClient.withDistributedFileSystem(conf.hdfsHostPort)
+    val hdfsClient = HDFSClient.withDistributedFileSystem(conf.hdfsHostPort, yarnConf)
     if (!hdfsClient.doesDatasetExists(name)) {
       throw new DatasetNotFoundException(s"Dataset '$name' not found.")
     }
@@ -25,7 +27,7 @@ case class JalebiContext private(conf: JalebiConfig) {
   }
 
   def deleteDataset(name: String): Unit = {
-    HDFSClient.withDistributedFileSystem(conf.hdfsHostPort).deleteDataset(name)
+    HDFSClient.withDistributedFileSystem(conf.hdfsHostPort, yarnConf).deleteDataset(name)
   }
 
   @throws[DuplicateDatasetException]
@@ -35,7 +37,7 @@ case class JalebiContext private(conf: JalebiConfig) {
       Triplet(verticesMap(edge.source), edge, verticesMap(edge.target))
     }).grouped(conf.options.getPartitionSize().toInt)
       .map(Triplets(_))
-    HDFSClient.withDistributedFileSystem(conf.hdfsHostPort).createDataset(input.datasetName, triplets)
+    HDFSClient.withDistributedFileSystem(conf.hdfsHostPort, yarnConf).createDataset(input.datasetName, triplets)
   }
 
   def onLocalMaster: Boolean = conf.master == "local"

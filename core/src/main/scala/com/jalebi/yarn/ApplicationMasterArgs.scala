@@ -1,27 +1,40 @@
 package com.jalebi.yarn
 
-import com.jalebi.common.Logging
+import com.jalebi.common.{ArgumentUtils, Logging}
+import com.jalebi.yarn.CommandConstants.AppMaster
 
 case class ApplicationMasterArgs(args: Map[String, String]) {
 
   //Since precondition check for mandatory arguments is already done, just return the arg
   def getApplicationId: String = {
-    args(CommandConstants.AppMaster.applicationId)
+    args(AppMaster.applicationId)
   }
 
   def getJarPath: String = {
-    args(CommandConstants.AppMaster.jarPath)
+    args(AppMaster.jarPath)
   }
 }
 
 object ApplicationMasterArgs extends Logging {
 
   @throws[IllegalArgumentException]
+  def createArgsFromEnvironment(): ApplicationMasterArgs = {
+    val m = Seq(AppMaster.applicationId, AppMaster.jarPath).map(key => {
+      val value = System.getenv().get(key)
+      if (value == null) {
+        throw new IllegalArgumentException(s"Environment entry not defined for key $key.")
+      }
+      (key, value)
+    }).toMap
+    ApplicationMasterArgs(m)
+  }
+
+  @throws[IllegalArgumentException]
   def apply(args: Array[String]): ApplicationMasterArgs = {
     val usage =
       s"""Usage: scala com.jalebi.yarn.ApplicationMaster
-         |[--${CommandConstants.AppMaster.applicationId} <applicationId>]
-         |[--${CommandConstants.AppMaster.jarPath} <jarPath>]
+         |[--${AppMaster.applicationId} <applicationid>]
+         |[--${AppMaster.jarPath} <jarpath>]
          |""".stripMargin
 
     if (args.isEmpty) {
@@ -29,30 +42,20 @@ object ApplicationMasterArgs extends Logging {
       throw new IllegalArgumentException("Arguments to ApplicationMaster are empty")
     }
 
-    val arglist = args.toList
-
     def nextOption(map: Map[String, String], list: List[String]): Map[String, String] = {
       list match {
         case Nil => map
-        case "--applicationId" :: value :: tail =>
-          nextOption(map ++ Map(CommandConstants.AppMaster.applicationId -> value.toString), tail)
-        case "--jarPath" :: value :: tail =>
-          nextOption(map ++ Map(CommandConstants.AppMaster.jarPath -> value.toString), tail)
-        case option :: tail => LOGGER.warn("Unknown option " + option)
+        case "--applicationid" :: value :: tail =>
+          nextOption(map ++ Map(AppMaster.applicationId -> value.toString), tail)
+        case "--jarpath" :: value :: tail =>
+          nextOption(map ++ Map(AppMaster.jarPath -> value.toString), tail)
+        case option :: _ => LOGGER.warn(s"Unknown option $option.")
           //          System.exit(1)
           Map.empty
       }
     }
-
-    val options = nextOption(Map(), arglist)
-    if (options.get(CommandConstants.AppMaster.applicationId).isEmpty) {
-      LOGGER.error(s"ApplicationId is not provided in arguments. Usage: $usage.")
-      throw new IllegalArgumentException("ApplicationId not provided in arguments.")
-    }
-    if (options.get(CommandConstants.AppMaster.jarPath).isEmpty) {
-      LOGGER.error(s"jarPath is not provided in arguments. Usage: $usage.")
-      throw new IllegalArgumentException("jarPath not provided in arguments.")
-    }
+    val options = nextOption(Map(), args.toList)
+    ArgumentUtils.validateArgPresent(Seq(AppMaster.applicationId, AppMaster.jarPath), options, usage)
     ApplicationMasterArgs(options)
   }
 }

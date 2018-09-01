@@ -3,6 +3,7 @@ package com.jalebi.yarn
 import java.util.Collections
 
 import com.jalebi.common.{JalebiUtils, Logging, URIBuilder, YarnUtils}
+import com.jalebi.yarn.CommandConstants.AppMaster
 import org.apache.hadoop.fs.{FileSystem, Path}
 import org.apache.hadoop.yarn.api.ApplicationConstants
 import org.apache.hadoop.yarn.api.records._
@@ -41,17 +42,21 @@ object ApplicationClient extends Logging {
     appContext
   }
 
-  private def createApplicationMasterContext(conf: YarnConfiguration, appclientArgs: ApplicationClientArgs, applicationId: String) = {
+  private def createApplicationMasterContext(conf: YarnConfiguration, clientArgs: ApplicationClientArgs, applicationId: String) = {
     val amContainer = Records.newRecord(classOf[ContainerLaunchContext])
     amContainer.setCommands(List(
-      s"scala ${appclientArgs.getClientClass} " +
-        s"--${CommandConstants.AppMaster.applicationId} $applicationId " +
-        s"--${CommandConstants.AppMaster.jarPath} ${appclientArgs.getJarPath}" +
+      s"scala ${clientArgs.getClientClass} " +
+        //        s"--${CommandConstants.AppMaster.applicationId} $applicationId " +
+        //        s"--${CommandConstants.AppMaster.jarPath} ${appclientArgs.getJarPath}" +
         s" 1> ${ApplicationConstants.LOG_DIR_EXPANSION_VAR}/stdout" +
         s" 2> ${ApplicationConstants.LOG_DIR_EXPANSION_VAR}/stderr"
     ).asJava)
-    amContainer.setLocalResources(Collections.singletonMap(JalebiAppConstants.jalebiArtifact, createLocalResource(conf, appclientArgs.getJarPath, applicationId)))
-    amContainer.setEnvironment(YarnUtils.createEnvironmentVariables(conf).asJava)
+    amContainer.setLocalResources(Collections.singletonMap(JalebiAppConstants.jalebiArtifact, createLocalResource(conf, clientArgs.getJarPath, applicationId)))
+    val appMasterVariables = Map(
+      AppMaster.applicationId -> applicationId,
+      AppMaster.jarPath -> clientArgs.getJarPath
+    )
+    amContainer.setEnvironment(YarnUtils.createEnvironmentVariables(conf, appMasterVariables).asJava)
     amContainer
   }
 

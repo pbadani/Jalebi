@@ -7,6 +7,8 @@ import java.util.Collections
 import java.util.concurrent.atomic.AtomicLong
 
 import com.jalebi.common.{JalebiUtils, Logging, YarnUtils}
+import com.jalebi.context.JalebiContext
+import com.jalebi.driver.Scheduler
 import com.jalebi.yarn.handler.{AMRMCallbackHandler, NMCallbackHandler}
 import org.apache.hadoop.fs.{FileSystem, Path}
 import org.apache.hadoop.net.NetUtils
@@ -24,10 +26,14 @@ import scala.collection.mutable.ListBuffer
 
 object ApplicationMaster extends Logging {
 
+  def apply(context: JalebiContext): ApplicationMaster = {
+    new ApplicationMaster(context, ApplicationMasterArgs.createArgsFromEnvironment())
+  }
+
   def main(args: Array[String]): Unit = {
     var applicationMaster: Option[ApplicationMaster] = None
     try {
-      applicationMaster = Some(new ApplicationMaster(ApplicationMasterArgs(args)))
+      applicationMaster = Some(new ApplicationMaster(null, ApplicationMasterArgs(args)))
       applicationMaster.get.run()
       Thread.sleep(1000000)
     } finally {
@@ -39,7 +45,7 @@ object ApplicationMaster extends Logging {
   }
 }
 
-class ApplicationMaster(amArgs: ApplicationMasterArgs) extends Logging {
+class ApplicationMaster(context: JalebiContext, amArgs: ApplicationMasterArgs) extends Scheduler(context) with Logging {
   val numberOfContainersNeeded = 3
   val containerStateManager = ContainerStateManager(numberOfContainersNeeded)
 
@@ -57,7 +63,7 @@ class ApplicationMaster(amArgs: ApplicationMasterArgs) extends Logging {
   private val launchThreads = ListBuffer[Thread]()
   private val executorIDCounter = new AtomicLong(0)
 
-  def newExecutorId = s"${CommandConstants.Executor.executorPrefix}_${executorIDCounter.getAndIncrement()}"
+  def newExecutorId = s"${CommandConstants.ExecutorConstants.executorPrefix}_${executorIDCounter.getAndIncrement()}"
 
   lazy val amContainerId: ContainerId = {
     val containerIdString = System.getenv.get(ApplicationConstants.Environment.CONTAINER_ID.toString)
@@ -135,14 +141,14 @@ class ApplicationMaster(amArgs: ApplicationMasterArgs) extends Logging {
     val amContainer = Records.newRecord(classOf[ContainerLaunchContext])
     amContainer.setCommands(List(
       s"scala com.jalebi.yarn.executor.Executor" +
-        s" --${CommandConstants.Executor.driverHost} $appMasterHostname" +
-        s" --${CommandConstants.Executor.driverPort} $appMasterHostPort" +
+        s" --${CommandConstants.ExecutorConstants.driverHost} $appMasterHostname" +
+        s" --${CommandConstants.ExecutorConstants.driverPort} $appMasterHostPort" +
         s" --${CommandConstants.AppMaster.applicationId} ${amArgs.getApplicationId}" +
         s" 1> ${ApplicationConstants.LOG_DIR_EXPANSION_VAR}/stdout" +
         s" 2> ${ApplicationConstants.LOG_DIR_EXPANSION_VAR}/stderr"
     ).asJava)
     amContainer.setLocalResources(Collections.singletonMap(JalebiAppConstants.jalebiArtifact, createLocalResource(conf)))
-    amContainer.setEnvironment(YarnUtils.createEnvironmentVariables(conf).asJava)
+    amContainer.setEnvironment(YarnUtils.createEnvironmentVariables(conf, Map.empty).asJava)
     amContainer
   }
 
@@ -181,4 +187,10 @@ class ApplicationMaster(amArgs: ApplicationMasterArgs) extends Logging {
       amrmClient.stop()
     }
   }
+
+  override def startExecutors(executorIds: Set[String]): Unit = ???
+
+  override def shutExecutors(executorIds: Set[String]): Unit = ???
+
+  override def shutAllExecutors(): Unit = ???
 }

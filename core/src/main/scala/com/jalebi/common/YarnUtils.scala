@@ -22,17 +22,19 @@ object YarnUtils {
     resource
   }
 
-  def createEnvironmentVariables(conf: YarnConfiguration): mutable.HashMap[String, String] = {
+  def createEnvironmentVariables(conf: YarnConfiguration, additional: Map[String, String]): mutable.HashMap[String, String] = {
     val envVariables = mutable.HashMap[String, String]()
-    val classPathElementsToAdd = Option(conf.getStrings(YarnConfiguration.YARN_APPLICATION_CLASSPATH)) match {
+    (Option(conf.getStrings(YarnConfiguration.YARN_APPLICATION_CLASSPATH)) match {
       case Some(s) => s.toSeq
       case None => YarnConfiguration.DEFAULT_YARN_APPLICATION_CLASSPATH.toSeq
-    }
-    classPathElementsToAdd.foreach { c =>
+    }).foreach { c =>
       JalebiUtils.addPathToEnvironment(envVariables, Environment.CLASSPATH.name, c.trim)
     }
     Seq(JalebiAppConstants.jalebiArtifact).foreach { c =>
       JalebiUtils.addPathToEnvironment(envVariables, Environment.CLASSPATH.name, c.trim)
+    }
+    additional.foreach {
+      case (key, value) => envVariables.put(key, value)
     }
     envVariables
   }

@@ -8,7 +8,7 @@ object CommandConstants {
     val jarPath = "jarpath"
   }
 
-  object Executor {
+  object ExecutorConstants {
     val executorPrefix = "JalebiExecutor"
     val driverHost = "driverhost"
     val driverPort = "driverport"

@@ -66,7 +66,7 @@ case class ExecutorStateManager(conf: JalebiConfig) extends Logging {
   }
 
   def removePartsFromExecutor(executorId: String, parts: Set[String]): Unit = {
-    LOGGER.info(s"Removed parts ${parts.mkString(",")} from executor $executorId")
+    LOGGER.info(s"Removed parts ${parts.mkString(",")} from executor $executorId.")
     updateState(executorId, state => state.copy(parts = state.parts -- parts))
   }
 
@@ -80,6 +80,14 @@ case class ExecutorStateManager(conf: JalebiConfig) extends Logging {
       id
     })
   }
+
+//  def markRequested(executorId: String): Unit = {
+//    LOGGER.info(s"Requesting $executorId.")
+//    if (!executorIdToState.contains(executorId)) {
+//      throw new IllegalStateException(s"Executor $executorId has not been added yet.")
+//    }
+//    updateState(executorId, state => state.copy(executorState = REQUESTED))
+//  }
 
   def markRegistered(executorId: String): Unit = {
     LOGGER.info(s"Registering $executorId")
@@ -102,16 +110,14 @@ case class ExecutorStateManager(conf: JalebiConfig) extends Logging {
     executorIdToLastHeartbeat(executorId) = heartbeat
   }
 
-  def addExecutor(executorId: String): ExecutorStateManager = {
-    LOGGER.info(s"Adding executor $executorId")
-    executorIdToState += (executorId -> default)
-    this
+  def addExecutor(executorId: String): Unit = {
+    LOGGER.info(s"Adding executor $executorId.")
+    executorIdToState.put(executorId, default)
   }
 
-  def removeExecutor(executorId: String): ExecutorStateManager = {
-    LOGGER.info(s"Removing executor $executorId")
+  def removeExecutor(executorId: String): Unit = {
+    LOGGER.info(s"Removing executor $executorId.")
     executorIdToState.remove(executorId)
-    this
   }
 
   private def updateState(executorId: String, oldToNewState: State => State) = {

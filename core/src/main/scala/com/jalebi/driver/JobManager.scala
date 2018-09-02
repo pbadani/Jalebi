@@ -1,7 +1,5 @@
 package com.jalebi.driver
 
-import java.util.concurrent.atomic.AtomicLong
-
 import com.jalebi.api.{Vertex, VertexID}
 import com.jalebi.common.{Logging, ResultConverter}
 import com.jalebi.context.{Dataset, JalebiContext}
@@ -16,23 +14,21 @@ import scala.collection.mutable
 
 case class JobManager(context: JalebiContext) extends Logging {
 
-  val applicationId: String = s"Jalebi-${System.currentTimeMillis()}"
-  private val jobIdCounter = new AtomicLong(0)
-  private val executorIdCounter = new AtomicLong(0)
-  private val numOfExecutors = context.conf.getNumberOfExecutors().toInt
-  private val scheduler = if (context.onLocalMaster) LocalScheduler(context) else ApplicationMaster(context)
+  private val applicationId: String = s"Jalebi-${System.currentTimeMillis()}"
+  val executorState: ExecutorStateManager = ExecutorStateManager(context.conf)
+  private val scheduler = if (context.onLocalMaster) LocalScheduler(context, executorState, applicationId) else ApplicationMaster(context, executorState, applicationId)
   private val driverCoordinatorService = DriverCoordinatorService(this, context.conf)
   val resultAggregator = new ResultAggregator()
-  val executorState: ExecutorStateManager = {
-    (0 until numOfExecutors)
-      .foldLeft(ExecutorStateManager(context.conf))((acc, _) => acc.addExecutor(newExecutorId()))
-  }
 
   def ensureInitialized(): Unit = synchronized {
     if (!executorState.isInitialized) {
       driverCoordinatorService.start()
-      LOGGER.info(s"Starting executors: [${executorState.listExecutorIds().mkString(", ")}]")
-      scheduler.startExecutors(executorState.listExecutorIds())
+      val executorIds = executorState.listExecutorIds()
+      if (executorIds.isEmpty) {
+        throw new IllegalStateException("No executors to run.")
+      }
+      LOGGER.info(s"Starting executors: [${executorIds.mkString(", ")}]")
+      scheduler.startExecutors(executorIds)
       executorState.initialize()
     }
   }
@@ -40,7 +36,7 @@ case class JobManager(context: JalebiContext) extends Logging {
   @throws[DatasetNotLoadedException]
   def ensureDatasetLoaded(name: String): Unit = {
     if (!context.isLoaded) {
-      throw new DatasetNotLoadedException(s"No dataset is loaded currently.")
+      throw new DatasetNotLoadedException("No dataset is loaded currently.")
     }
     if (context.getCurrentDatasetName != name) {
       throw new DatasetNotLoadedException(s"Currently loaded dataset ${context.getCurrentDatasetName} is not same as $name")
@@ -50,7 +46,7 @@ case class JobManager(context: JalebiContext) extends Logging {
   @throws[DatasetNotLoadedException]
   def load(hdfsClient: HDFSClient, name: String): Dataset = {
     ensureInitialized()
-    val jobId = newJobId()
+    val jobId = context.newJobId(applicationId)
     val parts = hdfsClient.listDatasetParts(name)
     val executors = executorState.listExecutorIds()
     executorState.loadPartsToExecutors(jobId, parts, name)
@@ -60,7 +56,7 @@ case class JobManager(context: JalebiContext) extends Logging {
 
   def findVertex(vertexId: VertexID, name: String): mutable.Queue[Vertex] = {
     ensureDatasetLoaded(name)
-    val jobId = newJobId()
+    val jobId = context.newJobId(applicationId)
     executorState.assignNewTask(TaskRequestBuilder.searchRequest(jobId, vertexId, name))
     val responseToVertexes: TaskResponse => Seq[Vertex] = response => ResultConverter.convertFromVertices(response.vertexResults)
     val executors = executorState.listExecutorIds()
@@ -73,10 +69,6 @@ case class JobManager(context: JalebiContext) extends Logging {
   }
 
   def driverHostPort: RichHostPort = context.driverHostPort
-
-  def newJobId(): String = s"$applicationId-Job-${jobIdCounter.getAndIncrement()}"
-
-  def newExecutorId(): String = s"$applicationId-Executor-${executorIdCounter.getAndIncrement()}"
 }
 
 object JobManager {

@@ -1,7 +1,6 @@
 package com.jalebi.yarn
 
 import java.util
-import java.util.Collections
 
 import com.jalebi.common.{JalebiUtils, Logging, URIBuilder, YarnUtils}
 import com.jalebi.yarn.CommandConstants.AppMaster
@@ -55,21 +54,21 @@ object ApplicationClient extends Logging {
     //Set the resource localization for the client jar and for dependencies in 'jalebihome'.
     val clientJar = localizeClientJar(amContainer, conf, clientArgs.getJarPath, applicationId)
     val dependencies = localizeDependencies(amContainer, conf, clientArgs.getJalebiHome, applicationId)
-    dependencies.putAll(clientJar)
-    amContainer.setLocalResources(dependencies)
-    amContainer.setEnvironment(setupEnvironment(conf, clientArgs.getJarPath, applicationId))
+    val allDependencies = clientJar ++ dependencies
+    amContainer.setLocalResources(allDependencies.asJava)
+    amContainer.setEnvironment(setupEnvironment(conf, allDependencies.keySet, clientArgs.getJarPath, applicationId))
     amContainer
   }
 
-  private def setupEnvironment(conf: YarnConfiguration, jarPath: String, applicationId: String): util.Map[String, String] = {
+  private def setupEnvironment(conf: YarnConfiguration, resourceNames: Set[String], jarPath: String, applicationId: String): util.Map[String, String] = {
     val appMasterVariables = Map(
       AppMaster.applicationId -> applicationId,
       AppMaster.jarPath -> jarPath
     )
-    YarnUtils.createEnvironmentVariables(conf, appMasterVariables).asJava
+    YarnUtils.createEnvironmentVariables(conf, resourceNames, appMasterVariables).asJava
   }
 
-  private def localizeClientJar(amContainer: ContainerLaunchContext, conf: YarnConfiguration, jarPath: String, applicationId: String): util.Map[String, LocalResource] = {
+  private def localizeClientJar(amContainer: ContainerLaunchContext, conf: YarnConfiguration, jarPath: String, applicationId: String): Map[String, LocalResource] = {
     //Put a copy of the resource in HDFS for this application and then localize it from there.
     val fs = FileSystem.get(conf)
     val sourcePath = new Path(URIBuilder.forLocalFile(jarPath))
@@ -77,20 +76,20 @@ object ApplicationClient extends Logging {
     fs.copyFromLocalFile(sourcePath, destPath)
     LOGGER.info(s"Copied resource $jarPath to HDFS destination ${destPath.getParent}/${destPath.getName}")
     val resource = YarnUtils.createFileResource(fs, destPath)
-    Collections.singletonMap(JalebiAppConstants.jalebiArtifact, resource)
+    Map(JalebiAppConstants.jalebiArtifact -> resource)
   }
 
-  private def localizeDependencies(amContainer: ContainerLaunchContext, conf: YarnConfiguration, jalebiHome: String, applicationId: String): util.Map[String, LocalResource] = {
+  private def localizeDependencies(amContainer: ContainerLaunchContext, conf: YarnConfiguration, jalebiHome: String, applicationId: String): Map[String, LocalResource] = {
     import com.jalebi.common.JalebiUtils._
     val fs = FileSystem.get(conf)
-    fs.listFiles(new Path(URIBuilder.forLocalFile(jalebiHome)), true)
+    FileSystem.getLocal(conf).listFiles(new Path(URIBuilder.forLocalFile(jalebiHome)), true)
       .map(fileStatus => {
         val fileName = fileStatus.getPath.getName
         val destPath = new Path(fs.getHomeDirectory, JalebiUtils.getJalebiHomePath(applicationId, fileName))
         fs.copyFromLocalFile(fileStatus.getPath, destPath)
         LOGGER.info(s"Copied resource $fileName to HDFS destination ${destPath.getParent}/${destPath.getName}")
         (fileName, YarnUtils.createFileResource(fs, destPath))
-      }).toMap.asJava
+      }).toMap
   }
 
   private def applicationMasterCapacity = {

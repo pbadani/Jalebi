@@ -47,7 +47,7 @@ class ResultAggregator extends Logging {
   def getResultForJobId[T](jobId: String, executors: Set[String], f: TaskResponse => Seq[T]): mutable.Queue[T] = {
     waitForJobToBeCompleted(jobId, executors)
     jobIdToResult(jobId).flatMap((a: TaskResponse) => {
-      LOGGER.info(s"Result ${a}")
+      LOGGER.info(s"Result $a")
       f(a)
     })
   }

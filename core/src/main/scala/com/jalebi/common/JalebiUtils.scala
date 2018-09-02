@@ -40,7 +40,7 @@ object JalebiUtils {
     ugi
   }
 
-  implicit case class RemoteFileIterator[T](i: RemoteIterator[T]) extends Iterator[T] {
+  implicit class RemoteFileIterator[T](i: RemoteIterator[T]) extends Iterator[T] {
     override def hasNext: Boolean = i.hasNext
 
     override def next(): T = i.next()

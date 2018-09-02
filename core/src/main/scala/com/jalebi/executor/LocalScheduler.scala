@@ -2,12 +2,14 @@ package com.jalebi.executor
 
 import com.jalebi.common.Logging
 import com.jalebi.context.JalebiContext
-import com.jalebi.driver.Scheduler
+import com.jalebi.driver.{ExecutorStateManager, Scheduler}
 
 import scala.collection.mutable
 
-case class LocalScheduler(context: JalebiContext) extends Scheduler(context) with Logging {
+case class LocalScheduler(context: JalebiContext, executorStateManager: ExecutorStateManager, applicationId: String) extends Scheduler(context) with Logging {
 
+  private val numOfExecutors = context.conf.getNumberOfExecutors().toInt
+  (0 until numOfExecutors).foreach(_ => executorStateManager.addExecutor(context.newExecutorId(applicationId)))
   private val threads: mutable.Map[String, Thread] = mutable.HashMap()
 
   override def startExecutors(executorIds: Set[String]): Unit = {
@@ -38,5 +40,5 @@ case class LocalScheduler(context: JalebiContext) extends Scheduler(context) wit
 }
 
 object LocalScheduler {
-  def apply(context: JalebiContext): LocalScheduler = new LocalScheduler(context)
+  def apply(context: JalebiContext, executorStateManager: ExecutorStateManager, applicationId: String): LocalScheduler = new LocalScheduler(context, executorStateManager, applicationId)
 }

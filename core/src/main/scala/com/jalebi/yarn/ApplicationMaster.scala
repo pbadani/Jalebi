@@ -111,8 +111,12 @@ class ApplicationMaster(context: JalebiContext, amArgs: ApplicationMasterArgs, e
 
   private def createLocalResource(conf: YarnConfiguration): LocalResource = {
     val fs = FileSystem.get(conf)
-    val resourcePath = new Path(fs.getHomeDirectory, JalebiUtils.getResourcePath(amArgs.getApplicationId, JalebiAppConstants.jalebiArtifact))
-    YarnUtils.createFileResource(fs, resourcePath)
+    try {
+      val resourcePath = new Path(fs.getHomeDirectory, JalebiUtils.getResourcePath(amArgs.getApplicationId, JalebiAppConstants.jalebiArtifact))
+      YarnUtils.createFileResource(fs, resourcePath)
+    } finally {
+      fs.close()
+    }
   }
 
   private def amrmClientIsInitialized = amrmClient != null

@@ -47,7 +47,12 @@ case class TaskManager(executorId: String) extends Logging {
   }
 
   def loadDataset(dataset: String, parts: Set[String]): Jalebi = {
-    taskConfig.get.hdfsClient.loadDataset(dataset, parts)
+    val hdfsClient = taskConfig.get.hdfsClient
+    try {
+      hdfsClient.loadDataset(dataset, parts)
+    } finally {
+      hdfsClient.close()
+    }
   }
 
   def execute(taskRequest: TaskRequest): Unit = {
@@ -56,7 +61,7 @@ case class TaskManager(executorId: String) extends Logging {
       case TaskType.LOAD_DATASET =>
         require(taskRequest.dataset != null, "Dataset name cannot be null.")
         require(taskRequest.parts.nonEmpty, "No parts to load.")
-        require(executorState != NEW && executorState != UNREGISTERED, s"Executor should not be in $executorState.")
+        require(executorState != NEW && executorState != UNREGISTERED, s"Executor $executorId should not be in $executorState.")
         try {
           LOGGER.info(s"Loading dataset ${taskRequest.dataset}, parts [${taskRequest.parts.mkString(", ")}]")
           setStates(datasetState = Some(LOADING), executorState = Some(RUNNING_JOB))

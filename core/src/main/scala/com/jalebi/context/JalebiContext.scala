@@ -14,7 +14,7 @@ import org.apache.hadoop.yarn.conf.YarnConfiguration
 case class JalebiContext private(conf: JalebiConfig) extends Logging {
 
   private var currentDataset: Option[Dataset] = None
-  val driverHostPort: RichHostPort = new RichHostPort("http", NetUtils.getLocalHostname, 8585)
+  val driverHostPort: RichHostPort = new RichHostPort("http", NetUtils.getLocalHostname, NetUtils.getFreeSocketPort)
   val yarnConf = new YarnConfiguration()
   private val jobIdCounter = new AtomicLong(0)
   private val executorIdCounter = new AtomicLong(0)

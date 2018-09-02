@@ -37,7 +37,7 @@ class AMRMCallbackHandler(applicationMaster: ApplicationMaster, executorStateMan
   }
 
   override def getProgress: Float = {
-//    containerStateManager.getProgress
+    //    containerStateManager.getProgress
     70F
   }
 
@@ -49,22 +49,14 @@ class AMRMCallbackHandler(applicationMaster: ApplicationMaster, executorStateMan
   }
 
   override def onContainersAllocated(containers: util.List[Container]): Unit = {
-    containers.forEach(container => {
-      LOGGER.info(s"Container Allocated: " +
-        s" | Id: ${container.getId}" +
-        s" | Allocation request id: ${container.getAllocationRequestId}" +
-        s" | Node id: ${container.getNodeId}" +
-        s" | Node address: ${container.getNodeHttpAddress}" +
-        s" | Execution type: ${container.getExecutionType}".stripMargin('|'))
-    })
     //    if (containerStateManager.areAllContainerRequestsFulfilled()) {
     //      applicationMaster.releaseContainers(containers)
     //    } else {
     //    containerStateManager.containersAllocated(containers)
     containers.forEach(container => {
-      val executorId = executorStateManager.findExecutorToAllocate()
+      val executorId = executorStateManager.findExecutorToAssignContainer(container)
       if (executorId.isDefined) {
-        val launchThread = applicationMaster.createLaunchContainerThread(container, executorId.get)
+        val launchThread = applicationMaster.createLaunchContainerThread(executorId.get, container)
         LOGGER.info(
           s"""Launching executor on a new container:" +
           " | Jalebi Executor id: $executorId" +

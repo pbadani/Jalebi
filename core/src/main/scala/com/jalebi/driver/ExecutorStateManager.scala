@@ -6,14 +6,19 @@ import com.jalebi.partitioner.HashPartitioner
 import com.jalebi.proto.jobmanagement.DatasetState.NONE
 import com.jalebi.proto.jobmanagement.ExecutorState._
 import com.jalebi.proto.jobmanagement.{DatasetState, ExecutorState, TaskRequest}
+import org.apache.hadoop.yarn.api.records.Container
 
 import scala.collection.mutable
 
 case class ExecutorStateManager(conf: JalebiConfig) extends Logging {
 
-  case class State(parts: Set[String], executorState: ExecutorState, datasetState: DatasetState, nextAction: Option[TaskRequest])
+  case class State(parts: Set[String],
+                   executorState: ExecutorState,
+                   datasetState: DatasetState,
+                   container: Option[Container],
+                   nextAction: Option[TaskRequest])
 
-  private val default = State(parts = Set.empty, executorState = NEW, datasetState = NONE, nextAction = None)
+  private val default = State(parts = Set.empty, executorState = NEW, datasetState = NONE, container = None, nextAction = None)
 
   private var initializationState = false
 
@@ -58,7 +63,7 @@ case class ExecutorStateManager(conf: JalebiConfig) extends Logging {
   }
 
   private def assignPartsToExecutor(jobId: String, executorId: String, parts: Set[String], name: String): Unit = {
-    LOGGER.info(s"Assigned parts [${parts.mkString(",")}] to executor $executorId")
+    LOGGER.info(s"Assigned parts [${parts.mkString(",")}] to executor $executorId.")
     updateState(executorId, state => {
       val request = TaskRequestBuilder.loadDatasetRequest(jobId, name, parts.toSeq)
       state.copy(parts = parts, nextAction = Some(request))
@@ -70,27 +75,24 @@ case class ExecutorStateManager(conf: JalebiConfig) extends Logging {
     updateState(executorId, state => state.copy(parts = state.parts -- parts))
   }
 
-  def findExecutorToAllocate(): Option[String] = {
-    executorIdToState.find {
-      case (_, state) => state.executorState == NEW
-    }.map {
-      case (id, _) => id
-    }.map(id => {
-      updateState(id, state => state.copy(executorState = ALLOCATED))
-      id
-    })
+  def findExecutorToAssignContainer(container: Container): Option[String] = {
+    executorIdToState.collectFirst {
+      case (executorId, state) if state.container.isEmpty =>
+        updateState(executorId, state => state.copy(container = Some(container), executorState = REQUESTED))
+        executorId
+    }
   }
 
-//  def markRequested(executorId: String): Unit = {
-//    LOGGER.info(s"Requesting $executorId.")
-//    if (!executorIdToState.contains(executorId)) {
-//      throw new IllegalStateException(s"Executor $executorId has not been added yet.")
-//    }
-//    updateState(executorId, state => state.copy(executorState = REQUESTED))
-//  }
+  def markAllocated(executorId: String): Unit = {
+    LOGGER.info(s"Allocated $executorId.")
+    if (!executorIdToState.contains(executorId)) {
+      throw new IllegalStateException(s"Executor $executorId has not been added yet.")
+    }
+    updateState(executorId, state => state.copy(executorState = ALLOCATED))
+  }
 
   def markRegistered(executorId: String): Unit = {
-    LOGGER.info(s"Registering $executorId")
+    LOGGER.info(s"Registering $executorId.")
     if (!executorIdToState.contains(executorId)) {
       throw new IllegalStateException(s"Executor $executorId has not been added yet.")
     }
@@ -98,7 +100,7 @@ case class ExecutorStateManager(conf: JalebiConfig) extends Logging {
   }
 
   def markUnregistered(executorId: String): Unit = {
-    LOGGER.info(s"Unregistering $executorId")
+    LOGGER.info(s"Unregistering $executorId.")
     if (!executorIdToState.contains(executorId)) {
       throw new IllegalStateException(s"Executor $executorId has not been added yet.")
     }

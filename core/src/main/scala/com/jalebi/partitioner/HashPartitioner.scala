@@ -7,8 +7,8 @@ object HashPartitioner extends Partitioner {
     val mapping = executors.toIterator.zip(parts.grouped(partsPerExecutor.toInt)).toMap
     LOGGER.info(s"Assigning partitions to Executors: ${
       mapping.map {
-        case (executorId, partitions) => s"ExecutorId $executorId - [${partitions.mkString(",")}]"
-      }.mkString(System.lineSeparator())
+        case (executorId, partitions) => s"$executorId - [${partitions.mkString(",")}]"
+      }.mkString(", ")
     }")
     mapping
   }

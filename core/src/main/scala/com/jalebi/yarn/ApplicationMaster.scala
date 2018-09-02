@@ -78,7 +78,7 @@ class ApplicationMaster(context: JalebiContext, amArgs: ApplicationMasterArgs, e
     })
   }
 
-  def createLaunchContainerThread(allocatedContainer: Container, executorId: String): Thread = {
+  def createLaunchContainerThread(executorId: String, allocatedContainer: Container): Thread = {
     val thread = new Thread(() => {
       val containerLaunchContext = createExecutorContext(context.yarnConf, executorId)
       LOGGER.info(s"Starting container at: " +
@@ -96,7 +96,7 @@ class ApplicationMaster(context: JalebiContext, amArgs: ApplicationMasterArgs, e
   private def createExecutorContext(conf: YarnConfiguration, executorId: String) = {
     val amContainer = Records.newRecord(classOf[ContainerLaunchContext])
     amContainer.setCommands(List(
-      s"scala com.jalebi.yarn.executor.Executor" +
+      s"scala com.jalebi.executor.Executor" +
         s" --${ExecutorConstants.driverHost} $driverHost" +
         s" --${ExecutorConstants.driverPort} $driverPort" +
         s" --${ExecutorConstants.executorId} $executorId" +

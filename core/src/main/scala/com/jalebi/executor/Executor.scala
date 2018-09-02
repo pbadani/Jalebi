@@ -15,6 +15,7 @@ case class Executor(taskManager: TaskManager, driverHostPort: RichHostPort) exte
       .forAddress(driverHostPort.host, driverHostPort.port.toInt)
       .usePlaintext().build()
 
+    LOGGER.info(s"Registering executor ${taskManager.executorId}.")
     val stub = JobManagementProtocolGrpc.stub(channel)
     stub.registerExecutor(ExecutorRequest(taskManager.executorId)).onComplete(r => {
       taskManager.markRegistered(TaskConfig(r.get))
@@ -28,11 +29,11 @@ case class Executor(taskManager: TaskManager, driverHostPort: RichHostPort) exte
         }
 
         override def onCompleted(): Unit = {
-          LOGGER.info(s"on Complete - Executor ${taskManager.executorId}")
+          LOGGER.info(s"on Complete - Executor ${taskManager.executorId}.")
         }
 
         override def onNext(taskRequest: TaskRequest): Unit = {
-          LOGGER.info(s"on next - Executor ${taskManager.executorId} $taskRequest")
+          LOGGER.info(s"on next - Executor ${taskManager.executorId} $taskRequest.")
           taskManager.execute(taskRequest)
         }
       })
@@ -48,11 +49,12 @@ case class Executor(taskManager: TaskManager, driverHostPort: RichHostPort) exte
   }
 }
 
-object Executor {
+object Executor extends Logging {
 
   def main(args: Array[String]): Unit = {
     val executorArgs = ExecutorArgs(args)
     val executor = Executor(TaskManager(executorArgs.getExecutorId), executorArgs.getDriverHostPort)
+    LOGGER.info(s"Starting Executor with Args $executorArgs")
     executor.run()
   }
 }

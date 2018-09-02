@@ -48,8 +48,8 @@ case class JobManager(context: JalebiContext) extends Logging {
     ensureInitialized()
     val jobId = context.newJobId(applicationId)
     val parts = hdfsClient.listDatasetParts(name)
-    val executors = executorState.listExecutorIds()
     executorState.loadPartsToExecutors(jobId, parts, name)
+    val executors = executorState.listExecutorIds()
     resultAggregator.waitForJobToBeCompleted(jobId, executors)
     Dataset(name, this)
   }

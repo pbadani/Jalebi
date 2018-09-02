@@ -8,6 +8,8 @@ case class ApplicationClientArgs(args: Map[String, String]) {
   //Since precondition check for mandatory arguments is already done, just return the arg
   def getClientClass: String = args(AppMaster.clientClass)
 
+  def getJalebiHome: String = args(AppMaster.jalebiHome)
+
   def getJarPath: String = args(AppMaster.jarPath)
 }
 
@@ -18,6 +20,7 @@ object ApplicationClientArgs extends Logging {
     val usage =
       s"""Usage: scala com.jalebi.yarn.ApplicationClient
          |[--${AppMaster.clientClass} <clientclass>]
+         |[--${AppMaster.jalebiHome} <jalebihome>]
          |[--${AppMaster.jarPath} <jarpath>]
          |""".stripMargin
 
@@ -31,6 +34,8 @@ object ApplicationClientArgs extends Logging {
         case Nil => map
         case "--clientclass" :: value :: tail =>
           nextOption(map ++ Map(AppMaster.clientClass -> value.toString), tail)
+        case "--jalebihome" :: value :: tail =>
+          nextOption(map ++ Map(AppMaster.jalebiHome -> value.toString), tail)
         case "--jarpath" :: value :: tail =>
           nextOption(map ++ Map(AppMaster.jarPath -> value.toString), tail)
         case option :: _ => LOGGER.warn(s"Unknown option $option.")
@@ -40,7 +45,7 @@ object ApplicationClientArgs extends Logging {
     }
 
     val options = nextOption(Map(), args.toList)
-    ArgumentUtils.validateArgPresent(Seq(AppMaster.clientClass, AppMaster.jarPath), options, usage)
+    ArgumentUtils.validateArgPresent(Seq(AppMaster.clientClass, AppMaster.jarPath, AppMaster.jalebiHome), options, usage)
     ApplicationClientArgs(options)
   }
 }

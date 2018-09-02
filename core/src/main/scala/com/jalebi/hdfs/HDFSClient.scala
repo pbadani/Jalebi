@@ -12,8 +12,6 @@ import org.apache.hadoop.fs.{FileSystem, Path}
 import org.apache.hadoop.io.IOUtils
 import org.apache.hadoop.yarn.conf.YarnConfiguration
 
-import scala.collection.mutable.ListBuffer
-
 case class HDFSClient(fs: FileSystem) extends Logging {
 
   @throws[DuplicateDatasetException]
@@ -96,11 +94,8 @@ case class HDFSClient(fs: FileSystem) extends Logging {
   }
 
   private def listDirectory(path: Path): Set[String] = {
-    val fileIterator = fs.listFiles(path, false)
-    val file = ListBuffer[String]()
-    while (fileIterator.hasNext)
-      file += fileIterator.next().getPath.getName
-    file.toSet
+    import com.jalebi.common.JalebiUtils._
+    fs.listFiles(path, false).map(_.getPath.getName).toSet
   }
 
   def deleteDirectory(): Unit = {

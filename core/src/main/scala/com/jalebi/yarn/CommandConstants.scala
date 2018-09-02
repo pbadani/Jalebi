@@ -5,6 +5,7 @@ object CommandConstants {
   object AppMaster {
     val clientClass = "clientclass"
     val applicationId = "applicationid"
+    val jalebiHome = "jalebihome"
     val jarPath = "jarpath"
   }
 

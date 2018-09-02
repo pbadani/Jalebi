@@ -1,5 +1,6 @@
 package com.jalebi.common
 
+import org.apache.hadoop.fs.RemoteIterator
 import org.apache.hadoop.security.UserGroupInformation
 import org.apache.hadoop.yarn.api.ApplicationConstants
 
@@ -14,6 +15,12 @@ object JalebiUtils {
     require(applicationId.nonEmpty)
     require(resource.nonEmpty)
     s"jalebi/$applicationId/$resource"
+  }
+
+  def getJalebiHomePath(applicationId: String, resource: String): String = {
+    require(applicationId.nonEmpty)
+    require(resource.nonEmpty)
+    s"jalebi/$applicationId/jalebihome/$resource"
   }
 
   def addPathToEnvironment(env: mutable.HashMap[String, String], key: String, value: String): Unit = {
@@ -32,4 +39,11 @@ object JalebiUtils {
     ugi.addCredentials(currentUser.getCredentials)
     ugi
   }
+
+  implicit case class RemoteFileIterator[T](i: RemoteIterator[T]) extends Iterator[T] {
+    override def hasNext: Boolean = i.hasNext
+
+    override def next(): T = i.next()
+  }
+
 }

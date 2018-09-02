@@ -3,13 +3,15 @@ package com.jalebi.common
 import com.jalebi.yarn.JalebiAppConstants
 import org.apache.hadoop.fs.{FileSystem, Path}
 import org.apache.hadoop.yarn.api.ApplicationConstants.Environment
-import org.apache.hadoop.yarn.api.records.{LocalResource, LocalResourceType, LocalResourceVisibility, URL}
+import org.apache.hadoop.yarn.api.records._
 import org.apache.hadoop.yarn.conf.YarnConfiguration
 import org.apache.hadoop.yarn.util.Records
 
 import scala.collection.mutable
 
 object YarnUtils {
+
+  def createResourcePriority(priority: Int = 1): Priority = Priority.newInstance(priority)
 
   def createFileResource(fs: FileSystem, destPath: Path): LocalResource = {
     val resource = Records.newRecord(classOf[LocalResource])

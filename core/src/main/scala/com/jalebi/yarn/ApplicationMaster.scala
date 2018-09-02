@@ -37,7 +37,7 @@ object ApplicationMaster extends Logging {
       Thread.sleep(1000000)
     } finally {
       applicationMaster.foreach(am => {
-        LOGGER.info(s"Unregistering Application Master.")
+        LOGGER.info(s"Un-registering Application Master.")
         am.finish()
       })
     }
@@ -148,10 +148,6 @@ class ApplicationMaster(context: JalebiContext, amArgs: ApplicationMasterArgs) e
     amContainer
   }
 
-  private def createResourcePriority(): Priority = {
-    Priority.newInstance(1)
-  }
-
   private def createLocalResource(conf: YarnConfiguration): LocalResource = {
     val fs = FileSystem.get(conf)
     val resourcePath = new Path(fs.getHomeDirectory, JalebiUtils.getResourcePath(amArgs.getApplicationId, JalebiAppConstants.jalebiArtifact))
@@ -182,7 +178,7 @@ class ApplicationMaster(context: JalebiContext, amArgs: ApplicationMasterArgs) e
     executorIds.foreach(executorId => {
       executorState.addExecutor(executorId)
       val resourceCapability = createResourceCapability()
-      val resourcePriority = createResourcePriority()
+      val resourcePriority = YarnUtils.createResourcePriority()
       val containerRequest = new ContainerRequest(resourceCapability, null, null, resourcePriority)
       LOGGER.info(s"Container request $containerRequest")
       amrmClient.addContainerRequest(containerRequest)

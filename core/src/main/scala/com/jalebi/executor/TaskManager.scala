@@ -27,7 +27,9 @@ case class TaskManager(executorId: String) extends Logging {
 
     def get: TaskResponse = {
       if (queue.nonEmpty) {
-        queue.dequeue()
+        val resp = queue.dequeue()
+        LOGGER.info(s"Propagating response $resp")
+        resp
       } else {
         TaskResponse(StringUtils.EMPTY, StringUtils.EMPTY, RUNNING, taskManager.executorId, taskManager.executorState, taskManager.datasetState)
       }
@@ -47,12 +49,7 @@ case class TaskManager(executorId: String) extends Logging {
   }
 
   def loadDataset(dataset: String, parts: Set[String]): Jalebi = {
-    val hdfsClient = taskConfig.get.hdfsClient
-    try {
-      hdfsClient.loadDataset(dataset, parts)
-    } finally {
-      hdfsClient.close()
-    }
+    taskConfig.get.hdfsClient.loadDataset(dataset, parts)
   }
 
   def execute(taskRequest: TaskRequest): Unit = {
@@ -63,11 +60,13 @@ case class TaskManager(executorId: String) extends Logging {
         require(taskRequest.parts.nonEmpty, "No parts to load.")
         require(executorState != NEW && executorState != UNREGISTERED, s"Executor $executorId should not be in $executorState.")
         try {
-          LOGGER.info(s"Loading dataset ${taskRequest.dataset}, parts [${taskRequest.parts.mkString(", ")}]")
+          LOGGER.info(s"Loading '${taskRequest.dataset}' parts [${taskRequest.parts.mkString(", ")}] on $executorId.")
           setStates(datasetState = Some(LOADING), executorState = Some(RUNNING_JOB))
           currentJalebi = Some(loadDataset(taskRequest.dataset, taskRequest.parts.toSet))
           setStates(datasetState = Some(LOADED), executorState = Some(RUNNABLE))
-          propagateInHeartbeat.put(TaskResponse(taskRequest.jobId, taskRequest.taskId, COMPLETED, executorId, executorState, datasetState))
+          val response = TaskResponse(taskRequest.jobId, taskRequest.taskId, COMPLETED, executorId, executorState, datasetState)
+          LOGGER.info(s"Load dataset response $response on $executorId.")
+          propagateInHeartbeat.put(response)
         } catch {
           case e: DatasetCorruptException =>
             currentJalebi = None
@@ -79,10 +78,13 @@ case class TaskManager(executorId: String) extends Logging {
       case TaskType.SEARCH_VERTEX =>
         require(currentJalebi.isDefined)
         require(currentJalebi.get.name == taskRequest.dataset, s"Dataset mismatch. Expected ${currentJalebi.get.name}, Actual: ${taskRequest.dataset}")
+        LOGGER.info(s"Searching vertex '${taskRequest.startVertexId} on $executorId.")
         setStates(None, executorState = Some(RUNNING_JOB))
         val result = currentJalebi.get.searchVertex(VertexID(taskRequest.startVertexId))
         val vertexResult = ResultConverter.convertToVertexResult(result)
-        propagateInHeartbeat.put(TaskResponse(taskRequest.jobId, taskRequest.taskId, COMPLETED, executorId, executorState, datasetState, vertexResult, Nil))
+        val response = TaskResponse(taskRequest.jobId, taskRequest.taskId, COMPLETED, executorId, executorState, datasetState, vertexResult, Nil)
+        LOGGER.info(s"Search vertex response $response on $executorId.")
+        propagateInHeartbeat.put(response)
         setStates(None, executorState = Some(RUNNABLE))
 
       case TaskType.BREADTH_FIRST =>

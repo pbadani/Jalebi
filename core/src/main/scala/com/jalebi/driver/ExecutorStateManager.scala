@@ -75,9 +75,9 @@ case class ExecutorStateManager(conf: JalebiConfig) extends Logging {
     updateState(executorId, state => state.copy(parts = state.parts -- parts))
   }
 
-  def findExecutorToAssignContainer(container: Container): Option[String] = {
+  def findExecutorToAssignContainer(container: Container): Option[String] = this.synchronized {
     executorIdToState.collectFirst {
-      case (executorId, state) if state.container.isEmpty =>
+      case (executorId, state) if state.container.isEmpty && state.executorState == NEW =>
         updateState(executorId, state => state.copy(container = Some(container), executorState = REQUESTED))
         executorId
     }

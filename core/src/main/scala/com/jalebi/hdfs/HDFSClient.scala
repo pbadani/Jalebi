@@ -102,7 +102,6 @@ case class HDFSClient(fs: FileSystem) extends Logging {
     fs.delete(new Path(HDFSClientConstants.datasetParentDirectory), true)
   }
 
-  def close(): Unit = fs.close()
 }
 
 object HDFSClient {

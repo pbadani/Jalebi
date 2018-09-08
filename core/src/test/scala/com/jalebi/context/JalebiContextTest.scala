@@ -2,11 +2,12 @@ package com.jalebi.context
 
 import com.jalebi.api.{Edge, Vertex, VertexID}
 import com.jalebi.hdfs.HDFSClient
+import org.apache.hadoop.yarn.conf.YarnConfiguration
 import org.scalatest.{FlatSpec, Matchers}
 
 class JalebiContextTest extends FlatSpec with Matchers {
 
-  private val hdfsClient = HDFSClient.withLocalFileSystem()
+  private val hdfsClient = HDFSClient.withLocalFileSystem(new YarnConfiguration())
 
   hdfsClient.deleteDirectory()
 

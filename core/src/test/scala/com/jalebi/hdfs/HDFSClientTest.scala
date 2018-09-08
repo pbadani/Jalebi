@@ -2,11 +2,12 @@ package com.jalebi.hdfs
 
 import com.jalebi.api._
 import com.jalebi.exception.DatasetNotFoundException
+import org.apache.hadoop.yarn.conf.YarnConfiguration
 import org.scalatest.{FlatSpec, Matchers}
 
 class HDFSClientTest extends FlatSpec with Matchers {
 
-  val hdfsClient = HDFSClient.withLocalFileSystem()
+  val hdfsClient = HDFSClient.withLocalFileSystem(new YarnConfiguration())
   hdfsClient.deleteDirectory()
 
   val testTriplets = Seq(

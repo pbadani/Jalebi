@@ -27,7 +27,7 @@ object YarnUtils {
   def createEnvironmentVariables(conf: YarnConfiguration, resourceNames: Set[String], additional: Map[String, String]): mutable.HashMap[String, String] = {
     val envVariables = mutable.HashMap[String, String]()
     resourceNames.foreach { c =>
-      JalebiUtils.addPathToEnvironment(envVariables, Environment.CLASSPATH.name, c.trim)
+      JalebiUtils.addToClasspath(envVariables, c.trim)
     }
     additional.foreach {
       case (key, value) => envVariables.put(key, value)
@@ -36,7 +36,7 @@ object YarnUtils {
       case Some(s) => s.toSeq
       case None => YarnConfiguration.DEFAULT_YARN_APPLICATION_CLASSPATH.toSeq
     }).foreach { c =>
-      JalebiUtils.addPathToEnvironment(envVariables, Environment.CLASSPATH.name, c.trim)
+      JalebiUtils.addToClasspath(envVariables, c.trim)
     }
     envVariables
   }

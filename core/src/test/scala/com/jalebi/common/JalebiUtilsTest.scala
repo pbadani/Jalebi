@@ -29,4 +29,5 @@ class JalebiUtilsTest extends FlatSpec with Matchers {
     resources.foreach(resource => JalebiUtils.addToClasspath(actualEnvironment, resource))
     expectedEnvironment shouldBe actualEnvironment
   }
+
 }

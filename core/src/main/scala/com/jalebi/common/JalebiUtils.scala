@@ -34,14 +34,6 @@ object JalebiUtils {
     env.put(classpathKey, newValue)
   }
 
-  def createUser(): UserGroupInformation = {
-    val currentUser = UserGroupInformation.getCurrentUser
-    val username = currentUser.getShortUserName
-    val ugi = UserGroupInformation.createRemoteUser(username)
-    ugi.addCredentials(currentUser.getCredentials)
-    ugi
-  }
-
   implicit class RemoteFileIterator[T](i: RemoteIterator[T]) extends Iterator[T] {
     override def hasNext: Boolean = i.hasNext
 

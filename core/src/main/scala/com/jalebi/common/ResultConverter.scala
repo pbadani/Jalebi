@@ -6,7 +6,7 @@ import com.jalebi.proto.jobmanagement.VertexResult
 object ResultConverter {
 
   def convertToVertexResult(vertex: Option[Vertex]): Seq[VertexResult] = {
-    vertex.map(v => VertexResult(v.getId, v.data)).toSeq
+    convertToVertices(vertex.toSeq)
   }
 
   def convertToVertices(vertex: Seq[Vertex]): Seq[VertexResult] = {
@@ -14,7 +14,7 @@ object ResultConverter {
   }
 
   def convertFromVertexResult(vertex: Option[VertexResult]): Seq[Vertex] = {
-    vertex.map(v => Vertex(VertexID(v.vertexId), v.data)).toSeq
+    convertFromVertices(vertex.toSeq)
   }
 
   def convertFromVertices(vertex: Seq[VertexResult]): Seq[Vertex] = {

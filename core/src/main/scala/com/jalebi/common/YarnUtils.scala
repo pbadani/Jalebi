@@ -1,8 +1,6 @@
 package com.jalebi.common
 
-import com.jalebi.yarn.JalebiAppConstants
 import org.apache.hadoop.fs.{FileSystem, Path}
-import org.apache.hadoop.yarn.api.ApplicationConstants.Environment
 import org.apache.hadoop.yarn.api.records._
 import org.apache.hadoop.yarn.conf.YarnConfiguration
 import org.apache.hadoop.yarn.util.Records

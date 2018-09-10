@@ -3,12 +3,19 @@ package com.jalebi.hdfs
 import com.jalebi.api._
 import com.jalebi.exception.DatasetNotFoundException
 import org.apache.hadoop.yarn.conf.YarnConfiguration
-import org.scalatest.{FlatSpec, Matchers}
+import org.scalatest.{BeforeAndAfter, FlatSpec, Matchers}
 
-class HDFSClientTest extends FlatSpec with Matchers {
+class HDFSClientTest extends FlatSpec with Matchers with BeforeAndAfter {
 
-  val hdfsClient = HDFSClient.withLocalFileSystem(new YarnConfiguration())
-  hdfsClient.deleteDirectory()
+  private val hdfsClient = HDFSClient.withLocalFileSystem(new YarnConfiguration())
+
+  before {
+    hdfsClient.deleteDirectory()
+  }
+
+  after {
+    hdfsClient.deleteDirectory()
+  }
 
   val testTriplets = Seq(
     Triplets(Seq(
@@ -58,8 +65,6 @@ class HDFSClientTest extends FlatSpec with Matchers {
 
     hdfsClient.deleteDataset(testDataset)
     hdfsClient.doesDatasetExists(testDataset) shouldBe false
-
-    hdfsClient.deleteDirectory()
   }
 
   it should "delete all the datasets in the directory." in {
@@ -87,7 +92,6 @@ class HDFSClientTest extends FlatSpec with Matchers {
   }
 
   it should "list datasets found in the directory." in {
-    hdfsClient.deleteDirectory()
     val testDataset = "TestDataset1"
     hdfsClient.createDataset(testDataset, testTriplets.iterator)
 

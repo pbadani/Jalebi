@@ -3,13 +3,19 @@ package com.jalebi.context
 import com.jalebi.api.{Edge, Vertex, VertexID}
 import com.jalebi.hdfs.HDFSClient
 import org.apache.hadoop.yarn.conf.YarnConfiguration
-import org.scalatest.{FlatSpec, Matchers}
+import org.scalatest.{BeforeAndAfter, FlatSpec, Matchers}
 
-class JalebiContextTest extends FlatSpec with Matchers {
+class JalebiContextTest extends FlatSpec with Matchers with BeforeAndAfter {
 
   private val hdfsClient = HDFSClient.withLocalFileSystem(new YarnConfiguration())
 
-  hdfsClient.deleteDirectory()
+  before {
+    hdfsClient.deleteDirectory()
+  }
+
+  after {
+    hdfsClient.deleteDirectory()
+  }
 
   private val conf = JalebiConfig
     .withAppName("TestApp")

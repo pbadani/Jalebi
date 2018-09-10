@@ -23,6 +23,12 @@ class JalebiUtilsTest extends FlatSpec with Matchers {
     expectedPath shouldBe actualPath
   }
 
+  it should "build the local file system URI for the given resource." in {
+    val expectedPath = s"file://$resource"
+    val actualPath = JalebiUtils.URIForLocalFile(resource)
+    expectedPath shouldBe actualPath
+  }
+
   it should "add entries to classpath for the given resources." in {
     val expectedEnvironment = mutable.HashMap[String, String]((Environment.CLASSPATH.name, "TestResourceName1<CPS>TestResourceName2<CPS>TestResourceName3"))
     val actualEnvironment = mutable.HashMap[String, String]()

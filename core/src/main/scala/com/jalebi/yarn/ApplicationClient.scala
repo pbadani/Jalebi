@@ -2,7 +2,7 @@ package com.jalebi.yarn
 
 import java.util
 
-import com.jalebi.common.{JalebiUtils, Logging, URIBuilder, YarnUtils}
+import com.jalebi.common.{JalebiUtils, Logging, YarnUtils}
 import com.jalebi.yarn.CommandConstants.AppMaster
 import org.apache.hadoop.fs.{FileSystem, Path}
 import org.apache.hadoop.yarn.api.ApplicationConstants
@@ -70,7 +70,7 @@ object ApplicationClient extends Logging {
     //Put a copy of the resource in HDFS for this application and then localize it from there.
     val fs = FileSystem.get(conf)
     try {
-      val sourcePath = new Path(URIBuilder.forLocalFile(jarPath))
+      val sourcePath = new Path(JalebiUtils.URIForLocalFile(jarPath))
       val destPath = new Path(fs.getHomeDirectory, JalebiUtils.getResourcePath(applicationId, JalebiAppConstants.jalebiArtifact))
       fs.copyFromLocalFile(sourcePath, destPath)
       LOGGER.info(s"Copied resource $jarPath to HDFS destination ${destPath.getParent}/${destPath.getName}")
@@ -85,7 +85,7 @@ object ApplicationClient extends Logging {
     val fs = FileSystem.get(conf)
     val localFs = FileSystem.getLocal(conf)
     try {
-      localFs.listFiles(new Path(URIBuilder.forLocalFile(jalebiHome)), true)
+      localFs.listFiles(new Path(JalebiUtils.URIForLocalFile(jalebiHome)), true)
         .map(fileStatus => {
           val fileName = fileStatus.getPath.getName
           val destPath = new Path(fs.getHomeDirectory, JalebiUtils.getJalebiHomePath(applicationId, fileName))

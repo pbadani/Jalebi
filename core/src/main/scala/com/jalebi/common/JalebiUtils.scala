@@ -34,6 +34,8 @@ object JalebiUtils {
     env.put(classpathKey, newValue)
   }
 
+  def URIForLocalFile(resource: String) = s"file://$resource"
+
   implicit class RemoteFileIterator[T](i: RemoteIterator[T]) extends Iterator[T] {
     override def hasNext: Boolean = i.hasNext
 

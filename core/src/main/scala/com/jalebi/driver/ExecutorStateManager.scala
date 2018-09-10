@@ -37,6 +37,12 @@ case class ExecutorStateManager(conf: JalebiConfig) extends Logging {
     while (executorIdToState.exists {
       case (_, state) => state.executorState == NEW
     }) {
+      val unregistered = executorIdToState.filter {
+        case (_, state) => state.executorState == NEW
+      }.map {
+        case (executorId, _) => executorId
+      }
+      LOGGER.info(s"waiting for ${unregistered.mkString(", ")} to be registered.")
       Thread.sleep(1000)
     }
   }
@@ -122,6 +128,12 @@ case class ExecutorStateManager(conf: JalebiConfig) extends Logging {
     executorIdToState.remove(executorId)
   }
 
+  def forEachExecutor(f: (String, State) => Unit): Unit = {
+    executorIdToState.foreach {
+      case (executorId, state) => f(executorId, state)
+    }
+  }
+
   private def updateState(executorId: String, oldToNewState: State => State) = {
     val state = executorIdToState(executorId)
     executorIdToState += (executorId -> oldToNewState(state))
@@ -134,7 +146,11 @@ case class ExecutorStateManager(conf: JalebiConfig) extends Logging {
   }
 
   def clearParts(): Unit = {
-    executorIdToState.mapValues(state => state.copy(parts = Set.empty, datasetState = NONE, nextAction = None))
+    executorIdToState.keySet.foreach(executorId => {
+      updateState(executorId, state => {
+        state.copy(parts = Set.empty, datasetState = NONE, nextAction = None)
+      })
+    })
   }
 
   def getMissingHeartbeatExecutors: Set[String] = {

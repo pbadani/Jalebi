@@ -11,7 +11,7 @@ class ExecutorStateManagerTest extends FlatSpec with Matchers {
   private val conf = JalebiConfig
     .withAppName("TestApp")
     .withMaster("local")
-    .withHDFSFileSystem("file", "localhost", 0)
+    .withHDFSFileSystem("file", "localhost")
     .fry()
 
   "ExecutorStateManager" should "be able to list all the executors added." in {

@@ -1,7 +1,6 @@
 package com.jalebi.common
 
 import org.apache.hadoop.fs.RemoteIterator
-import org.apache.hadoop.security.UserGroupInformation
 import org.apache.hadoop.yarn.api.ApplicationConstants
 import org.apache.hadoop.yarn.api.ApplicationConstants.Environment
 

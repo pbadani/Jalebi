@@ -8,7 +8,7 @@ class JalebiConfigTest extends FlatSpec with Matchers {
     val conf = JalebiConfig
       .withAppName("TestApp")
       .withMaster("local")
-      .withHDFSFileSystem("file", "localhost", 0)
+      .withHDFSFileSystem("file", "localhost")
       .fry()
     conf.appName shouldBe "TestApp"
     conf.master shouldBe "local"
@@ -24,7 +24,7 @@ class JalebiConfigTest extends FlatSpec with Matchers {
       JalebiConfig
         .withAppName("TestApp")
         //.withMaster("local")
-        .withHDFSFileSystem("file", "localhost", 0)
+        .withHDFSFileSystem("file", "localhost")
         .fry()
     }
   }
@@ -33,7 +33,7 @@ class JalebiConfigTest extends FlatSpec with Matchers {
     val conf = JalebiConfig
       .withAppName("TestApp")
       .withMaster("jalebi://localhost:8080")
-      .withHDFSFileSystem("file", "localhost", 0)
+      .withHDFSFileSystem("file", "localhost")
       .fry()
 
     conf.appName shouldBe "TestApp"
@@ -50,7 +50,7 @@ class JalebiConfigTest extends FlatSpec with Matchers {
       JalebiConfig
         .withAppName("")
         .withMaster("jalebi1://localhost:8080")
-        .withHDFSFileSystem("file", "localhost", 0)
+        .withHDFSFileSystem("file", "localhost")
         .fry()
     }
   }
@@ -60,7 +60,7 @@ class JalebiConfigTest extends FlatSpec with Matchers {
       JalebiConfig
         .withAppName("")
         .withMaster("local")
-        .withHDFSFileSystem("file", "localhost", 0)
+        .withHDFSFileSystem("file", "localhost")
         .fry()
     }
   }

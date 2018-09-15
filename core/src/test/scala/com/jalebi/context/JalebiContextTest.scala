@@ -20,7 +20,7 @@ class JalebiContextTest extends FlatSpec with Matchers with BeforeAndAfter {
   private val conf = JalebiConfig
     .withAppName("TestApp")
     .withMaster("local")
-    .withHDFSFileSystem("file", "localhost", 0)
+    .withHDFSFileSystem("file", "localhost")
     .fry()
 
   "Context" should "create and load the dataset from local file system." in {

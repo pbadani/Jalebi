@@ -3,8 +3,6 @@ package com.jalebi.driver
 import com.jalebi.common.Logging
 import com.jalebi.context.JalebiConfig
 import com.jalebi.partitioner.HashPartitioner
-import com.jalebi.proto.jobmanagement.DatasetState.NONE
-import com.jalebi.proto.jobmanagement.ExecutorState._
 import com.jalebi.proto.jobmanagement.{DatasetState, ExecutorState, TaskRequest}
 import org.apache.hadoop.yarn.api.records.Container
 
@@ -18,7 +16,7 @@ case class ExecutorStateManager(conf: JalebiConfig) extends Logging {
                    container: Option[Container],
                    nextAction: Option[TaskRequest])
 
-  private val default = State(parts = Set.empty, executorState = NEW, datasetState = NONE, container = None, nextAction = None)
+  private val default = State(parts = Set.empty, executorState = ExecutorState.NEW, datasetState = DatasetState.NONE, container = None, nextAction = None)
 
   private var initializationState = false
 
@@ -35,16 +33,17 @@ case class ExecutorStateManager(conf: JalebiConfig) extends Logging {
 
   def waitForAllExecutorsToBeRegistered(): Unit = {
     while (executorIdToState.exists {
-      case (_, state) => state.executorState == NEW
+      case (_, state) => state.executorState == ExecutorState.NEW
     }) {
       val unregistered = executorIdToState.filter {
-        case (_, state) => state.executorState == NEW
+        case (_, state) => state.executorState == ExecutorState.NEW
       }.map {
         case (executorId, _) => executorId
       }
       LOGGER.info(s"waiting for ${unregistered.mkString(", ")} to be registered.")
       Thread.sleep(1000)
     }
+    LOGGER.info("All executors are registered.")
   }
 
   def loadPartsToExecutors(jobId: String, parts: Set[String], name: String): Unit = {
@@ -83,8 +82,8 @@ case class ExecutorStateManager(conf: JalebiConfig) extends Logging {
 
   def findExecutorToAssignContainer(container: Container): Option[String] = this.synchronized {
     executorIdToState.collectFirst {
-      case (executorId, state) if state.container.isEmpty && state.executorState == NEW =>
-        updateState(executorId, state => state.copy(container = Some(container), executorState = REQUESTED))
+      case (executorId, state) if state.container.isEmpty && state.executorState == ExecutorState.NEW =>
+        updateState(executorId, state => state.copy(container = Some(container), executorState = ExecutorState.REQUESTED))
         executorId
     }
   }
@@ -94,7 +93,7 @@ case class ExecutorStateManager(conf: JalebiConfig) extends Logging {
     if (!executorIdToState.contains(executorId)) {
       throw new IllegalStateException(s"Executor $executorId has not been added yet.")
     }
-    updateState(executorId, state => state.copy(executorState = ALLOCATED))
+    updateState(executorId, state => state.copy(executorState = ExecutorState.ALLOCATED))
   }
 
   def markRegistered(executorId: String): Unit = {
@@ -102,7 +101,7 @@ case class ExecutorStateManager(conf: JalebiConfig) extends Logging {
     if (!executorIdToState.contains(executorId)) {
       throw new IllegalStateException(s"Executor $executorId has not been added yet.")
     }
-    updateState(executorId, state => state.copy(executorState = REGISTERED))
+    updateState(executorId, state => state.copy(executorState = ExecutorState.REGISTERED))
   }
 
   def markUnregistered(executorId: String): Unit = {
@@ -110,7 +109,7 @@ case class ExecutorStateManager(conf: JalebiConfig) extends Logging {
     if (!executorIdToState.contains(executorId)) {
       throw new IllegalStateException(s"Executor $executorId has not been added yet.")
     }
-    updateState(executorId, state => state.copy(executorState = UNREGISTERED))
+    updateState(executorId, state => state.copy(executorState = ExecutorState.UNREGISTERED))
   }
 
   def updateLastHeartbeat(executorId: String, eState: ExecutorState, dState: DatasetState, heartbeat: Long): Unit = {
@@ -148,7 +147,7 @@ case class ExecutorStateManager(conf: JalebiConfig) extends Logging {
   def clearParts(): Unit = {
     executorIdToState.keySet.foreach(executorId => {
       updateState(executorId, state => {
-        state.copy(parts = Set.empty, datasetState = NONE, nextAction = None)
+        state.copy(parts = Set.empty, datasetState = DatasetState.NONE, nextAction = None)
       })
     })
   }

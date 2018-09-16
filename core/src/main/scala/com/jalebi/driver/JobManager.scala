@@ -14,8 +14,8 @@ import scala.collection.mutable
 
 case class JobManager(context: JalebiContext) extends Logging {
 
-  private val applicationId: String = s"Jalebi-${System.currentTimeMillis()}"
-  val executorState: ExecutorStateManager = ExecutorStateManager(context.conf)
+  private val applicationId = s"Jalebi-${System.currentTimeMillis()}"
+  val executorState = ExecutorStateManager(context.conf)
   private val scheduler = if (context.onLocalMaster) LocalScheduler(context, executorState, applicationId) else ApplicationMaster(context, executorState, applicationId)
   private val driverCoordinatorService = DriverCoordinatorService(this, context.conf)
   val resultAggregator = new ResultAggregator()

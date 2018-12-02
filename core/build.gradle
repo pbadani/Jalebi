@@ -28,11 +28,11 @@ dependencies {
     compile group: 'org.apache.avro', name: 'avro', version: '1.8.2'
     compile group: 'com.sksamuel.avro4s', name: 'avro4s-core_2.12', version: '1.9.0'
 
-    compileOnly group: 'org.apache.hadoop', name: 'hadoop-common', version: '3.0.3'
-    compileOnly group: 'org.apache.hadoop', name: 'hadoop-hdfs-client', version: '3.0.3'
-    compileOnly group: 'org.apache.hadoop', name: 'hadoop-hdfs', version: '3.0.3'
-    compileOnly group: 'org.apache.hadoop', name: 'hadoop-yarn-client', version: '3.0.3'
-    compileOnly group: 'org.apache.hadoop', name: 'hadoop-yarn', version: '3.0.3'
+    compile group: 'org.apache.hadoop', name: 'hadoop-common', version: '3.0.3'
+    compile group: 'org.apache.hadoop', name: 'hadoop-hdfs-client', version: '3.0.3'
+    compile group: 'org.apache.hadoop', name: 'hadoop-hdfs', version: '3.0.3'
+    compile group: 'org.apache.hadoop', name: 'hadoop-yarn-client', version: '3.0.3'
+    compile group: 'org.apache.hadoop', name: 'hadoop-yarn', version: '3.0.3'
 }
 
 

@@ -40,6 +40,12 @@ case class JalebiContext private(conf: JalebiConfig) extends Logging {
   def createDataset(input: JalebiWriter): Unit = {
     val verticesMap = input.vertices.map(v => (v.vertexId, v)).toMap
     val triplets = input.edges.map(edge => {
+      if (!verticesMap.contains(edge.source)) {
+        throw new InvalidVertexReferenceException(s"Vertex with id ${edge.source.id} not present in the list of vertices.")
+      }
+      if (!verticesMap.contains(edge.target)) {
+        throw new InvalidVertexReferenceException(s"Vertex with id ${edge.target.id} not present in the list of vertices.")
+      }
       Triplet(verticesMap(edge.source), edge, verticesMap(edge.target))
     }).grouped(conf.options.getPartitionSize().toInt)
       .map(Triplets(_))

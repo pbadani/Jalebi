@@ -1,4 +1,4 @@
-
+.DS_Store
 /.gradle/
 /.idea/
 /Jalebi.iml
@@ -13,3 +13,4 @@
 /proto/out/
 /proto/build/
 /core/libs/
+/scratchpad/build/

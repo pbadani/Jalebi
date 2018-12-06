@@ -48,6 +48,12 @@ case class TaskManager(executorId: String) extends Logging {
     this.taskConfig = Some(taskConfig)
   }
 
+ def markUnregistered(taskConfig: TaskConfig): Unit = {
+    executorState = UNREGISTERED
+    LOGGER.info(s"Task config - $taskConfig")
+    this.taskConfig = Some(taskConfig)
+  }
+
   def loadDataset(dataset: String, parts: Set[String]): Jalebi = {
     taskConfig.get.hdfsClient.loadDataset(dataset, parts)
   }

@@ -52,6 +52,8 @@ case class JalebiContext private(conf: JalebiConfig) extends Logging {
     HDFSClient.withDistributedFileSystem(conf.hdfsHostPort, yarnConf).createDataset(input.datasetName, triplets)
   }
 
+  def close(): Unit = jobManager.close()
+
   def onLocalMaster: Boolean = conf.master == "local"
 
   def getCurrentDatasetName: String = currentDataset.get.name

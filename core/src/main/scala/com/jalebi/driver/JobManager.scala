@@ -17,12 +17,12 @@ case class JobManager(context: JalebiContext) extends Logging {
   private val applicationId = s"Jalebi-${System.currentTimeMillis()}"
   val executorState = ExecutorStateManager(context.conf)
   private val scheduler = if (context.onLocalMaster) LocalScheduler(context, executorState, applicationId) else ApplicationMaster(context, executorState, applicationId)
-  private val driverCoordinatorService = Driver(this, context.conf)
+  private val driver = Driver(this, context.conf)
   val resultAggregator = new ResultAggregator()
 
   def ensureInitialized(): Unit = synchronized {
     if (!executorState.isInitialized) {
-      driverCoordinatorService.start()
+      driver.start()
       val executorIds = executorState.listExecutorIds()
       if (executorIds.isEmpty) {
         throw new IllegalStateException("No executors to run.")
@@ -63,9 +63,10 @@ case class JobManager(context: JalebiContext) extends Logging {
     resultAggregator.getResultForJobId(jobId, executors, responseToVertexes)
   }
 
-  def shutRunningExecutors(): Unit = {
+  def close(): Unit = {
     LOGGER.info("Shutting all executors.")
     scheduler.shutAllExecutors()
+    driver.interrupt()
   }
 
   def driverHostPort: RichHostPort = context.driverHostPort

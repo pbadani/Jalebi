@@ -37,10 +37,17 @@ case class Executor(taskManager: TaskManager, driverHostPort: RichHostPort) exte
           taskManager.execute(taskRequest)
         }
       })
-
-    while (taskManager.keepRunning) {
-      resp.onNext(taskManager.propagateInHeartbeat.get)
-      Thread.sleep(taskManager.heartbeatInterval * 1000)
+    try {
+      while (taskManager.keepRunning) {
+        resp.onNext(taskManager.propagateInHeartbeat.get)
+        Thread.sleep(taskManager.heartbeatInterval * 1000)
+      }
+    } catch {
+      case _: InterruptedException =>
+        LOGGER.info(s"Request to shutdown executor ${taskManager.executorId}")
+        stub.unregisterExecutor(ExecutorRequest(taskManager.executorId)).onComplete(r => {
+          taskManager.markUnregistered(TaskConfig(r.get))
+        })
     }
   }
 

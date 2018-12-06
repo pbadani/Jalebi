@@ -58,13 +58,13 @@ class HDFSClientTest extends FlatSpec with Matchers with BeforeAndAfter {
     val testDataset = "TestDataset1"
     hdfsClient.createDataset(testDataset, testTriplets.iterator)
 
-    hdfsClient.doesDatasetExists(testDataset) shouldBe true
+    hdfsClient.datasetExists(testDataset) shouldBe true
 
     val parts = hdfsClient.listDatasetParts(testDataset)
     parts shouldBe Set("part-0", "part-1")
 
     hdfsClient.deleteDataset(testDataset)
-    hdfsClient.doesDatasetExists(testDataset) shouldBe false
+    hdfsClient.datasetExists(testDataset) shouldBe false
   }
 
   it should "delete all the datasets in the directory." in {
@@ -74,13 +74,13 @@ class HDFSClientTest extends FlatSpec with Matchers with BeforeAndAfter {
     val testDataset2 = "TestDataset2"
     hdfsClient.createDataset(testDataset2, testTriplets.iterator)
 
-    hdfsClient.doesDatasetExists(testDataset) shouldBe true
-    hdfsClient.doesDatasetExists(testDataset2) shouldBe true
+    hdfsClient.datasetExists(testDataset) shouldBe true
+    hdfsClient.datasetExists(testDataset2) shouldBe true
 
     hdfsClient.deleteDirectory()
 
-    hdfsClient.doesDatasetExists(testDataset) shouldBe false
-    hdfsClient.doesDatasetExists(testDataset2) shouldBe false
+    hdfsClient.datasetExists(testDataset) shouldBe false
+    hdfsClient.datasetExists(testDataset2) shouldBe false
   }
 
   it should "should throw DatasetNotFoundException if ensuring dataset exists for a missing one." in {

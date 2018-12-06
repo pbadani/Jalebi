@@ -43,7 +43,7 @@ class JalebiContextTest extends FlatSpec with Matchers with BeforeAndAfter {
     hdfsClient.ensureDatasetExists("TestDataset")
 
     context.deleteDataset("TestDataset")
-    hdfsClient.doesDatasetExists("TestDataset") shouldBe false
+    hdfsClient.datasetExists("TestDataset") shouldBe false
   }
 
 }

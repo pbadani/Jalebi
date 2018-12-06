@@ -17,7 +17,7 @@ case class HDFSClient(fs: FileSystem) extends Logging {
   @throws[DuplicateDatasetException]
   def createDataset(name: String, triplets: => Iterator[Triplets]): Unit = {
     val filePath = s"${HDFSClientConstants.datasetParentDirectory}$name"
-    if (doesDatasetExists(name)) {
+    if (datasetExists(name)) {
       throw new DuplicateDatasetException(s"Dataset '$name' is already present at $filePath.")
     }
     LOGGER.info(s"Creating Dataset '$name' at $filePath.")
@@ -57,10 +57,10 @@ case class HDFSClient(fs: FileSystem) extends Logging {
 
   @throws[DatasetNotFoundException]
   def ensureDatasetExists(name: String): Unit = {
-    doesDatasetExists(name, Some(throw new DatasetNotFoundException(s"Dataset '$name' not found.")))
+    datasetExists(name, Some(throw new DatasetNotFoundException(s"Dataset '$name' not found.")))
   }
 
-  def doesDatasetExists(name: String, actionIfNotExists: => Option[() => Unit] = None): Boolean = {
+  def datasetExists(name: String, actionIfNotExists: => Option[() => Unit] = None): Boolean = {
     val fileExists = fs.exists(new Path(s"${HDFSClientConstants.datasetParentDirectory}$name"))
     LOGGER.debug(s"Dataset '$name' ${if (fileExists) "exists." else "doesn't exist."}")
     if (!fileExists && actionIfNotExists.isDefined) {
@@ -87,7 +87,7 @@ case class HDFSClient(fs: FileSystem) extends Logging {
   }
 
   def deleteDataset(name: String): Unit = {
-    if (doesDatasetExists(name)) {
+    if (datasetExists(name)) {
       LOGGER.info(s"Deleting dataset '$name'.")
       fs.delete(new Path(s"${HDFSClientConstants.datasetParentDirectory}$name"), true)
     }

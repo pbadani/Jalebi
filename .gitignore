@@ -8,9 +8,9 @@
 /core/publish/
 /core/build/
 /core/out/
+/core/libs/
 /scratchpad/target/
 /scratchpad/out/
+/scratchpad/build/
 /proto/out/
 /proto/build/
-/core/libs/
-/scratchpad/build/

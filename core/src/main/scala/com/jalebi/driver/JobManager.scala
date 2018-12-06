@@ -17,7 +17,7 @@ case class JobManager(context: JalebiContext) extends Logging {
   private val applicationId = s"Jalebi-${System.currentTimeMillis()}"
   val executorState = ExecutorStateManager(context.conf)
   private val scheduler = if (context.onLocalMaster) LocalScheduler(context, executorState, applicationId) else ApplicationMaster(context, executorState, applicationId)
-  private val driverCoordinatorService = DriverCoordinatorService(this, context.conf)
+  private val driverCoordinatorService = Driver(this, context.conf)
   val resultAggregator = new ResultAggregator()
 
   def ensureInitialized(): Unit = synchronized {

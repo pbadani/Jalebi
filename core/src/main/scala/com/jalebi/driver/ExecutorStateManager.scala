@@ -31,7 +31,7 @@ case class ExecutorStateManager(conf: JalebiConfig) extends Logging {
 
   def isInitialized: Boolean = initializationState
 
-  def waitForAllExecutorsToBeRegistered(): Unit = {
+  private[driver] def waitForAllExecutorsToBeRegistered(): Unit = {
     while (executorIdToState.exists {
       case (_, state) => state.executorState == ExecutorState.NEW
     }) {
@@ -75,7 +75,7 @@ case class ExecutorStateManager(conf: JalebiConfig) extends Logging {
     })
   }
 
-  def removePartsFromExecutor(executorId: String, parts: Set[String]): Unit = {
+  private def removePartsFromExecutor(executorId: String, parts: Set[String]): Unit = {
     LOGGER.info(s"Removed parts ${parts.mkString(",")} from executor $executorId.")
     updateState(executorId, state => state.copy(parts = state.parts -- parts))
   }
@@ -133,9 +133,9 @@ case class ExecutorStateManager(conf: JalebiConfig) extends Logging {
     }
   }
 
-  private def updateState(executorId: String, oldToNewState: State => State) = {
+  private def updateState(executorId: String, mapState: State => State) = {
     val state = executorIdToState(executorId)
-    executorIdToState += (executorId -> oldToNewState(state))
+    executorIdToState += (executorId -> mapState(state))
   }
 
   def listExecutorIds(): Set[String] = executorIdToState.keySet.toSet

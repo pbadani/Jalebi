@@ -8,7 +8,7 @@ import io.grpc.stub.StreamObserver
 
 import scala.concurrent.{ExecutionContext, Future}
 
-case class DriverCoordinatorService(jobManager: JobManager, conf: JalebiConfig) extends Runnable with Logging {
+case class Driver(jobManager: JobManager, conf: JalebiConfig) extends Runnable with Logging {
 
   override def run(): Unit = {
     jobManager.shutRunningExecutors()
@@ -70,6 +70,6 @@ case class DriverCoordinatorService(jobManager: JobManager, conf: JalebiConfig) 
   }
 }
 
-object DriverCoordinatorService {
-  def apply(jobManager: JobManager, conf: JalebiConfig): Thread = new Thread(new DriverCoordinatorService(jobManager, conf))
+object Driver {
+  def apply(jobManager: JobManager, conf: JalebiConfig): Thread = new Thread(new Driver(jobManager, conf))
 }

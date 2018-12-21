@@ -18,6 +18,9 @@ dependencies {
     compile group: 'com.thesamet.scalapb', name: 'scalapb-runtime_2.12', version: '0.7.4'
     compile group: 'com.thesamet.scalapb', name: 'scalapb-runtime-grpc_2.12', version: '0.7.4'
 
+    compile group: 'com.typesafe.akka', name: 'akka-actor_2.12', version: '2.5.19'
+    testCompile group: 'com.typesafe.akka', name: 'akka-testkit_2.12', version: '2.5.19'
+    
     compile group: 'io.grpc', name: 'grpc-netty-shaded', version: '1.13.2'
     compile group: 'io.netty', name: 'netty-common', version: '4.1.8.Final'
 

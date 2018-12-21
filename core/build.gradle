@@ -14,6 +14,9 @@ dependencies {
     compile group: 'org.scala-lang', name: 'scala-compiler', version: '2.12.3'
     testCompile group: 'org.scalatest', name: 'scalatest_2.12', version: '3.0.0'
 
+    compile group: 'com.typesafe.akka', name: 'akka-actor_2.12', version: '2.5.19'
+    testCompile group: 'com.typesafe.akka', name: 'akka-testkit_2.12', version: '2.5.19'
+
     compile group: 'com.thesamet.scalapb', name: 'compilerplugin_2.12', version: '0.7.4'
     compile group: 'com.thesamet.scalapb', name: 'protoc-bridge_2.12', version: '0.7.3'
     compile group: 'com.thesamet.scalapb', name: 'scalapbc_2.12', version: '0.7.4'

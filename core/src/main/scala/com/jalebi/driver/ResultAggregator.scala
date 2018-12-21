@@ -1,5 +1,7 @@
 package com.jalebi.driver
 
+import java.util.concurrent.CountDownLatch
+
 import com.jalebi.common.Logging
 import com.jalebi.proto.jobmanagement.TaskResponse
 import com.jalebi.proto.jobmanagement.TaskState.COMPLETED
@@ -9,12 +11,13 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
 
-class ResultAggregator extends Logging {
+class ResultAggregator(executorStateManager: ExecutorStateManager) extends Logging {
 
   private val jobIdToResult = mutable.HashMap[String, mutable.Queue[TaskResponse]]()
   //    .withDefaultValue(mutable.Queue[TaskResponse]())
 
-  def waitForJobToBeCompleted(jobId: String, executors: Set[String]): Unit = {
+  def waitForJobToBeCompleted(jobId: String): Unit = {
+    val executors = executorStateManager.listExecutorIds()
     val futures = executors.map(executorId => Future {
       var isTaskCompleted = false
       while ( {
@@ -44,8 +47,8 @@ class ResultAggregator extends Logging {
     jobIdToResult(taskResponse.jobId).enqueue(taskResponse)
   }
 
-  def getResultForJobId[T](jobId: String, executors: Set[String], f: TaskResponse => Seq[T]): mutable.Queue[T] = {
-    waitForJobToBeCompleted(jobId, executors)
+  def getResultForJobId[T](jobId: String, f: TaskResponse => Seq[T]): mutable.Queue[T] = {
+    waitForJobToBeCompleted(jobId)
     jobIdToResult(jobId).flatMap((a: TaskResponse) => {
       LOGGER.info(s"Result $a")
       f(a)

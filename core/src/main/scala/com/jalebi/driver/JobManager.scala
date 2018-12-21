@@ -18,7 +18,7 @@ case class JobManager(context: JalebiContext) extends Logging {
   val executorState = ExecutorStateManager(context.conf)
   private val scheduler = if (context.onLocalMaster) LocalScheduler(context, executorState, applicationId) else ApplicationMaster(context, executorState, applicationId)
   private val driver = Driver(this, context.conf)
-  val resultAggregator = new ResultAggregator()
+  val resultAggregator = new ResultAggregator(executorState)
 
   def ensureInitialized(): Unit = synchronized {
     if (!executorState.isInitialized) {
@@ -49,8 +49,7 @@ case class JobManager(context: JalebiContext) extends Logging {
     val jobId = context.newJobId(applicationId)
     val parts = hdfsClient.listDatasetParts(name)
     executorState.loadPartsToExecutors(jobId, parts, name)
-    val executors = executorState.listExecutorIds()
-    resultAggregator.waitForJobToBeCompleted(jobId, executors)
+    resultAggregator.waitForJobToBeCompleted(jobId)
     Dataset(name, this)
   }
 
@@ -59,8 +58,7 @@ case class JobManager(context: JalebiContext) extends Logging {
     val jobId = context.newJobId(applicationId)
     executorState.assignNewTask(TaskRequestBuilder.searchRequest(jobId, vertexId, name))
     val responseToVertexes: TaskResponse => Seq[Vertex] = response => ResultConverter.convertFromVertices(response.vertexResults)
-    val executors = executorState.listExecutorIds()
-    resultAggregator.getResultForJobId(jobId, executors, responseToVertexes)
+    resultAggregator.getResultForJobId(jobId, responseToVertexes)
   }
 
   def close(): Unit = {

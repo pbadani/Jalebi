@@ -13,13 +13,11 @@ case class Driver(jobManager: JobManager, conf: JalebiConfig) extends Runnable w
   private val serverHandler = new JobManagementProtocolGrpc.JobManagementProtocol with Logging {
     override def registerExecutor(request: ExecutorRequest): Future[ExecutorResponse] = {
       LOGGER.info(s"Driver side - Registering executor on server ${request.executorId}")
-      jobManager.executorState.markRegistered(request.executorId)
       Future.successful(ExecutorResponse(conf.getHeartbeatInterval().toInt, Some(conf.hdfsHostPort.get.toHostPort)))
     }
 
     override def unregisterExecutor(request: ExecutorRequest): Future[ExecutorResponse] = {
       LOGGER.info(s"Driver side - Unregistering executor on server ${request.executorId}")
-      jobManager.executorState.markUnregistered(request.executorId)
       Future.successful(ExecutorResponse(conf.getHeartbeatInterval().toInt))
     }
 
@@ -35,17 +33,17 @@ case class Driver(jobManager: JobManager, conf: JalebiConfig) extends Runnable w
 
         override def onNext(response: TaskResponse): Unit = {
           val executorId = response.executorId
-          jobManager.executorState.updateLastHeartbeat(executorId, response.executorState, response.datasetState, System.currentTimeMillis())
-          jobManager.resultAggregator.saveTaskResult(response)
-          jobManager.executorState.consumeNextTask(executorId).foreach(request => {
-            LOGGER.info(s"Issuing new task $request to executor $executorId.")
-            requestObserver.onNext(request)
-          })
-          if (response.jobId.isEmpty) {
-            LOGGER.debug(s"on next $response.")
-          } else {
-            LOGGER.info(s"on next $response.")
-          }
+          //          jobManager.executorState.updateLastHeartbeat(executorId, response.executorState, response.datasetState, System.currentTimeMillis())
+          //          jobManager.resultAggregator.saveTaskResult(response)
+          //          jobManager.executorState.consumeNextTask(executorId).foreach(request => {
+          //            LOGGER.info(s"Issuing new task $request to executor $executorId.")
+          //            requestObserver.onNext(request)
+          //          })
+          //          if (response.jobId.isEmpty) {
+          //            LOGGER.debug(s"on next $response.")
+          //          } else {
+          //            LOGGER.info(s"on next $response.")
+          //          }
         }
       }
     }

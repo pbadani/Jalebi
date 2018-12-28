@@ -1,44 +1,48 @@
 package com.jalebi.executor
 
+import akka.actor.{ActorRef, Props}
 import com.jalebi.common.Logging
 import com.jalebi.context.JalebiContext
-import com.jalebi.driver.{ExecutorStateManager, Scheduler}
+import com.jalebi.driver.Scheduler
+import com.jalebi.message.StartExecutors
 
 import scala.collection.mutable
 
-case class LocalScheduler(context: JalebiContext, executorStateManager: ExecutorStateManager, applicationId: String) extends Scheduler(context) with Logging {
+case class LocalScheduler(jContext: JalebiContext, applicationId: String) extends Scheduler(jContext) with Logging {
 
-  private val numOfExecutors = context.conf.getNumberOfExecutors().toInt
-  (0 until numOfExecutors).foreach(_ => executorStateManager.addExecutor(context.newExecutorId(applicationId)))
-  private val threads: mutable.Map[String, Thread] = mutable.HashMap()
+  private val refs = mutable.HashMap[String, ActorRef]()
 
   override def startExecutors(executorIds: Set[String]): Unit = {
-    executorIds.foreach(executorId => {
-      val thread = new Thread(Executor(TaskManager(executorId), context.driverHostPort), executorId)
-      threads += (executorId -> thread)
-      LOGGER.info(s"Starting thread for $executorId.")
-      thread.start()
-    })
   }
 
   override def shutExecutors(executorIds: Set[String]): Unit = {
     executorIds.foreach(executorId => {
-      threads.get(executorId).foreach(t => {
-        LOGGER.info(s"Stopping thread for $executorId.")
-        t.interrupt()
-      })
+      refs.get(executorId).foreach(executorRef => context.stop(executorRef))
+      LOGGER.info(s"Stopping executor $executorId.")
     })
   }
 
   override def shutAllExecutors(): Unit = {
-    threads.foreach {
-      case (executorId, thread) =>
-        LOGGER.info(s"Stopping thread for $executorId.")
-        thread.interrupt()
-    }
+    shutExecutors(refs.keySet.toSet)
+  }
+
+  override def receive: Receive = {
+    case StartExecutors(executorIds, hostPort) =>
+      executorIds.foreach(executorId => {
+        if (refs.contains(executorId)) {
+          throw new IllegalStateException(s"Executor $executorId already started.")
+        }
+        val executorRef = Executor.master.actorOf(Executor.props(executorId, hostPort), Executor.name(executorId))
+        refs += (executorId -> executorRef)
+        LOGGER.info(s"Starting executor $executorId.")
+      })
   }
 }
 
 object LocalScheduler {
-  def apply(context: JalebiContext, executorStateManager: ExecutorStateManager, applicationId: String): LocalScheduler = new LocalScheduler(context, executorStateManager, applicationId)
+  def props(jContext: JalebiContext, applicationId: String) = Props(LocalScheduler(jContext, applicationId))
+
+  def name() = "LocalScheduler"
+
+  def apply(context: JalebiContext, applicationId: String): LocalScheduler = new LocalScheduler(context, applicationId)
 }

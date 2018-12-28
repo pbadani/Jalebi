@@ -7,37 +7,31 @@ import com.jalebi.proto.jobmanagement.{DatasetState, TaskRequest}
 import org.apache.hadoop.yarn.api.records.Container
 
 import scala.collection.mutable
+import scala.concurrent.duration.Duration
+import scala.concurrent.{Await, Promise}
 
-case class ExecutorStateManager(jContext: JalebiContext) extends Logging {
+sealed trait JobManagerData extends Logging
 
-  private val default = StateValue(parts = Set.empty, executorState = NEW, datasetState = DatasetState.NONE, container = None, nextAction = None)
+object EmptyExecutorStateManager extends JobManagerData
 
-  private var initializationState = false
+case class ExecutorStateManage(jContext: JalebiContext) extends JobManagerData {
 
-  private val executorIdToState = mutable.HashMap[String, StateValue]().withDefaultValue(default)
+  private val executorIdToState = new mutable.HashMap[String, StateValue]()
+  private var waitToRegister: Option[Promise[ExecutorState]] = None
+  private var waitToLoad: Option[Promise[ExecutorState]] = None
 
-  private val executorIdToLastHeartbeat = mutable.HashMap[String, Long]()
-
-  def initialize1(): Unit = {
-    waitForAllExecutorsToBeRegistered()
-    initializationState = true
+  //This is a blocking call made by the JobManager because we want to wait for all the executors
+  //to be registered before we start executing the jobs.
+  def waitForAllToRegister(duration: Duration): Unit = {
+    val p = Promise[ExecutorState]()
+    waitToRegister = Some(p)
+    Await.ready(p.future, duration)
   }
 
-  def isInitialized: Boolean = initializationState
-
-  private[driver] def waitForAllExecutorsToBeRegistered(): Unit = {
-    while (executorIdToState.exists {
-      case (_, state) => state.executorState == NEW
-    }) {
-      val unregistered = executorIdToState.filter {
-        case (_, state) => state.executorState == NEW
-      }.map {
-        case (executorId, _) => executorId
-      }
-      LOGGER.info(s"waiting for ${unregistered.mkString(", ")} to be registered.")
-      Thread.sleep(1000)
-    }
-    LOGGER.info("All executors are registered.")
+  def waitForAllToLoad(duration: Duration): Unit = {
+    val p = Promise[ExecutorState]()
+    waitToLoad = Some(p)
+    Await.ready(p.future, duration)
   }
 
   def loadPartsToExecutors(jobId: String, parts: Set[String], name: String): Unit = {
@@ -96,24 +90,34 @@ case class ExecutorStateManager(jContext: JalebiContext) extends Logging {
       throw new IllegalStateException(s"Executor $executorId has not been added yet.")
     }
     updateState(executorId, state => state.copy(executorState = REGISTERED))
+    if (areAll(REGISTERED)) {
+      waitToRegister.foreach(_.success(REGISTERED))
+    }
   }
+
+  def markLoaded(executorId: String): Unit = {
+    if (!executorIdToState.contains(executorId)) {
+      throw new IllegalStateException(s"Executor $executorId has not been added yet.")
+    }
+    updateState(executorId, state => state.copy(executorState = LOADED))
+    if (areAll(LOADED)) {
+      waitToRegister.foreach(_.success(LOADED))
+    }
+  }
+
+  def areAll(executorState: ExecutorState): Boolean = executorIdToState.values.forall(_.executorState == executorState)
 
   def markUnregistered(executorId: String): Unit = {
     LOGGER.info(s"Unregistering $executorId.")
     if (!executorIdToState.contains(executorId)) {
       throw new IllegalStateException(s"Executor $executorId has not been added yet.")
     }
-    updateState(executorId, state => state.copy(executorState = UNREGISTERED))
+    updateState(executorId, state => state.copy(executorState = REGISTERED))
   }
 
-  def updateLastHeartbeat(executorId: String, eState: ExecutorState, dState: DatasetState, heartbeat: Long): Unit = {
-    updateState(executorId, state => state.copy(executorState = eState, datasetState = dState))
-    executorIdToLastHeartbeat(executorId) = heartbeat
-  }
-
-  def addExecutor(executorId: String): Unit = {
+  def addExecutor(executorId: String, stateValue: StateValue): Unit = {
     LOGGER.info(s"Adding executor $executorId.")
-    executorIdToState.put(executorId, default)
+    executorIdToState.put(executorId, stateValue)
   }
 
   def removeExecutor(executorId: String): Unit = {
@@ -147,7 +151,6 @@ case class ExecutorStateManager(jContext: JalebiContext) extends Logging {
   }
 }
 
-
-object ExecutorStateManager {
+object ExecutorStateManage {
   val default = StateValue(parts = Set.empty, executorState = NEW, datasetState = DatasetState.NONE, container = None, nextAction = None)
 }

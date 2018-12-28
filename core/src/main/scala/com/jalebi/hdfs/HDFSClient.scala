@@ -106,7 +106,7 @@ case class HDFSClient(fs: FileSystem) extends Logging {
 
 object HDFSClient {
 
-  implicit class RichHostPort(hostPort: HostPort) {
+  implicit class RichHostPort(hostPort: HostPort) extends Serializable {
 
     def this(scheme: String, host: String, port: Long) = this(HostPort(scheme, host, port))
 

@@ -4,7 +4,6 @@ import com.jalebi.api.{Jalebi, VertexID}
 import com.jalebi.common.{Logging, ResultConverter}
 import com.jalebi.exception.DatasetCorruptException
 import com.jalebi.proto.jobmanagement.DatasetState._
-import com.jalebi.proto.jobmanagement.ExecutorState._
 import com.jalebi.proto.jobmanagement.TaskState._
 import com.jalebi.proto.jobmanagement._
 import org.apache.commons.lang.StringUtils
@@ -14,7 +13,7 @@ import scala.collection.mutable
 case class TaskManager(executorId: String) extends Logging {
 
   private var datasetState: DatasetState = NONE
-  private var executorState: ExecutorState = NEW
+  private var executorState: ExecutorState = New
   private var currentJalebi: Option[Jalebi] = None
   private var running = true
   private var taskConfig: Option[TaskConfig] = None
@@ -31,7 +30,7 @@ case class TaskManager(executorId: String) extends Logging {
         LOGGER.info(s"Propagating response $resp")
         resp
       } else {
-        TaskResponse(StringUtils.EMPTY, StringUtils.EMPTY, RUNNING, taskManager.executorId, taskManager.executorState, taskManager.datasetState)
+        TaskResponse(StringUtils.EMPTY, StringUtils.EMPTY, RUNNING, taskManager.executorId, null, taskManager.datasetState)
       }
     }
   }
@@ -43,13 +42,13 @@ case class TaskManager(executorId: String) extends Logging {
   }
 
   def markRegistered(taskConfig: TaskConfig): Unit = {
-    executorState = REGISTERED
+    executorState = Registered
     LOGGER.info(s"Task config - $taskConfig")
     this.taskConfig = Some(taskConfig)
   }
 
- def markUnregistered(taskConfig: TaskConfig): Unit = {
-    executorState = UNREGISTERED
+  def markUnregistered(taskConfig: TaskConfig): Unit = {
+    executorState = Unregistered
     LOGGER.info(s"Task config - $taskConfig")
     this.taskConfig = Some(taskConfig)
   }
@@ -59,25 +58,25 @@ case class TaskManager(executorId: String) extends Logging {
   }
 
   def execute(taskRequest: TaskRequest): Unit = {
-    require(executorState != NEW || executorState != UNREGISTERED || executorState != ASSUMED_DEAD)
+    require(executorState != New || executorState != Unregistered || executorState != AssumedDead)
     taskRequest.taskType match {
       case TaskType.LOAD_DATASET =>
         require(taskRequest.dataset != null, "Dataset name cannot be null.")
         require(taskRequest.parts.nonEmpty, "No parts to load.")
-        require(executorState != NEW && executorState != UNREGISTERED, s"Executor $executorId should not be in $executorState.")
+        require(executorState != New && executorState != Unregistered, s"Executor $executorId should not be in $executorState.")
         try {
           LOGGER.info(s"Loading '${taskRequest.dataset}' parts [${taskRequest.parts.mkString(", ")}] on $executorId.")
-          setStates(datasetState = Some(LOADING), executorState = Some(RUNNING_JOB))
+          setStates(datasetState = Some(LOADING), executorState = Some(RunningJob))
           currentJalebi = Some(loadDataset(taskRequest.dataset, taskRequest.parts.toSet))
-          setStates(datasetState = Some(LOADED), executorState = Some(RUNNABLE))
-          val response = TaskResponse(taskRequest.jobId, taskRequest.taskId, COMPLETED, executorId, executorState, datasetState)
+          setStates(datasetState = Some(LOADED), executorState = Some(Runnable))
+          val response = TaskResponse(taskRequest.jobId, taskRequest.taskId, COMPLETED, executorId, null, datasetState)
           LOGGER.info(s"Load dataset response $response on $executorId.")
           propagateInHeartbeat.put(response)
         } catch {
           case e: DatasetCorruptException =>
             currentJalebi = None
-            setStates(datasetState = Some(NONE), executorState = Some(RUNNABLE))
-            propagateInHeartbeat.put(TaskResponse(taskRequest.jobId, taskRequest.taskId, FAILED, executorId, executorState, datasetState))
+            setStates(datasetState = Some(NONE), executorState = Some(Runnable))
+            propagateInHeartbeat.put(TaskResponse(taskRequest.jobId, taskRequest.taskId, FAILED, executorId, null, datasetState))
             LOGGER.error(e.getMessage)
         }
 
@@ -85,13 +84,13 @@ case class TaskManager(executorId: String) extends Logging {
         require(currentJalebi.isDefined)
         require(currentJalebi.get.name == taskRequest.dataset, s"Dataset mismatch. Expected ${currentJalebi.get.name}, Actual: ${taskRequest.dataset}")
         LOGGER.info(s"Searching vertex '${taskRequest.startVertexId} on $executorId.")
-        setStates(None, executorState = Some(RUNNING_JOB))
+        setStates(None, executorState = Some(RunningJob))
         val result = currentJalebi.get.searchVertex(VertexID(taskRequest.startVertexId))
         val vertexResult = ResultConverter.convertToVertexResult(result)
-        val response = TaskResponse(taskRequest.jobId, taskRequest.taskId, COMPLETED, executorId, executorState, datasetState, vertexResult, Nil)
+        val response = TaskResponse(taskRequest.jobId, taskRequest.taskId, COMPLETED, executorId, null, datasetState, vertexResult, Nil)
         LOGGER.info(s"Search vertex response $response on $executorId.")
         propagateInHeartbeat.put(response)
-        setStates(None, executorState = Some(RUNNABLE))
+        setStates(None, executorState = Some(Runnable))
 
       case TaskType.BREADTH_FIRST =>
         require(currentJalebi.isDefined)

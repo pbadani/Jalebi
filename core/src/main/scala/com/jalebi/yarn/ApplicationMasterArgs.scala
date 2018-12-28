@@ -54,6 +54,7 @@ object ApplicationMasterArgs extends Logging {
           Map.empty
       }
     }
+
     val options = nextOption(Map(), args.toList)
     ArgumentUtils.validateArgPresent(Seq(AppMaster.applicationId, AppMaster.jarPath), options, usage)
     ApplicationMasterArgs(options)

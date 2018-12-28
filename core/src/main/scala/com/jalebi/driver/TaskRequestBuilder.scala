@@ -10,7 +10,7 @@ object TaskRequestBuilder {
     TaskRequest(jobId, StringUtils.EMPTY, TaskType.SEARCH_VERTEX, vertexId.id, name, Nil)
   }
 
-  def loadDatasetRequest(jobId: String, name: String, parts: Seq[String]): TaskRequest = {
-    TaskRequest(jobId, StringUtils.EMPTY, TaskType.LOAD_DATASET, 0, name, parts)
+  def loadDatasetRequest(jobId: String, name: String): TaskRequest = {
+    TaskRequest(jobId, StringUtils.EMPTY, TaskType.LOAD_DATASET, 0, name, Seq.empty)
   }
 }

@@ -1,7 +1,5 @@
 package com.jalebi.driver
 
-import java.util.concurrent.CountDownLatch
-
 import com.jalebi.common.Logging
 import com.jalebi.proto.jobmanagement.TaskResponse
 import com.jalebi.proto.jobmanagement.TaskState.COMPLETED

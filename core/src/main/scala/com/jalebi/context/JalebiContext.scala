@@ -2,38 +2,40 @@ package com.jalebi.context
 
 import java.util.concurrent.atomic.AtomicLong
 
+import akka.actor._
+import akka.pattern.ask
+import akka.util.Timeout
 import com.jalebi.api.{Triplet, Triplets}
 import com.jalebi.common.Logging
 import com.jalebi.driver.JobManager
 import com.jalebi.exception._
 import com.jalebi.hdfs.HDFSClient
 import com.jalebi.hdfs.HDFSClient.RichHostPort
+import com.jalebi.message.{InitializeExecutors, LoadDataset}
+import com.typesafe.config.ConfigFactory
 import org.apache.hadoop.net.NetUtils
 import org.apache.hadoop.yarn.conf.YarnConfiguration
+
+import scala.concurrent.duration._
 
 case class JalebiContext private(conf: JalebiConfig) extends Logging {
 
   private var currentDataset: Option[Dataset] = None
   val driverHostPort: RichHostPort = new RichHostPort("http", NetUtils.getLocalHostname, NetUtils.getFreeSocketPort)
-  val yarnConf = new YarnConfiguration()
   private val jobIdCounter = new AtomicLong(0)
   private val executorIdCounter = new AtomicLong(0)
-  // Let this context object be constructed before passing it to JobManager
-  lazy val jobManager: JobManager = JobManager.createNew(this)
+  private val jobManager = JalebiContext.master.actorOf(JobManager.props(this), JobManager.name)
+  implicit val timeout: Timeout = Timeout(10 seconds)
+  jobManager ? InitializeExecutors
 
   @throws[DatasetNotFoundException]
   @throws[DatasetNotLoadedException]
-  def loadDataset(name: String): Dataset = {
-    val hdfsClient = HDFSClient.withDistributedFileSystem(conf.hdfsHostPort, yarnConf)
-    if (!hdfsClient.datasetExists(name)) {
-      throw new DatasetNotFoundException(s"Dataset '$name' not found.")
-    }
-    currentDataset = Some(jobManager.load(hdfsClient, name))
-    currentDataset.get
+  def loadDataset(name: String): Unit = {
+    jobManager ! LoadDataset(name)
   }
 
   def deleteDataset(name: String): Unit = {
-    HDFSClient.withDistributedFileSystem(conf.hdfsHostPort, yarnConf).deleteDataset(name)
+    HDFSClient.withDistributedFileSystem(conf.hdfsHostPort, new YarnConfiguration()).deleteDataset(name)
   }
 
   @throws[DuplicateDatasetException]
@@ -49,10 +51,10 @@ case class JalebiContext private(conf: JalebiConfig) extends Logging {
       Triplet(verticesMap(edge.source), edge, verticesMap(edge.target))
     }).grouped(conf.options.getPartitionSize().toInt)
       .map(Triplets(_))
-    HDFSClient.withDistributedFileSystem(conf.hdfsHostPort, yarnConf).createDataset(input.datasetName, triplets)
+    HDFSClient.withDistributedFileSystem(conf.hdfsHostPort, new YarnConfiguration()).createDataset(input.datasetName, triplets)
   }
 
-  def close(): Unit = jobManager.close()
+  def close(): Unit = jobManager ! PoisonPill
 
   def onLocalMaster: Boolean = conf.master == "local"
 
@@ -66,5 +68,7 @@ case class JalebiContext private(conf: JalebiConfig) extends Logging {
 }
 
 object JalebiContext {
+  val master: ActorSystem = ActorSystem("Master", ConfigFactory.load("master"))
+
   def apply(conf: JalebiConfig): JalebiContext = new JalebiContext(conf)
 }

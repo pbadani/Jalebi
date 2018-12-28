@@ -1,75 +1,124 @@
 package com.jalebi.driver
 
+import akka.actor._
 import com.jalebi.api.{Vertex, VertexID}
-import com.jalebi.common.{Logging, ResultConverter}
+import com.jalebi.common.Logging
 import com.jalebi.context.{Dataset, JalebiContext}
-import com.jalebi.exception.DatasetNotLoadedException
+import com.jalebi.exception.{DatasetNotFoundException, DatasetNotLoadedException}
 import com.jalebi.executor.LocalScheduler
+import com.jalebi.extensions.MasterSettings
 import com.jalebi.hdfs.HDFSClient
 import com.jalebi.hdfs.HDFSClient.RichHostPort
-import com.jalebi.proto.jobmanagement.TaskResponse
+import com.jalebi.message._
+import com.jalebi.proto.jobmanagement.HostPort
 import com.jalebi.yarn.ApplicationMaster
+import org.apache.hadoop.yarn.conf.YarnConfiguration
 
 import scala.collection.mutable
+import scala.concurrent.duration._
 
-case class JobManager(context: JalebiContext) extends Logging {
+case class JobManager(jContext: JalebiContext) extends FSM[JobManagerState, JobManagerData] with Logging {
 
   private val applicationId = s"Jalebi-${System.currentTimeMillis()}"
-  val executorState = ExecutorStateManager(context.conf)
-  private val scheduler = if (context.onLocalMaster) LocalScheduler(context, executorState, applicationId) else ApplicationMaster(context, executorState, applicationId)
-  private val driver = Driver(this, context.conf)
-  val resultAggregator = new ResultAggregator(executorState)
-
-  def ensureInitialized(): Unit = synchronized {
-    if (!executorState.isInitialized) {
-      driver.start()
-      val executorIds = executorState.listExecutorIds()
-      if (executorIds.isEmpty) {
-        throw new IllegalStateException("No executors to run.")
-      }
-      LOGGER.info(s"Starting executors: [${executorIds.mkString(", ")}]")
-      scheduler.startExecutors(executorIds)
-      executorState.initialize()
-    }
+  private val scheduler = if (jContext.onLocalMaster) {
+    context.actorOf(LocalScheduler.props(jContext, applicationId), LocalScheduler.name())
+  } else {
+    context.actorOf(Props(ApplicationMaster(jContext, null, applicationId)), "AppMaster")
   }
+  private val conf = MasterSettings(context.system)
+  private var stateMonitorRef: Option[ActorRef] = None
+
+  startWith(UnInitialized, EmptyExecutorStateManager)
+
+  when(UnInitialized) {
+    case Event(InitializeExecutors, EmptyExecutorStateManager) =>
+      val numOfExecutors = jContext.conf.getNumberOfExecutors().toInt
+      val executorStateManage = ExecutorStateManage(jContext)
+      (0 until numOfExecutors).foreach(_ => {
+        val executorId = jContext.newExecutorId(applicationId)
+        executorStateManage.addExecutor(executorId, ExecutorStateManage.default)
+      })
+      goto(Initialized) using executorStateManage
+  }
+
+  when(Initialized) {
+    case Event(LoadDataset(name), e) =>
+      val hdfsClient = HDFSClient.withDistributedFileSystem(jContext.conf.hdfsHostPort, new YarnConfiguration())
+      if (!hdfsClient.datasetExists(name)) {
+        throw new DatasetNotFoundException(s"Dataset '$name' not found.")
+      }
+      val executorStateManage = e.asInstanceOf[ExecutorStateManage]
+      executorStateManage.assignNewTask(TaskRequestBuilder.loadDatasetRequest(jContext.newJobId(applicationId), name))
+      goto(Loaded) using executorStateManage
+  }
+
+  onTransition {
+    case UnInitialized -> Initialized =>
+      val executorStateManage = nextStateData.asInstanceOf[ExecutorStateManage]
+      val hostPort = RichHostPort(HostPort("", conf.host, conf.port))
+      val executorIds = executorStateManage.listExecutorIds()
+      stateMonitorRef = Some(context.actorOf(StateMonitor.props(executorStateManage, jContext), StateMonitor.name()))
+      scheduler ! StartExecutors(executorIds, hostPort)
+      executorStateManage.waitForAllToRegister(10 seconds)
+    case Initialized -> Loaded =>
+      val executorStateManage = nextStateData.asInstanceOf[ExecutorStateManage]
+      executorStateManage.waitForAllToLoad(10 seconds)
+  }
+
+  initialize()
+
+  //
+  //  def ensureInitialized(): Unit = synchronized {
+  //    if (!executorState.isInitialized) {
+  //      driver.start()
+  //      val executorIds = executorState.listExecutorIds()
+  //      if (executorIds.isEmpty) {
+  //        throw new IllegalStateException("No executors to run.")
+  //      }
+  //      LOGGER.info(s"Starting executors: [${executorIds.mkString(", ")}]")
+  //      scheduler.startExecutors(executorIds)
+  //      executorState.initialize1()
+  //    }
+  //  }
+
 
   @throws[DatasetNotLoadedException]
   def ensureDatasetLoaded(name: String): Unit = {
-    if (!context.isLoaded) {
+    if (!jContext.isLoaded) {
       throw new DatasetNotLoadedException("No dataset is loaded currently.")
     }
-    if (context.getCurrentDatasetName != name) {
-      throw new DatasetNotLoadedException(s"Currently loaded dataset ${context.getCurrentDatasetName} is not same as $name")
+    if (jContext.getCurrentDatasetName != name) {
+      throw new DatasetNotLoadedException(s"Currently loaded dataset ${jContext.getCurrentDatasetName} is not same as $name")
     }
   }
 
   @throws[DatasetNotLoadedException]
   def load(hdfsClient: HDFSClient, name: String): Dataset = {
-    ensureInitialized()
-    val jobId = context.newJobId(applicationId)
-    val parts = hdfsClient.listDatasetParts(name)
-    executorState.loadPartsToExecutors(jobId, parts, name)
-    resultAggregator.waitForJobToBeCompleted(jobId)
+    //    ensureInitialized()
+    //    val jobId = jContext.newJobId(applicationId)
+    //    jobActors.put(jobId, context.actorOf(Job.props(jobId), Job.name(jobId)))
+    //    val parts = hdfsClient.listDatasetParts(name)
+    //    executorState.loadPartsToExecutors(jobId, parts, name)
+    //    resultAggregator.waitForJobToBeCompleted(jobId)
     Dataset(name, this)
   }
 
-  def findVertex(vertexId: VertexID, name: String): mutable.Queue[Vertex] = {
+  def find(vertexId: VertexID, name: String): mutable.Queue[Vertex] = {
     ensureDatasetLoaded(name)
-    val jobId = context.newJobId(applicationId)
-    executorState.assignNewTask(TaskRequestBuilder.searchRequest(jobId, vertexId, name))
-    val responseToVertexes: TaskResponse => Seq[Vertex] = response => ResultConverter.convertFromVertices(response.vertexResults)
-    resultAggregator.getResultForJobId(jobId, responseToVertexes)
+    null
+    //    val jobId = jContext.newJobId(applicationId)
+    //    executorState.assignNewTask(TaskRequestBuilder.searchRequest(jobId, vertexId, name))
+    //    val responseToVertexes: TaskResponse => Seq[Vertex] = response => ResultConverter.convertFromVertices(response.vertexResults)
+    //    resultAggregator.getResultForJobId(jobId, responseToVertexes)
   }
 
-  def close(): Unit = {
-    LOGGER.info("Shutting all executors.")
-    scheduler.shutAllExecutors()
-    driver.interrupt()
-  }
 
-  def driverHostPort: RichHostPort = context.driverHostPort
+  def driverHostPort: RichHostPort = jContext.driverHostPort
+
 }
 
 object JobManager {
-  def createNew(context: JalebiContext) = new JobManager(context)
+  def props(jContext: JalebiContext) = Props(new JobManager(jContext))
+
+  def name = "JobManager"
 }

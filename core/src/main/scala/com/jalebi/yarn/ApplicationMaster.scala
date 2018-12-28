@@ -22,30 +22,30 @@ import scala.collection.mutable.ListBuffer
 
 object ApplicationMaster extends Logging {
 
-  def apply(context: JalebiContext, executorStateManager: ExecutorStateManager, applicationId: String): ApplicationMaster = {
-    new ApplicationMaster(context, ApplicationMasterArgs.createArgsFromEnvironment(), executorStateManager, applicationId)
+  def apply(jContext: JalebiContext, executorStateManager: ExecutorStateManager, applicationId: String): ApplicationMaster = {
+    new ApplicationMaster(jContext, ApplicationMasterArgs.createArgsFromEnvironment(), executorStateManager, applicationId)
   }
 
 }
 
-class ApplicationMaster(context: JalebiContext, amArgs: ApplicationMasterArgs, executorStateManager: ExecutorStateManager, applicationId: String) extends Scheduler(context) with Logging {
+class ApplicationMaster(jContext: JalebiContext, amArgs: ApplicationMasterArgs, executorStateManager: ExecutorStateManager, applicationId: String) extends Scheduler(jContext) with Logging {
   val numberOfContainersNeeded = 3
   val containerStateManager = ContainerStateManager(numberOfContainersNeeded)
-
+  val yarnConf = new YarnConfiguration()
   val amrmClient: AMRMClientAsync[ContainerRequest] = AMRMClientAsync.createAMRMClientAsync[ContainerRequest](1000, AMRMCallbackHandler(this, executorStateManager))
-  amrmClient.init(context.yarnConf)
+  amrmClient.init(yarnConf)
   amrmClient.start()
 
   val nmClient: NMClientAsync = NMClientAsync.createNMClientAsync(NMCallbackHandler(this, executorStateManager))
-  nmClient.init(context.yarnConf)
+  nmClient.init(yarnConf)
   nmClient.start()
 
   private val containerMemory = 256
   private val containerVCores = 1
-  val (driverHost, driverPort) = (context.driverHostPort.host, context.driverHostPort.port)
+  val (driverHost, driverPort) = (jContext.driverHostPort.host, jContext.driverHostPort.port)
 
-  private val numOfExecutors = context.conf.getNumberOfExecutors().toInt
-  (0 until numOfExecutors).foreach(_ => executorStateManager.addExecutor(context.newExecutorId(applicationId)))
+  private val numOfExecutors = jContext.conf.getNumberOfExecutors().toInt
+  (0 until numOfExecutors).foreach(_ => executorStateManager.addExecutor(jContext.newExecutorId(applicationId)))
 
   private val launchThreads = ListBuffer[Thread]()
 
@@ -80,7 +80,7 @@ class ApplicationMaster(context: JalebiContext, amArgs: ApplicationMasterArgs, e
 
   def createLaunchContainerThread(executorId: String, allocatedContainer: Container): Thread = {
     val thread = new Thread(() => {
-      val containerLaunchContext = createExecutorContext(context.yarnConf, executorId)
+      val containerLaunchContext = createExecutorContext(yarnConf, executorId)
       LOGGER.info(s"Starting container at: " +
         s" | Executor id: $executorId" +
         s" | Container Id: ${allocatedContainer.getId}" +
@@ -152,5 +152,9 @@ class ApplicationMaster(context: JalebiContext, amArgs: ApplicationMasterArgs, e
 
   override def shutAllExecutors(): Unit = {
 
+  }
+
+  override def receive: Receive = {
+    case "" =>
   }
 }

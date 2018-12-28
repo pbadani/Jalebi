@@ -17,6 +17,11 @@ dependencies {
     compile group: 'com.typesafe.akka', name: 'akka-actor_2.12', version: '2.5.19'
     testCompile group: 'com.typesafe.akka', name: 'akka-testkit_2.12', version: '2.5.19'
 
+    compile group: 'com.typesafe.akka', name: 'akka-remote_2.12', version: '2.5.19'
+    testCompile group: 'com.typesafe.akka', name: 'akka-multi-node-testkit_2.12', version: '2.5.19'
+
+    compile group: 'com.typesafe.akka', name: 'akka-slf4j_2.12', version: '2.5.19'
+
     compile group: 'com.thesamet.scalapb', name: 'compilerplugin_2.12', version: '0.7.4'
     compile group: 'com.thesamet.scalapb', name: 'protoc-bridge_2.12', version: '0.7.3'
     compile group: 'com.thesamet.scalapb', name: 'scalapbc_2.12', version: '0.7.4'

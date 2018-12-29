@@ -60,6 +60,18 @@ case class JobManager(jContext: JalebiContext) extends FSM[JobManagerState, JobM
       stay
   }
 
+  when(Killed) {
+    case Event("", s) =>
+      val a = ""
+      stay
+  }
+
+  whenUnhandled {
+    case Event(Shutdown, e) =>
+      val executorStateManage = e.asInstanceOf[ExecutorStateManage]
+      goto(Killed) using e
+  }
+
   onTransition {
     case UnInitialized -> Initialized =>
       val executorStateManage = nextStateData.asInstanceOf[ExecutorStateManage]
@@ -71,6 +83,8 @@ case class JobManager(jContext: JalebiContext) extends FSM[JobManagerState, JobM
     case Initialized -> DatasetLoaded =>
       val executorStateManage = nextStateData.asInstanceOf[ExecutorStateManage]
       executorStateManage.waitForAllToLoad(10 seconds)
+    case _ -> Killed =>
+      scheduler ! StopExecutors()
   }
 
   initialize()

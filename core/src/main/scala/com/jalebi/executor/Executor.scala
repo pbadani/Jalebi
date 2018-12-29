@@ -1,6 +1,6 @@
 package com.jalebi.executor
 
-import akka.actor.{ActorSelection, ActorSystem, FSM, Props, Timers}
+import akka.actor.{ActorSelection, ActorSystem, FSM, PoisonPill, Props, Timers}
 import com.jalebi.common.Logging
 import com.jalebi.extensions.ExecutorSettings
 import com.jalebi.hdfs.HDFSClient
@@ -57,7 +57,7 @@ case class Executor(taskManager: TaskManager, driverHostPort: RichHostPort) exte
       goto(Loaded) using LoadedExecutorState(state.monitorRef, state.hdfs, jalebi)
   }
 
-   when(Loaded) {
+  when(Loaded) {
     case Event("", s) =>
       stay using s
   }
@@ -72,6 +72,10 @@ case class Executor(taskManager: TaskManager, driverHostPort: RichHostPort) exte
   whenUnhandled {
     case Event(h@Heartbeat(name), _) =>
       monitorRef.get ! h
+      stay
+    case Event(ShutExecutors, _) =>
+      //perform cleanup, save state, flush results.
+      self ! PoisonPill
       stay
   }
 

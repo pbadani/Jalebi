@@ -32,6 +32,7 @@ case class JalebiContext private(conf: JalebiConfig) extends Logging {
   @throws[DatasetNotLoadedException]
   def loadDataset(name: String): Unit = {
     jobManager ! LoadDataset(name)
+    Dataset(name, jobManager)
   }
 
   def deleteDataset(name: String): Unit = {

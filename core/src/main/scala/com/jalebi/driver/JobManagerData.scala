@@ -20,6 +20,7 @@ case class ExecutorStateManage(jContext: JalebiContext) extends JobManagerData w
   private val executorIdToState = new mutable.HashMap[String, StateValue]()
   private var waitToRegister: Option[Promise[ExecutorState]] = None
   private var waitToLoad: Option[Promise[ExecutorState]] = None
+  private var waitToUnregister: Option[Promise[ExecutorState]] = None
 
   //This is a blocking call made by the JobManager because we want to wait for all the executors
   //to be registered before we start executing the jobs.
@@ -32,6 +33,12 @@ case class ExecutorStateManage(jContext: JalebiContext) extends JobManagerData w
   def waitForAllToLoad(duration: Duration): Unit = {
     val p = Promise[ExecutorState]()
     waitToLoad = Some(p)
+    Await.ready(p.future, duration)
+  }
+
+  def waitForAllToUnregister(duration: Duration): Unit = {
+    val p = Promise[ExecutorState]()
+    waitToUnregister = Some(p)
     Await.ready(p.future, duration)
   }
 
@@ -109,7 +116,10 @@ case class ExecutorStateManage(jContext: JalebiContext) extends JobManagerData w
     if (!executorIdToState.contains(executorId)) {
       throw new IllegalStateException(s"Executor $executorId has not been added yet.")
     }
-    updateState(executorId, state => state.copy(executorState = REGISTERED))
+    updateState(executorId, state => state.copy(executorState = UNREGISTERED))
+    if (areAll(UNREGISTERED)) {
+      waitToLoad.foreach(_.success(UNREGISTERED))
+    }
   }
 
   def addExecutor(executorId: String, stateValue: StateValue): Unit = {

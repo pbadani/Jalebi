@@ -1,16 +1,18 @@
 package com.jalebi.context
 
-import com.jalebi.api.{Vertex, VertexID}
-import com.jalebi.driver.JobManager
+import akka.actor.ActorRef
+import akka.pattern._
+import akka.util.Timeout
+import com.jalebi.api.VertexID
+import com.jalebi.message.FindVertex
 
-case class Dataset(name: String, jobManager: JobManager) {
+import scala.concurrent.duration._
 
-  def findVertex(vertexId: VertexID): Seq[Vertex] = {
-    jobManager.find(vertexId, name)
-  }
+case class Dataset(name: String, jobManager: ActorRef) {
 
-  def breadthFirst(startFrom: VertexID) = {
-
+  def findVertex(vertexId: VertexID): String = {
+    implicit val timeout = Timeout(5 seconds)
+    jobManager.ask(FindVertex(vertexId)).asInstanceOf[String]
   }
 
 }

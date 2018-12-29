@@ -4,7 +4,7 @@ import com.jalebi.hdfs.HDFSClient.RichHostPort
 
 case class StartExecutors(executorIds: Set[String], hostPort: RichHostPort)
 
-case class StopExecutors(executorIds: Set[String])
+case class StopExecutors()
 
 case class RegisterExecutor(executorId: String)
 

@@ -2,6 +2,7 @@ package com.jalebi.driver
 
 import com.jalebi.common.Logging
 import com.jalebi.context.JalebiContext
+import com.jalebi.message.{ExecutorAction, LoadDatasetTask}
 import com.jalebi.partitioner.HashPartitioner
 import com.jalebi.proto.jobmanagement.{DatasetState, TaskRequest}
 import org.apache.hadoop.yarn.api.records.Container
@@ -14,7 +15,7 @@ sealed trait JobManagerData extends Logging
 
 object EmptyExecutorStateManager extends JobManagerData
 
-case class ExecutorStateManage(jContext: JalebiContext) extends JobManagerData {
+case class ExecutorStateManage(jContext: JalebiContext) extends JobManagerData with Logging {
 
   private val executorIdToState = new mutable.HashMap[String, StateValue]()
   private var waitToRegister: Option[Promise[ExecutorState]] = None
@@ -34,33 +35,29 @@ case class ExecutorStateManage(jContext: JalebiContext) extends JobManagerData {
     Await.ready(p.future, duration)
   }
 
-  def loadPartsToExecutors(jobId: String, parts: Set[String], name: String): Unit = {
+  def loadPartsToExecutors(jobId: String, allParts: Set[String], name: String): Unit = {
     clearParts()
-    HashPartitioner.partition(parts, listExecutorIds()).foreach {
-      case (e, p) => assignPartsToExecutor(jobId, e, p, name)
+    HashPartitioner.partition(allParts, listExecutorIds()).foreach {
+      case (executorId, parts) =>
+        LOGGER.info(s"Assigned parts [${parts.mkString(",")}] to $executorId.")
+        updateState(executorId, state => {
+          state.copy(parts = parts, nextAction = Some(LoadDatasetTask(jobId, name, parts)))
+        })
     }
   }
 
-  def assignNewTask(taskRequest: TaskRequest): Unit = {
+  def assignNewTask(executorAction: ExecutorAction): Unit = {
     executorIdToState.keySet.foreach(executorId => {
       updateState(executorId, state => {
-        state.copy(nextAction = Some(taskRequest.copy(parts = state.parts.toSeq)))
+        state.copy(nextAction = Some(executorAction))
       })
     })
   }
 
-  def consumeNextTask(executorId: String): Option[TaskRequest] = {
+  def consumeNextTask(executorId: String): Option[ExecutorAction] = {
     val next = executorIdToState(executorId).nextAction
     next.foreach(_ => updateState(executorId, state => state.copy(nextAction = None)))
     next
-  }
-
-  private def assignPartsToExecutor(jobId: String, executorId: String, parts: Set[String], name: String): Unit = {
-    LOGGER.info(s"Assigned parts [${parts.mkString(",")}] to executor $executorId.")
-    updateState(executorId, state => {
-      val request = TaskRequestBuilder.loadDatasetRequest(jobId, name)
-      state.copy(parts = parts, nextAction = Some(request))
-    })
   }
 
   private def removePartsFromExecutor(executorId: String, parts: Set[String]): Unit = {
@@ -99,9 +96,9 @@ case class ExecutorStateManage(jContext: JalebiContext) extends JobManagerData {
     if (!executorIdToState.contains(executorId)) {
       throw new IllegalStateException(s"Executor $executorId has not been added yet.")
     }
-    updateState(executorId, state => state.copy(executorState = LOADED))
-    if (areAll(LOADED)) {
-      waitToRegister.foreach(_.success(LOADED))
+    updateState(executorId, state => state.copy(executorState = DATASET_LOADED))
+    if (areAll(DATASET_LOADED)) {
+      waitToLoad.foreach(_.success(DATASET_LOADED))
     }
   }
 

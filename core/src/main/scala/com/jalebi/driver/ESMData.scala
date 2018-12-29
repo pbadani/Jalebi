@@ -1,6 +1,7 @@
 package com.jalebi.driver
 
-import com.jalebi.proto.jobmanagement.{DatasetState, TaskRequest}
+import com.jalebi.message.ExecutorAction
+import com.jalebi.proto.jobmanagement.DatasetState
 import org.apache.hadoop.yarn.api.records.Container
 
 sealed trait ESMData
@@ -13,4 +14,4 @@ case class StateValue(parts: Set[String],
                       executorState: ExecutorState,
                       datasetState: DatasetState,
                       container: Option[Container],
-                      nextAction: Option[TaskRequest])
+                      nextAction: Option[ExecutorAction])

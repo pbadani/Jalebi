@@ -8,4 +8,4 @@ object Initializing extends JobManagerState
 
 object Initialized extends JobManagerState
 
-object Loaded extends JobManagerState
+object DatasetLoaded extends JobManagerState

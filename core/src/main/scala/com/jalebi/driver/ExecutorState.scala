@@ -10,7 +10,7 @@ object ALLOCATED extends ExecutorState
 
 object REGISTERED extends ExecutorState
 
-object LOADED extends ExecutorState
+object DATASET_LOADED extends ExecutorState
 
 object RUNNING_JOB extends ExecutorState
 

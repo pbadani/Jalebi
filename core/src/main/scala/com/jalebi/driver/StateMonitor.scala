@@ -11,12 +11,14 @@ case class StateMonitor(executorStateManage: ExecutorStateManage, jContext: Jale
       executorStateManage.markRegistered(executorId)
       sender() ! RegistrationAcknowledged(jContext.conf.hdfsHostPort.get)
     case LoadedDataset(executorId) =>
+      LOGGER.info(s"Loaded dataset at $executorId")
       executorStateManage.markLoaded(executorId)
     case Heartbeat(executorId) =>
       LOGGER.info(s"Received $executorId heartbeat.")
-      executorStateManage.consumeNextTask(executorId).foreach(
-        sender() ! _
-      )
+      executorStateManage.consumeNextTask(executorId).foreach { i =>
+        println(i)
+        sender() ! i
+      }
   }
 }
 

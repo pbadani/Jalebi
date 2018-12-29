@@ -2,6 +2,7 @@ package com.jalebi.driver
 
 import com.jalebi.common.Logging
 import com.jalebi.context.JalebiContext
+import com.jalebi.message.ExecutorAction
 import com.jalebi.partitioner.HashPartitioner
 import com.jalebi.proto.jobmanagement.{DatasetState, TaskRequest}
 import org.apache.hadoop.yarn.api.records.Container
@@ -48,25 +49,25 @@ case class ExecutorStateManager(jContext: JalebiContext) extends Logging {
   }
 
   def assignNewTask(taskRequest: TaskRequest): Unit = {
-    executorIdToState.keySet.foreach(executorId => {
-      updateState(executorId, state => {
-        state.copy(nextAction = Some(taskRequest.copy(parts = state.parts.toSeq)))
-      })
-    })
+//    executorIdToState.keySet.foreach(executorId => {
+//      updateState(executorId, state => {
+//        state.copy(nextAction = Some(taskRequest.copy(parts = state.parts.toSeq)))
+//      })
+//    })
   }
 
-  def consumeNextTask(executorId: String): Option[TaskRequest] = {
+  def consumeNextTask(executorId: String): Option[ExecutorAction] = {
     val next = executorIdToState(executorId).nextAction
     next.foreach(_ => updateState(executorId, state => state.copy(nextAction = None)))
     next
   }
 
   private def assignPartsToExecutor(jobId: String, executorId: String, parts: Set[String], name: String): Unit = {
-    LOGGER.info(s"Assigned parts [${parts.mkString(",")}] to executor $executorId.")
-    updateState(executorId, state => {
-      val request = TaskRequestBuilder.loadDatasetRequest(jobId, name)
-      state.copy(parts = parts, nextAction = Some(request))
-    })
+//    LOGGER.info(s"Assigned parts [${parts.mkString(",")}] to executor $executorId.")
+//    updateState(executorId, state => {
+//      val request = TaskRequestBuilder.loadDatasetRequest(jobId, name)
+//      state.copy(parts = parts, nextAction = Some(request))
+//    })
   }
 
   private def removePartsFromExecutor(executorId: String, parts: Set[String]): Unit = {

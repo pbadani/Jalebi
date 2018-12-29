@@ -3,9 +3,11 @@ package com.jalebi.executor
 import akka.actor.{ActorSelection, ActorSystem, FSM, Props, Timers}
 import com.jalebi.common.Logging
 import com.jalebi.extensions.ExecutorSettings
+import com.jalebi.hdfs.HDFSClient
 import com.jalebi.hdfs.HDFSClient.RichHostPort
 import com.jalebi.message._
 import com.typesafe.config.ConfigFactory
+import org.apache.hadoop.yarn.conf.YarnConfiguration
 
 import scala.concurrent.duration._
 
@@ -43,20 +45,28 @@ case class Executor(taskManager: TaskManager, driverHostPort: RichHostPort) exte
     case Event(RegistrationAcknowledged(hdfs), _) =>
       LOGGER.info(s"Registered ${taskManager.executorId}")
       require(monitorRef.isDefined, "MonitorRef not set.")
-      goto(Registered) using ExecutorConfig(monitorRef.get, hdfs)
+      goto(Registered) using RegisteredExecutorState(monitorRef.get, hdfs)
   }
 
   when(Registered) {
-    case Event(LoadDataset(name), s) =>
+    case Event(LoadDatasetTask(jobId, name, parts), s) =>
+      val state = s.asInstanceOf[RegisteredExecutorState]
       LOGGER.info(s"Loading dataset $name.")
-      goto(Loaded) using stateData
+      val hdfsClient = HDFSClient.withDistributedFileSystem(Some(state.hdfs), new YarnConfiguration())
+      val jalebi = hdfsClient.loadDataset(name, parts)
+      goto(Loaded) using LoadedExecutorState(state.monitorRef, state.hdfs, jalebi)
+  }
+
+   when(Loaded) {
+    case Event("", s) =>
+      stay using s
   }
 
   onTransition {
     case New -> Registered =>
-      timers.startPeriodicTimer(HeartbeatKey, Heartbeat(taskManager.executorId), 5 seconds)
+      timers.startPeriodicTimer(HeartbeatKey, Heartbeat(taskManager.executorId), 3 seconds)
     case Registered -> Loaded =>
-      sender() ! LoadedDataset(taskManager.executorId)
+      monitorRef.get ! LoadedDataset(taskManager.executorId)
   }
 
   whenUnhandled {

@@ -48,8 +48,16 @@ case class JobManager(jContext: JalebiContext) extends FSM[JobManagerState, JobM
         throw new DatasetNotFoundException(s"Dataset '$name' not found.")
       }
       val executorStateManage = e.asInstanceOf[ExecutorStateManage]
-      executorStateManage.assignNewTask(TaskRequestBuilder.loadDatasetRequest(jContext.newJobId(applicationId), name))
-      goto(Loaded) using executorStateManage
+      val parts = hdfsClient.listDatasetParts(name)
+      val jobId = jContext.newJobId(applicationId)
+      executorStateManage.loadPartsToExecutors(jobId, parts, name)
+      goto(DatasetLoaded) using executorStateManage
+  }
+
+  when(DatasetLoaded) {
+    case Event("", s) =>
+      val a = ""
+      stay
   }
 
   onTransition {
@@ -60,7 +68,7 @@ case class JobManager(jContext: JalebiContext) extends FSM[JobManagerState, JobM
       stateMonitorRef = Some(context.actorOf(StateMonitor.props(executorStateManage, jContext), StateMonitor.name()))
       scheduler ! StartExecutors(executorIds, hostPort)
       executorStateManage.waitForAllToRegister(10 seconds)
-    case Initialized -> Loaded =>
+    case Initialized -> DatasetLoaded =>
       val executorStateManage = nextStateData.asInstanceOf[ExecutorStateManage]
       executorStateManage.waitForAllToLoad(10 seconds)
   }

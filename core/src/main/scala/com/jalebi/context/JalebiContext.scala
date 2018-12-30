@@ -20,8 +20,6 @@ import scala.concurrent.duration._
 
 case class JalebiContext private(conf: JalebiConfig) extends Logging {
 
-  private var currentDataset: Option[Dataset] = None
-  val driverHostPort: RichHostPort = new RichHostPort("http", NetUtils.getLocalHostname, NetUtils.getFreeSocketPort)
   private val jobIdCounter = new AtomicLong(0)
   private val executorIdCounter = new AtomicLong(0)
   private val jobManager = JalebiContext.master.actorOf(JobManager.props(this), JobManager.name)
@@ -30,7 +28,7 @@ case class JalebiContext private(conf: JalebiConfig) extends Logging {
 
   @throws[DatasetNotFoundException]
   @throws[DatasetNotLoadedException]
-  def loadDataset(name: String): Unit = {
+  def loadDataset(name: String): Dataset = {
     jobManager ! LoadDataset(name)
     Dataset(name, jobManager)
   }
@@ -58,10 +56,6 @@ case class JalebiContext private(conf: JalebiConfig) extends Logging {
   def close(): Unit = jobManager ! PoisonPill
 
   def onLocalMaster: Boolean = conf.master == "local"
-
-  def getCurrentDatasetName: String = currentDataset.get.name
-
-  def isLoaded: Boolean = currentDataset.isDefined
 
   def newJobId(applicationId: String): String = s"$applicationId-Job-${jobIdCounter.getAndIncrement()}"
 

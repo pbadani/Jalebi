@@ -20,36 +20,36 @@ class HDFSClientTest extends FlatSpec with Matchers with BeforeAndAfter {
   val testTriplets = Seq(
     Triplets(Seq(
       Triplet(
-        Vertex(VertexID(1), Map("TestKey1" -> "TestValue1", "TestKey2" -> "TestValue2")),
-        Edge(VertexID(1), VertexID(2), Map("TestKey5" -> "TestValue5", "TestKey6" -> "TestValue6"), isDirected = false),
-        Vertex(VertexID(2), Map("TestKey3" -> "TestValue3", "TestKey4" -> "TestValue4"))
+        Node(Node(1), Map("TestKey1" -> "TestValue1", "TestKey2" -> "TestValue2")),
+        Edge(Node(1), Node(2), Map("TestKey5" -> "TestValue5", "TestKey6" -> "TestValue6"), isDirected = false),
+        Node(Node(2), Map("TestKey3" -> "TestValue3", "TestKey4" -> "TestValue4"))
       ),
       Triplet(
-        Vertex(VertexID(3), Map("TestKey1" -> "TestValue1", "TestKey2" -> "TestValue2")),
-        Edge(VertexID(3), VertexID(4), Map("TestKey5" -> "TestValue5", "TestKey6" -> "TestValue6"), isDirected = false),
-        Vertex(VertexID(4), Map("TestKey3" -> "TestValue3", "TestKey4" -> "TestValue4"))
+        Node(Node(3), Map("TestKey1" -> "TestValue1", "TestKey2" -> "TestValue2")),
+        Edge(Node(3), Node(4), Map("TestKey5" -> "TestValue5", "TestKey6" -> "TestValue6"), isDirected = false),
+        Node(Node(4), Map("TestKey3" -> "TestValue3", "TestKey4" -> "TestValue4"))
       ),
       Triplet(
-        Vertex(VertexID(5), Map("TestKey1" -> "TestValue1", "TestKey2" -> "TestValue2")),
-        Edge(VertexID(5), VertexID(6), Map("TestKey5" -> "TestValue5", "TestKey6" -> "TestValue6"), isDirected = false),
-        Vertex(VertexID(6), Map("TestKey3" -> "TestValue3", "TestKey4" -> "TestValue4"))
+        Node(Node(5), Map("TestKey1" -> "TestValue1", "TestKey2" -> "TestValue2")),
+        Edge(Node(5), Node(6), Map("TestKey5" -> "TestValue5", "TestKey6" -> "TestValue6"), isDirected = false),
+        Node(Node(6), Map("TestKey3" -> "TestValue3", "TestKey4" -> "TestValue4"))
       )
     )),
     Triplets(Seq(
       Triplet(
-        Vertex(VertexID(7), Map("TestKey1" -> "TestValue1", "TestKey2" -> "TestValue2")),
-        Edge(VertexID(7), VertexID(8), Map("TestKey5" -> "TestValue5", "TestKey6" -> "TestValue6"), isDirected = false),
-        Vertex(VertexID(8), Map("TestKey3" -> "TestValue3", "TestKey4" -> "TestValue4"))
+        Node(Node(7), Map("TestKey1" -> "TestValue1", "TestKey2" -> "TestValue2")),
+        Edge(Node(7), Node(8), Map("TestKey5" -> "TestValue5", "TestKey6" -> "TestValue6"), isDirected = false),
+        Node(Node(8), Map("TestKey3" -> "TestValue3", "TestKey4" -> "TestValue4"))
       ),
       Triplet(
-        Vertex(VertexID(9), Map("TestKey1" -> "TestValue1", "TestKey2" -> "TestValue2")),
-        Edge(VertexID(9), VertexID(10), Map("TestKey5" -> "TestValue5", "TestKey6" -> "TestValue6"), isDirected = false),
-        Vertex(VertexID(10), Map("TestKey3" -> "TestValue3", "TestKey4" -> "TestValue4"))
+        Node(Node(9), Map("TestKey1" -> "TestValue1", "TestKey2" -> "TestValue2")),
+        Edge(Node(9), Node(10), Map("TestKey5" -> "TestValue5", "TestKey6" -> "TestValue6"), isDirected = false),
+        Node(Node(10), Map("TestKey3" -> "TestValue3", "TestKey4" -> "TestValue4"))
       ),
       Triplet(
-        Vertex(VertexID(11), Map("TestKey1" -> "TestValue1", "TestKey2" -> "TestValue2")),
-        Edge(VertexID(11), VertexID(12), Map("TestKey5" -> "TestValue5", "TestKey6" -> "TestValue6"), isDirected = false),
-        Vertex(VertexID(12), Map("TestKey3" -> "TestValue3", "TestKey4" -> "TestValue4"))
+        Node(Node(11), Map("TestKey1" -> "TestValue1", "TestKey2" -> "TestValue2")),
+        Edge(Node(11), Node(12), Map("TestKey5" -> "TestValue5", "TestKey6" -> "TestValue6"), isDirected = false),
+        Node(Node(12), Map("TestKey3" -> "TestValue3", "TestKey4" -> "TestValue4"))
       )
     ))
   )

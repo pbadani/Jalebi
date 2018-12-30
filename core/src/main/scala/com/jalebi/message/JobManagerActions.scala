@@ -1,12 +1,10 @@
 package com.jalebi.message
 
-import com.jalebi.api.VertexID
-
 trait Job
 
 case class LoadDataset(name: String) extends Job
 
-case class FindVertex(vertexId: VertexID) extends Job
+case class FindNode(nodeId: Long) extends Job
 
 object InitializeExecutors
 

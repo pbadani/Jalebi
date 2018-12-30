@@ -3,9 +3,7 @@ package com.jalebi.api
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
-case class VertexID(id: Long)
-
-case class Vertex(vertexId: VertexID, data: Map[String, String]) {
+case class Node(id: Long, data: Map[String, String]) {
 
   private val relations = ListBuffer[Edge]()
 
@@ -26,17 +24,17 @@ case class Vertex(vertexId: VertexID, data: Map[String, String]) {
   }
 
   def getOutgoing: Seq[Edge] = {
-    relations.filter(e => (e.isDirected && e.isSource(this.vertexId))
+    relations.filter(e => (e.isDirected && e.isSource(this.id))
       || (!e.isDirected))
   }
 
   def getIncoming: Seq[Edge] = {
-    relations.filter(e => (e.isDirected && e.isTarget(this.vertexId))
+    relations.filter(e => (e.isDirected && e.isTarget(this.id))
       || (!e.isDirected))
   }
 
-  def getId: Long = vertexId.id
+  def getId: Long = id
 
-  override def toString: String = s"VertexID: $vertexId"
+  override def toString: String = s"NodeId: $id"
 }
 

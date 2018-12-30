@@ -58,8 +58,12 @@ case class Executor(executorId: String, driverHostPort: RichHostPort) extends FS
   }
 
   when(Loaded) {
-    case Event("", s) =>
-      stay using s
+    case Event(FindNodeTask(jobId, nodeId), s) =>
+      val executorState = s.asInstanceOf[LoadedExecutorState]
+      LOGGER.info(s"Finding node $nodeId in $executorId.")
+      val result = executorState.jalebi.searchNode(nodeId)
+      monitorRef.get ! TaskResult(jobId, result.map(Set(_)).getOrElse(Set.empty))
+      stay using executorState
   }
 
   onTransition {

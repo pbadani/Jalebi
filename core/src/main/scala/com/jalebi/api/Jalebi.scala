@@ -2,31 +2,25 @@ package com.jalebi.api
 
 case class Jalebi(name: String, triplets: Set[Triplets]) {
 
-  private val vertices = new VertexMap()
+  private val nodes = new NodeMap()
 
   triplets.flatMap(_.values).foreach(triplet => {
     val edge = triplet.edge
-    require(edge.source == triplet.source.vertexId)
-    require(edge.target == triplet.target.vertexId)
-    val sourceRef = vertices.add(triplet.source.vertexId, triplet.source)
-    val targetRef = vertices.add(triplet.target.vertexId, triplet.target)
+    require(edge.source.id == triplet.source.id)
+    require(edge.target.id == triplet.target.id)
+    val sourceRef = nodes.add(triplet.source.id, triplet.source)
+    val targetRef = nodes.add(triplet.target.id, triplet.target)
     sourceRef.addRelation(edge)
     targetRef.addRelation(edge)
     edge.setSourceRef(sourceRef)
     edge.setTargetRef(targetRef)
   })
 
-  def searchVertex(vertexId: VertexID): Option[Vertex] = {
-    vertices.get(vertexId)
-  }
+  def searchNode(nodeId: Long): Option[Node] = nodes.get(nodeId)
 
-  //
-  //  def searchDepthFirst(verticesToSearch: MatchCriteria[V], edgesToTraverse: MatchCriteria[E]): Unit = {
-  //
-  //  }
   override def toString: String = {
     triplets.flatMap(_.values).map(triplet =>
-      s"${Set(triplet.source.vertexId, "--", triplet.target.vertexId).mkString("\t\t")}")
+      s"${Set(triplet.source.id, "--", triplet.target.id).mkString("\t\t")}")
       .mkString(sys.props("line.separator"))
   }
 }

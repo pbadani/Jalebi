@@ -39,15 +39,15 @@ case class JalebiContext private(conf: JalebiConfig) extends Logging {
 
   @throws[DuplicateDatasetException]
   def createDataset(input: JalebiWriter): Unit = {
-    val verticesMap = input.vertices.map(v => (v.vertexId, v)).toMap
+    val nodeMap = input.vertices.map(v => (v.id, v)).toMap
     val triplets = input.edges.map(edge => {
-      if (!verticesMap.contains(edge.source)) {
-        throw new InvalidVertexReferenceException(s"Vertex with id ${edge.source.id} not present in the list of vertices.")
+      if (!nodeMap.contains(edge.source.id)) {
+        throw new InvalidVertexReferenceException(s"Node with id ${edge.source.id} not present in the list of nodes.")
       }
-      if (!verticesMap.contains(edge.target)) {
-        throw new InvalidVertexReferenceException(s"Vertex with id ${edge.target.id} not present in the list of vertices.")
+      if (!nodeMap.contains(edge.target.id)) {
+        throw new InvalidVertexReferenceException(s"Node with id ${edge.target.id} not present in the list of nodes.")
       }
-      Triplet(verticesMap(edge.source), edge, verticesMap(edge.target))
+      Triplet(nodeMap(edge.source.id), edge, nodeMap(edge.target.id))
     }).grouped(conf.options.getPartitionSize().toInt)
       .map(Triplets(_))
     HDFSClient.withDistributedFileSystem(conf.hdfsHostPort, new YarnConfiguration()).createDataset(input.datasetName, triplets)

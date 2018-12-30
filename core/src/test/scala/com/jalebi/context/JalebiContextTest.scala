@@ -1,6 +1,6 @@
 package com.jalebi.context
 
-import com.jalebi.api.{Edge, Vertex, VertexID}
+import com.jalebi.api.{Edge, Node, Node}
 import com.jalebi.hdfs.HDFSClient
 import org.apache.hadoop.yarn.conf.YarnConfiguration
 import org.scalatest.{BeforeAndAfter, FlatSpec, Matchers}
@@ -27,15 +27,15 @@ class JalebiContextTest extends FlatSpec with Matchers with BeforeAndAfter {
     val context = JalebiContext(conf)
     val jalebiWriter = new JalebiWriter {
 
-      override def vertices[V]: Seq[Vertex] = Seq(
-        Vertex(VertexID(1), Map("TestKey1" -> "TestValue1", "TestKey2" -> "TestValue2")),
-        Vertex(VertexID(2), Map("TestKey3" -> "TestValue3", "TestKey4" -> "TestValue4"))
+      override def vertices[V]: Seq[Node] = Seq(
+        Node(Node(1), Map("TestKey1" -> "TestValue1", "TestKey2" -> "TestValue2")),
+        Node(Node(2), Map("TestKey3" -> "TestValue3", "TestKey4" -> "TestValue4"))
       )
 
       override def datasetName: String = "TestDataset"
 
       override def edges[E]: Seq[Edge] = Seq(
-        Edge(VertexID(1), VertexID(2), Map("TestKey3" -> "TestValue3", "TestKey4" -> "TestValue4"), isDirected = false)
+        Edge(Node(1), Node(2), Map("TestKey3" -> "TestValue3", "TestKey4" -> "TestValue4"), isDirected = false)
       )
     }
 

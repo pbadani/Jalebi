@@ -1,6 +1,6 @@
 package com.jalebi.executor
 
-import com.jalebi.api.{Jalebi, VertexID}
+import com.jalebi.api.{Jalebi, Node}
 import com.jalebi.common.{Logging, ResultConverter}
 import com.jalebi.exception.DatasetCorruptException
 import com.jalebi.proto.jobmanagement.DatasetState._
@@ -85,7 +85,7 @@ case class TaskManager(executorId: String) extends Logging {
         require(currentJalebi.get.name == taskRequest.dataset, s"Dataset mismatch. Expected ${currentJalebi.get.name}, Actual: ${taskRequest.dataset}")
         LOGGER.info(s"Searching vertex '${taskRequest.startVertexId} on $executorId.")
         setStates(None, executorState = Some(RunningJob))
-        val result = currentJalebi.get.searchVertex(VertexID(taskRequest.startVertexId))
+        val result = currentJalebi.get.searchNode(taskRequest.startVertexId)
         val vertexResult = ResultConverter.convertToVertexResult(result)
         val response = TaskResponse(taskRequest.jobId, taskRequest.taskId, COMPLETED, executorId, null, datasetState, vertexResult, Nil)
         LOGGER.info(s"Search vertex response $response on $executorId.")

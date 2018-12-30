@@ -1,8 +1,8 @@
 package com.jalebi.api.search
 
-import com.jalebi.api.{Edge, Vertex}
+import com.jalebi.api.{Edge, Node}
 
-case class SearchCriteria[V <: Vertex, E <: Edge](verticesToSearch: MatchCriteria[V] = MatchAll, edgesToTraverse: MatchCriteria[E] = MatchAll, limit: LimitCriteria) {
+case class SearchCriteria[V <: Node, E <: Edge](verticesToSearch: MatchCriteria[V] = MatchAll, edgesToTraverse: MatchCriteria[E] = MatchAll, limit: LimitCriteria) {
 
   def vertexMatches(vertex: V): Boolean = verticesToSearch.matches(vertex)
 

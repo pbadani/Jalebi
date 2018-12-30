@@ -1,28 +1,28 @@
 package com.jalebi.api
 
-case class Edge(source: VertexID, target: VertexID, data: Map[String, String], isDirected: Boolean) {
+case class Edge(source: Node, target: Node, data: Map[String, String], isDirected: Boolean) {
 
-  private var sourceRef: Option[Vertex] = None
+  private var sourceRef: Option[Node] = None
 
-  private var targetRef: Option[Vertex] = None
+  private var targetRef: Option[Node] = None
 
-  def isSource(id: VertexID): Boolean = source == id
+  def isSource(id: Long): Boolean = source.id == id
 
-  def isTarget(id: VertexID): Boolean = target == id
+  def isTarget(id: Long): Boolean = target.id == id
 
-  def setSourceRef(vertex: Vertex): Unit = {
+  def setSourceRef(node: Node): Unit = {
     require(sourceRef.isEmpty, s"Source already referring to $sourceRef.")
-    require(vertex.vertexId == source, s"Source id $source does not match this vertex id ${vertex.vertexId}")
-    sourceRef = Some(vertex)
+    require(node.id == source.id, s"Source id $source does not match this node id ${node.id}")
+    sourceRef = Some(node)
   }
 
-  def setTargetRef(vertex: Vertex): Unit = {
+  def setTargetRef(node: Node): Unit = {
     require(targetRef.isEmpty, s"Target already referring to $targetRef.")
-    require(vertex.vertexId == target, s"Target id $target does not match this vertex id ${vertex.vertexId}")
-    targetRef = Some(vertex)
+    require(node.id == target.id, s"Target id $target does not match this node id ${node.id}")
+    targetRef = Some(node)
   }
 }
 
 object Edge {
-  def apply(source: VertexID, target: VertexID, data: Map[String, String], isDirected: Boolean): Edge = new Edge(source, target, data, isDirected)
+  def apply(source: Node, target: Node, data: Map[String, String], isDirected: Boolean): Edge = new Edge(source, target, data, isDirected)
 }

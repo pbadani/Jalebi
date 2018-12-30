@@ -4,7 +4,7 @@ import akka.actor.{ActorRef, Props}
 import com.jalebi.common.Logging
 import com.jalebi.context.JalebiContext
 import com.jalebi.driver.Scheduler
-import com.jalebi.message.{ShutExecutors, StartExecutors, StopExecutors}
+import com.jalebi.message._
 
 import scala.collection.mutable
 
@@ -36,7 +36,7 @@ case class LocalScheduler(jContext: JalebiContext, applicationId: String) extend
         refs += (executorId -> executorRef)
         LOGGER.info(s"Starting executor $executorId.")
       })
-    case StopExecutors() =>
+    case StopExecutors =>
       refs.foreach {
         case (executorId, ref) =>
           ref ! ShutExecutors
@@ -48,6 +48,4 @@ object LocalScheduler {
   def props(jContext: JalebiContext, applicationId: String) = Props(LocalScheduler(jContext, applicationId))
 
   def name() = "LocalScheduler"
-
-  def apply(context: JalebiContext, applicationId: String): LocalScheduler = new LocalScheduler(context, applicationId)
 }

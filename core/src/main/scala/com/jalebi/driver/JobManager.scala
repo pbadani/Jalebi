@@ -82,7 +82,7 @@ case class JobManager(jContext: JalebiContext) extends FSM[JobManagerState, JobM
       val executorStateManage = nextStateData.asInstanceOf[ExecutorStateManage]
       executorStateManage.waitForAllToLoad(10 seconds)
     case _ -> Killed =>
-      scheduler ! StopExecutors()
+      scheduler ! StopExecutors
   }
 
   initialize()

@@ -15,9 +15,8 @@ case class StateMonitor(executorStateManage: ExecutorStateManage, jContext: Jale
       executorStateManage.markLoaded(executorId)
     case Heartbeat(executorId) =>
       LOGGER.info(s"Received $executorId heartbeat.")
-      executorStateManage.consumeNextTask(executorId).foreach { i =>
-        println(i)
-        sender() ! i
+      executorStateManage.consumeNextTask(executorId).foreach {
+        sender() ! _
       }
   }
 }

@@ -44,17 +44,15 @@ case class JobManager(jContext: JalebiContext) extends FSM[JobManagerState, JobM
         throw new DatasetNotFoundException(s"Dataset '$name' not found.")
       }
       val parts = hdfsClient.listDatasetParts(name)
-      val jobId = jContext.newJobId(applicationId)
       val executorStateManage = e.asInstanceOf[ExecutorStateManage]
-      executorStateManage.loadPartsToExecutors(jobId, parts, name)
+      executorStateManage.loadPartsToExecutors(jContext.newJobId(applicationId), parts, name)
       goto(DatasetLoaded) using executorStateManage
   }
 
   when(DatasetLoaded) {
     case Event(f@FindNode(_, _), e) =>
-      val jobId = jContext.newJobId(applicationId)
       val executorStateManage = e.asInstanceOf[ExecutorStateManage]
-      executorStateManage.assignNewJob(jobId, f.copy(jobId = jobId))
+      executorStateManage.produceNewJob(f.copy(jobId = jContext.newJobId(applicationId)))
       stay
   }
 
@@ -73,10 +71,9 @@ case class JobManager(jContext: JalebiContext) extends FSM[JobManagerState, JobM
   onTransition {
     case UnInitialized -> Initialized =>
       val executorStateManage = nextStateData.asInstanceOf[ExecutorStateManage]
-      val hostPort = HostPort("", conf.host, conf.port)
       val executorIds = executorStateManage.listExecutorIds()
       stateMonitorRef = Some(context.actorOf(StateMonitor.props(executorStateManage, jContext), StateMonitor.name()))
-      scheduler ! StartExecutors(executorIds, hostPort)
+      scheduler ! StartExecutors(executorIds, conf.hostPort)
       executorStateManage.waitForAllToRegister(10 seconds)
     case Initialized -> DatasetLoaded =>
       val executorStateManage = nextStateData.asInstanceOf[ExecutorStateManage]
@@ -84,11 +81,10 @@ case class JobManager(jContext: JalebiContext) extends FSM[JobManagerState, JobM
     case _ -> Killed =>
       val executorStateManage = nextStateData.asInstanceOf[ExecutorStateManage]
       scheduler ! StopExecutors
-      executorStateManage.waitForAllToRegister(10 seconds)
+      executorStateManage.waitForAllToUnregister(10 seconds)
   }
 
   initialize()
-
 }
 
 object JobManager {

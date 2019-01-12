@@ -54,7 +54,7 @@ case class ExecutorStateManage(jContext: JalebiContext) extends JobManagerData w
     }
   }
 
-  def assignNewJob(jobId: String, executorAction: JobAction): Unit = {
+  def produceNewJob(executorAction: JobAction): Unit = {
     executorIdToState.keySet.foreach(executorId => {
       updateState(executorId, state => {
         state.copy(nextAction = Some(executorAction))

@@ -10,10 +10,8 @@ import com.jalebi.common.Logging
 import com.jalebi.driver.JobManager
 import com.jalebi.exception._
 import com.jalebi.hdfs.HDFSClient
-import com.jalebi.hdfs.HDFSClient.RichHostPort
 import com.jalebi.message.{InitializeExecutors, LoadDataset}
 import com.typesafe.config.ConfigFactory
-import org.apache.hadoop.net.NetUtils
 import org.apache.hadoop.yarn.conf.YarnConfiguration
 
 import scala.concurrent.duration._
@@ -53,7 +51,7 @@ case class JalebiContext private(conf: JalebiConfig) extends Logging {
     HDFSClient.withDistributedFileSystem(conf.hdfsHostPort, new YarnConfiguration()).createDataset(input.datasetName, triplets)
   }
 
-  def close(): Unit = jobManager ! PoisonPill
+  def close(): Unit = jobManager ! com.jalebi.message.Shutdown
 
   def onLocalMaster: Boolean = conf.master == "local"
 

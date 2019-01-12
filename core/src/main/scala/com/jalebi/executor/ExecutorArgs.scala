@@ -1,23 +1,16 @@
 package com.jalebi.executor
 
 import com.jalebi.common.{ArgumentUtils, Logging}
-import com.jalebi.hdfs.HDFSClient.RichHostPort
-import com.jalebi.proto.jobmanagement.HostPort
+import com.jalebi.hdfs.HostPort
 import com.jalebi.yarn.CommandConstants._
 
 case class ExecutorArgs(args: Map[String, String]) {
 
-  def getDriverHostPort: RichHostPort = {
-    RichHostPort(HostPort("http", args(ExecutorConstants.driverHost), args(ExecutorConstants.driverPort).toInt))
-  }
+  def getDriverHostPort = HostPort("http", args(ExecutorConstants.driverHost), args(ExecutorConstants.driverPort).toInt)
 
-  def getExecutorId: String = {
-    args(ExecutorConstants.executorId)
-  }
+  def getExecutorId = args(ExecutorConstants.executorId)
 
-  def getApplicationId: String = {
-    args(AppMaster.applicationId)
-  }
+  def getApplicationId = args(AppMaster.applicationId)
 }
 
 object ExecutorArgs extends Logging {

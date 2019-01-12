@@ -6,10 +6,8 @@ import com.jalebi.context.JalebiContext
 import com.jalebi.exception.DatasetNotFoundException
 import com.jalebi.executor.LocalScheduler
 import com.jalebi.extensions.MasterSettings
-import com.jalebi.hdfs.HDFSClient
-import com.jalebi.hdfs.HDFSClient.RichHostPort
+import com.jalebi.hdfs.{HDFSClient, HostPort}
 import com.jalebi.message._
-import com.jalebi.proto.jobmanagement.HostPort
 import com.jalebi.yarn.ApplicationMaster
 import org.apache.hadoop.yarn.conf.YarnConfiguration
 
@@ -75,7 +73,7 @@ case class JobManager(jContext: JalebiContext) extends FSM[JobManagerState, JobM
   onTransition {
     case UnInitialized -> Initialized =>
       val executorStateManage = nextStateData.asInstanceOf[ExecutorStateManage]
-      val hostPort = RichHostPort(HostPort("", conf.host, conf.port))
+      val hostPort = HostPort("", conf.host, conf.port)
       val executorIds = executorStateManage.listExecutorIds()
       stateMonitorRef = Some(context.actorOf(StateMonitor.props(executorStateManage, jContext), StateMonitor.name()))
       scheduler ! StartExecutors(executorIds, hostPort)
@@ -84,7 +82,9 @@ case class JobManager(jContext: JalebiContext) extends FSM[JobManagerState, JobM
       val executorStateManage = nextStateData.asInstanceOf[ExecutorStateManage]
       executorStateManage.waitForAllToLoad(10 seconds)
     case _ -> Killed =>
+      val executorStateManage = nextStateData.asInstanceOf[ExecutorStateManage]
       scheduler ! StopExecutors
+      executorStateManage.waitForAllToRegister(10 seconds)
   }
 
   initialize()

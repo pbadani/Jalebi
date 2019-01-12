@@ -104,28 +104,19 @@ case class HDFSClient(fs: FileSystem) extends Logging {
 
 }
 
+case class HostPort(scheme: String, host: String, port: Long) extends Serializable {
+
+  def getURI: URI = new URI(s"$scheme://$host:$port")
+
+}
+
 object HDFSClient {
-
-  implicit class RichHostPort(hostPort: HostPort) extends Serializable {
-
-    def this(scheme: String, host: String, port: Long) = this(HostPort(scheme, host, port))
-
-    def getURI: URI = new URI(s"$scheme://$host:$port")
-
-    def port: Long = hostPort.port
-
-    def host: String = hostPort.host
-
-    def scheme: String = hostPort.scheme
-
-    def toHostPort: HostPort = HostPort(scheme, host, port)
-  }
 
   def withLocalFileSystem(conf: YarnConfiguration): HDFSClient = {
     new HDFSClient(FileSystem.getLocal(conf))
   }
 
-  def withDistributedFileSystem(hostPort: Option[RichHostPort], conf: YarnConfiguration): HDFSClient = {
+  def withDistributedFileSystem(hostPort: Option[HostPort], conf: YarnConfiguration): HDFSClient = {
     require(hostPort.isDefined, "HDFS host and port are not defined in config.")
     new HDFSClient(FileSystem.get(hostPort.get.getURI, conf))
   }

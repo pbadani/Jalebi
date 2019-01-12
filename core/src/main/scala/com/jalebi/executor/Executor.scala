@@ -3,15 +3,14 @@ package com.jalebi.executor
 import akka.actor.{ActorSelection, ActorSystem, FSM, PoisonPill, Props, Timers}
 import com.jalebi.common.Logging
 import com.jalebi.extensions.ExecutorSettings
-import com.jalebi.hdfs.HDFSClient
-import com.jalebi.hdfs.HDFSClient.RichHostPort
+import com.jalebi.hdfs.{HDFSClient, HostPort}
 import com.jalebi.message._
 import com.typesafe.config.ConfigFactory
 import org.apache.hadoop.yarn.conf.YarnConfiguration
 
 import scala.concurrent.duration._
 
-case class Executor(executorId: String, driverHostPort: RichHostPort) extends FSM[ExecutorState, ExecutorData] with Timers with Logging {
+case class Executor(executorId: String, driverHostPort: HostPort) extends FSM[ExecutorState, ExecutorData] with Timers with Logging {
 
   private val conf = ExecutorSettings(context.system)
   //  private var masterRef: Option[ActorSelection] = None
@@ -90,7 +89,7 @@ object Executor extends Logging {
 
   val master = ActorSystem("Executors", ConfigFactory.load("executor"))
 
-  def props(executorId: String, driverHostPort: RichHostPort) = Props(Executor(executorId, driverHostPort))
+  def props(executorId: String, driverHostPort: HostPort) = Props(Executor(executorId, driverHostPort))
 
   def name(executorId: String): String = executorId
 

@@ -8,7 +8,7 @@ object YarnSampleClient {
     val jcontext = JalebiContext(jconf)
     val dataset = jcontext.loadDataset("test1")
     val r = dataset.findNode(10)
-    //    jcontext.close()
+        jcontext.close()
     //    println(r)
   }
 }

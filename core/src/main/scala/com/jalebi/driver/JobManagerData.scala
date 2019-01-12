@@ -2,7 +2,7 @@ package com.jalebi.driver
 
 import com.jalebi.common.Logging
 import com.jalebi.context.JalebiContext
-import com.jalebi.message.{ExecutorAction, LoadDatasetTask}
+import com.jalebi.message.{JobAction, LoadDataset}
 import com.jalebi.partitioner.HashPartitioner
 import com.jalebi.proto.jobmanagement.DatasetState
 import org.apache.hadoop.yarn.api.records.Container
@@ -18,7 +18,7 @@ object EmptyExecutorStateManager extends JobManagerData
 case class ExecutorStateManage(jContext: JalebiContext) extends JobManagerData with Logging {
 
   private val executorIdToState = new mutable.HashMap[String, StateValue]()
-  private val jobToExecutorStatus = new mutable.HashMap[String, mutable.Map[String, ]]()
+//  private val jobToExecutorStatus = new mutable.HashMap[String, mutable.Map[String, ]]()
   private var waitToRegister: Option[Promise[ExecutorState]] = None
   private var waitToLoad: Option[Promise[ExecutorState]] = None
   private var waitToUnregister: Option[Promise[ExecutorState]] = None
@@ -49,12 +49,12 @@ case class ExecutorStateManage(jContext: JalebiContext) extends JobManagerData w
       case (executorId, parts) =>
         LOGGER.info(s"Assigned parts [${parts.mkString(",")}] to $executorId.")
         updateState(executorId, state => {
-          state.copy(parts = parts, nextAction = Some(LoadDatasetTask(jobId, name, parts)))
+          state.copy(parts = parts, nextAction = Some(LoadDataset(jobId, name, parts)))
         })
     }
   }
 
-  def assignNewJob(jobId: String, executorAction: ExecutorAction): Unit = {
+  def assignNewJob(jobId: String, executorAction: JobAction): Unit = {
     executorIdToState.keySet.foreach(executorId => {
       updateState(executorId, state => {
         state.copy(nextAction = Some(executorAction))
@@ -62,7 +62,7 @@ case class ExecutorStateManage(jContext: JalebiContext) extends JobManagerData w
     })
   }
 
-  def consumeNextJob(executorId: String): Option[ExecutorAction] = {
+  def consumeNextJob(executorId: String): Option[JobAction] = {
     val next = executorIdToState(executorId).nextAction
     next.foreach(_ => updateState(executorId, state => state.copy(nextAction = None)))
     next

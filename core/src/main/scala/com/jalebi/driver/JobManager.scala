@@ -40,7 +40,7 @@ case class JobManager(jContext: JalebiContext) extends FSM[JobManagerState, JobM
   }
 
   when(Initialized) {
-    case Event(LoadDataset(name), e) =>
+    case Event(LoadDataset(name, _, _), e) =>
       val hdfsClient = HDFSClient.withDistributedFileSystem(jContext.conf.hdfsHostPort, new YarnConfiguration())
       if (!hdfsClient.datasetExists(name)) {
         throw new DatasetNotFoundException(s"Dataset '$name' not found.")
@@ -53,10 +53,10 @@ case class JobManager(jContext: JalebiContext) extends FSM[JobManagerState, JobM
   }
 
   when(DatasetLoaded) {
-    case Event(FindNode(nodeId), e) =>
+    case Event(f@FindNode(_, _), e) =>
       val jobId = jContext.newJobId(applicationId)
       val executorStateManage = e.asInstanceOf[ExecutorStateManage]
-      executorStateManage.assignNewJob(jobId, FindNodeTask(jobId, nodeId))
+      executorStateManage.assignNewJob(jobId, f.copy(jobId = jobId))
       stay
   }
 

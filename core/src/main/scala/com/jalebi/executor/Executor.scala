@@ -49,7 +49,7 @@ case class Executor(executorId: String, driverHostPort: RichHostPort) extends FS
   }
 
   when(Registered) {
-    case Event(LoadDatasetTask(jobId, name, parts), s) =>
+    case Event(LoadDataset(jobId, name, parts), s) =>
       val state = s.asInstanceOf[RegisteredExecutorState]
       LOGGER.info(s"Loading dataset $name.")
       val hdfsClient = HDFSClient.withDistributedFileSystem(Some(state.hdfs), new YarnConfiguration())
@@ -58,7 +58,7 @@ case class Executor(executorId: String, driverHostPort: RichHostPort) extends FS
   }
 
   when(Loaded) {
-    case Event(FindNodeTask(jobId, nodeId), s) =>
+    case Event(FindNode(nodeId, jobId), s) =>
       val executorState = s.asInstanceOf[LoadedExecutorState]
       LOGGER.info(s"Finding node $nodeId in $executorId.")
       val result = executorState.jalebi.searchNode(nodeId)
@@ -84,7 +84,6 @@ case class Executor(executorId: String, driverHostPort: RichHostPort) extends FS
   }
 
   initialize()
-
 }
 
 object Executor extends Logging {

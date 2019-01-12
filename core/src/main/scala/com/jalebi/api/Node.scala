@@ -5,6 +5,7 @@ import scala.collection.mutable.ListBuffer
 
 case class Node(id: Long, data: Map[String, String]) {
 
+  @transient
   private val relations = ListBuffer[Edge]()
 
   private val visitedByJobIDs: mutable.Set[String] = new mutable.HashSet[String]()

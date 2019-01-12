@@ -1,6 +1,6 @@
 package com.jalebi.driver
 
-import com.jalebi.message.ExecutorAction
+import com.jalebi.message.JobAction
 import com.jalebi.proto.jobmanagement.DatasetState
 import org.apache.hadoop.yarn.api.records.Container
 
@@ -14,4 +14,4 @@ case class StateValue(parts: Set[String],
                       executorState: ExecutorState,
                       datasetState: DatasetState,
                       container: Option[Container],
-                      nextAction: Option[ExecutorAction])
+                      nextAction: Option[JobAction])

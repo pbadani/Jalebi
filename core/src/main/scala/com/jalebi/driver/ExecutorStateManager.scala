@@ -2,7 +2,7 @@ package com.jalebi.driver
 
 import com.jalebi.common.Logging
 import com.jalebi.context.JalebiContext
-import com.jalebi.message.ExecutorAction
+import com.jalebi.message.JobAction
 import com.jalebi.partitioner.HashPartitioner
 import com.jalebi.proto.jobmanagement.{DatasetState, TaskRequest}
 import org.apache.hadoop.yarn.api.records.Container
@@ -56,7 +56,7 @@ case class ExecutorStateManager(jContext: JalebiContext) extends Logging {
 //    })
   }
 
-  def consumeNextTask(executorId: String): Option[ExecutorAction] = {
+  def consumeNextTask(executorId: String): Option[JobAction] = {
     val next = executorIdToState(executorId).nextAction
     next.foreach(_ => updateState(executorId, state => state.copy(nextAction = None)))
     next

@@ -15,6 +15,8 @@ import scala.collection.JavaConverters._
 
 object ApplicationClient extends Logging {
 
+  import com.jalebi.common.JalebiUtils._
+
   def main(args: Array[String]): Unit = {
     val yarnClient = YarnClient.createYarnClient()
     val conf = new YarnConfiguration()
@@ -69,7 +71,7 @@ object ApplicationClient extends Logging {
   private def localizeClientJar(amContainer: ContainerLaunchContext, conf: YarnConfiguration, jarPath: String, applicationId: String): Map[String, LocalResource] = {
     //Put a copy of the resource in HDFS for this application and then localize it from there.
     val fs = FileSystem.get(conf)
-    val sourcePath = new Path(JalebiUtils.URIForLocalFile(jarPath))
+    val sourcePath = JalebiUtils.URIForLocalFile(jarPath)
     val destPath = new Path(fs.getHomeDirectory, JalebiUtils.getResourcePath(applicationId, JalebiAppConstants.jalebiArtifact))
     fs.copyFromLocalFile(sourcePath, destPath)
     LOGGER.info(s"Copied resource $jarPath to HDFS destination ${destPath.getParent}/${destPath.getName}")
@@ -81,7 +83,7 @@ object ApplicationClient extends Logging {
     val fs = FileSystem.get(conf)
     val localFs = FileSystem.getLocal(conf)
     try {
-      localFs.listFiles(new Path(JalebiUtils.URIForLocalFile(jalebiHome)), true)
+      localFs.listFiles(JalebiUtils.URIForLocalFile(jalebiHome), true)
         .map(fileStatus => {
           val fileName = fileStatus.getPath.getName
           val destPath = new Path(fs.getHomeDirectory, JalebiUtils.getJalebiHomePath(applicationId, fileName))

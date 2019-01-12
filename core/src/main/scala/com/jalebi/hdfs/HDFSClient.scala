@@ -14,6 +14,8 @@ import org.apache.hadoop.yarn.conf.YarnConfiguration
 
 case class HDFSClient(fs: FileSystem) extends Logging {
 
+  import com.jalebi.common.JalebiUtils._
+
   @throws[DuplicateDatasetException]
   def createDataset(name: String, triplets: => Iterator[Triplets]): Unit = {
     val filePath = s"${HDFSClientConstants.datasetParentDirectory}$name"
@@ -24,7 +26,8 @@ case class HDFSClient(fs: FileSystem) extends Logging {
     triplets.zipWithIndex.foreach {
       case (t, index) =>
         val partFileName = s"part-$index"
-        val os = fs.create(new Path(Seq(filePath, partFileName).mkString("/")))
+        val fileName = Seq(filePath, partFileName).mkString("/")
+        val os = fs.create(fileName)
         val outputStream = AvroOutputStream.data[Triplets](os)
         LOGGER.info(s"Writing $partFileName for Dataset '$name' at $filePath.")
         outputStream.write(t)
@@ -42,7 +45,8 @@ case class HDFSClient(fs: FileSystem) extends Logging {
     }
     val filePath = s"${HDFSClientConstants.datasetParentDirectory}$name"
     Jalebi(name, parts.flatMap(partFileName => {
-      val is = fs.open(new Path(Seq(filePath, partFileName).mkString("/")))
+      val fileName = Seq(filePath, partFileName).mkString("/")
+      val is = fs.open(fileName)
       val os = new ByteArrayOutputStream()
       IOUtils.copyBytes(is, os, 4096, false)
       LOGGER.info(s"Reading $partFileName for Dataset '$name' at $filePath.")
@@ -61,7 +65,7 @@ case class HDFSClient(fs: FileSystem) extends Logging {
   }
 
   def datasetExists(name: String, actionIfNotExists: => Option[() => Unit] = None): Boolean = {
-    val fileExists = fs.exists(new Path(s"${HDFSClientConstants.datasetParentDirectory}$name"))
+    val fileExists = fs.exists(s"${HDFSClientConstants.datasetParentDirectory}$name")
     LOGGER.debug(s"Dataset '$name' ${if (fileExists) "exists." else "doesn't exist."}")
     if (!fileExists && actionIfNotExists.isDefined) {
       actionIfNotExists.get()
@@ -70,7 +74,7 @@ case class HDFSClient(fs: FileSystem) extends Logging {
   }
 
   def listDatasets(): Set[String] = {
-    val filePath = new Path(s"${HDFSClientConstants.datasetParentDirectory}/")
+    val filePath = s"${HDFSClientConstants.datasetParentDirectory}/"
     val files = listDirectory(filePath)
     LOGGER.info(s"Listing Datasets at $filePath : ${
       if (files.isEmpty) s"No Dataset found." else s"Datasets found: [${files.mkString(", ")}]."
@@ -81,7 +85,7 @@ case class HDFSClient(fs: FileSystem) extends Logging {
   @throws[DatasetNotFoundException]
   def listDatasetParts(name: String): Set[String] = {
     ensureDatasetExists(name)
-    val parts = listDirectory(new Path(s"${HDFSClientConstants.datasetParentDirectory}$name"))
+    val parts = listDirectory(s"${HDFSClientConstants.datasetParentDirectory}$name")
     LOGGER.info(s"Listing parts for Dataset '$name' - [${parts.mkString(", ")}].")
     parts
   }
@@ -89,7 +93,7 @@ case class HDFSClient(fs: FileSystem) extends Logging {
   def deleteDataset(name: String): Unit = {
     if (datasetExists(name)) {
       LOGGER.info(s"Deleting dataset '$name'.")
-      fs.delete(new Path(s"${HDFSClientConstants.datasetParentDirectory}$name"), true)
+      fs.delete(s"${HDFSClientConstants.datasetParentDirectory}$name", true)
     }
   }
 
@@ -99,7 +103,7 @@ case class HDFSClient(fs: FileSystem) extends Logging {
   }
 
   def deleteDirectory(): Unit = {
-    fs.delete(new Path(HDFSClientConstants.datasetParentDirectory), true)
+    fs.delete(HDFSClientConstants.datasetParentDirectory, true)
   }
 
 }

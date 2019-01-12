@@ -1,6 +1,6 @@
 package com.jalebi.common
 
-import org.apache.hadoop.fs.RemoteIterator
+import org.apache.hadoop.fs.{Path, RemoteIterator}
 import org.apache.hadoop.yarn.api.ApplicationConstants
 import org.apache.hadoop.yarn.api.ApplicationConstants.Environment
 
@@ -41,4 +41,5 @@ object JalebiUtils {
     override def next(): T = i.next()
   }
 
+  implicit def stringToPath(path: String) = new Path(path)
 }

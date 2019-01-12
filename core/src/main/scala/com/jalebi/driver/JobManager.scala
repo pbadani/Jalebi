@@ -67,7 +67,7 @@ case class JobManager(jContext: JalebiContext) extends FSM[JobManagerState, JobM
   whenUnhandled {
     case Event(Shutdown, e) =>
       val executorStateManage = e.asInstanceOf[ExecutorStateManage]
-      goto(Killed) using e
+      goto(Killed) using executorStateManage
   }
 
   onTransition {

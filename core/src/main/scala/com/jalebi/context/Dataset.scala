@@ -10,7 +10,7 @@ import scala.concurrent.duration._
 case class Dataset(name: String, jobManager: ActorRef) {
 
   def findNode(nodeId: Long): String = {
-    implicit val timeout = Timeout(5 seconds)
+    implicit val timeout = Timeout(10 seconds)
     jobManager.ask(FindNode(nodeId)).asInstanceOf[String]
   }
 

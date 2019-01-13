@@ -52,7 +52,10 @@ case class JobManager(jContext: JalebiContext) extends FSM[JobManagerState, JobM
   when(DatasetLoaded) {
     case Event(f@FindNode(_, _), e) =>
       val executorStateManage = e.asInstanceOf[ExecutorStateManage]
-      executorStateManage.produceNewJob(f.copy(jobId = jContext.newJobId(applicationId)))
+      val jobId = jContext.newJobId(applicationId)
+      executorStateManage.produceNewJob(f.copy(jobId = jobId))
+      val result = executorStateManage.waitForJobToComplete(jobId, 10 seconds)
+      sender() ! result.value
       stay
   }
 

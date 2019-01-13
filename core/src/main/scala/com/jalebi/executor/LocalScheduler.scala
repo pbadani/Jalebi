@@ -13,6 +13,7 @@ case class LocalScheduler(jContext: JalebiContext, applicationId: String) extend
   private val refs = mutable.HashMap[String, ActorRef]()
 
   override def startExecutors(executorIds: Set[String]): Unit = {
+
   }
 
   override def shutExecutors(executorIds: Set[String]): Unit = {
@@ -38,8 +39,7 @@ case class LocalScheduler(jContext: JalebiContext, applicationId: String) extend
       })
     case StopExecutors =>
       refs.foreach {
-        case (executorId, ref) =>
-          ref ! ShutExecutors
+        case (_, ref) => ref ! ShutExecutors
       }
   }
 }

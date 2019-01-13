@@ -61,7 +61,7 @@ case class Executor(executorId: String, driverHostPort: HostPort) extends FSM[Ex
       val executorState = s.asInstanceOf[LoadedExecutorState]
       LOGGER.info(s"Finding node $nodeId in $executorId.")
       val result = executorState.jalebi.searchNode(nodeId)
-      monitorRef.get ! TaskResult(jobId, result.map(Set(_)).getOrElse(Set.empty))
+      monitorRef.get ! TaskResult(executorId, jobId, result.map(Set(_)).getOrElse(Set.empty))
       stay using executorState
   }
 

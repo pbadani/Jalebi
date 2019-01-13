@@ -1,8 +1,9 @@
 package com.jalebi.driver
 
+import com.jalebi.api.Node
 import com.jalebi.common.Logging
 import com.jalebi.context.JalebiContext
-import com.jalebi.message.{JobAction, LoadDataset}
+import com.jalebi.message.{JobAction, LoadDataset, TaskResult}
 import com.jalebi.partitioner.HashPartitioner
 import com.jalebi.proto.jobmanagement.DatasetState
 import org.apache.hadoop.yarn.api.records.Container
@@ -18,10 +19,11 @@ object EmptyExecutorStateManager extends JobManagerData
 case class ExecutorStateManage(jContext: JalebiContext) extends JobManagerData with Logging {
 
   private val executorIdToState = new mutable.HashMap[String, StateValue]()
-//  private val jobToExecutorStatus = new mutable.HashMap[String, mutable.Map[String, ]]()
+  private val jobResult = new mutable.HashMap[String, mutable.Map[String, Set[Node]]]()
   private var waitToRegister: Option[Promise[ExecutorState]] = None
   private var waitToLoad: Option[Promise[ExecutorState]] = None
   private var waitToUnregister: Option[Promise[ExecutorState]] = None
+  private val waitForJobToComplete = new mutable.HashMap[String, Promise[Set[Node]]]()
 
   //This is a blocking call made by the JobManager because we want to wait for all the executors
   //to be registered before we start executing the jobs.
@@ -43,6 +45,12 @@ case class ExecutorStateManage(jContext: JalebiContext) extends JobManagerData w
     Await.ready(p.future, duration)
   }
 
+  def waitForJobToComplete(jobId: String, duration: Duration) = {
+    val p = Promise[Set[Node]]()
+    waitForJobToComplete.put(jobId, p)
+    Await.ready(p.future, duration)
+  }
+
   def loadPartsToExecutors(jobId: String, allParts: Set[String], name: String): Unit = {
     clearParts()
     HashPartitioner.partition(allParts, listExecutorIds()).foreach {
@@ -56,15 +64,13 @@ case class ExecutorStateManage(jContext: JalebiContext) extends JobManagerData w
 
   def produceNewJob(executorAction: JobAction): Unit = {
     executorIdToState.keySet.foreach(executorId => {
-      updateState(executorId, state => {
-        state.copy(nextAction = Some(executorAction))
-      })
+      updateState(executorId, _.copy(nextAction = Some(executorAction)))
     })
   }
 
   def consumeNextJob(executorId: String): Option[JobAction] = {
     val next = executorIdToState(executorId).nextAction
-    next.foreach(_ => updateState(executorId, state => state.copy(nextAction = None)))
+    next.foreach(_ => updateState(executorId, _.copy(nextAction = None)))
     next
   }
 
@@ -76,7 +82,7 @@ case class ExecutorStateManage(jContext: JalebiContext) extends JobManagerData w
   def findExecutorToAssignContainer(container: Container): Option[String] = this.synchronized {
     executorIdToState.collectFirst {
       case (executorId, state) if state.container.isEmpty && state.executorState == NEW =>
-        updateState(executorId, state => state.copy(container = Some(container), executorState = REQUESTED))
+        updateState(executorId, _.copy(container = Some(container), executorState = REQUESTED))
         executorId
     }
   }
@@ -86,7 +92,7 @@ case class ExecutorStateManage(jContext: JalebiContext) extends JobManagerData w
     if (!executorIdToState.contains(executorId)) {
       throw new IllegalStateException(s"Executor $executorId has not been added yet.")
     }
-    updateState(executorId, state => state.copy(executorState = ALLOCATED))
+    updateState(executorId, _.copy(executorState = ALLOCATED))
   }
 
   def markRegistered(executorId: String): Unit = {
@@ -94,7 +100,7 @@ case class ExecutorStateManage(jContext: JalebiContext) extends JobManagerData w
     if (!executorIdToState.contains(executorId)) {
       throw new IllegalStateException(s"Executor $executorId has not been added yet.")
     }
-    updateState(executorId, state => state.copy(executorState = REGISTERED))
+    updateState(executorId, _.copy(executorState = REGISTERED))
     if (areAll(REGISTERED)) {
       waitToRegister.foreach(_.success(REGISTERED))
     }
@@ -104,7 +110,7 @@ case class ExecutorStateManage(jContext: JalebiContext) extends JobManagerData w
     if (!executorIdToState.contains(executorId)) {
       throw new IllegalStateException(s"Executor $executorId has not been added yet.")
     }
-    updateState(executorId, state => state.copy(executorState = DATASET_LOADED))
+    updateState(executorId, _.copy(executorState = DATASET_LOADED))
     if (areAll(DATASET_LOADED)) {
       waitToLoad.foreach(_.success(DATASET_LOADED))
     }
@@ -117,7 +123,7 @@ case class ExecutorStateManage(jContext: JalebiContext) extends JobManagerData w
     if (!executorIdToState.contains(executorId)) {
       throw new IllegalStateException(s"Executor $executorId has not been added yet.")
     }
-    updateState(executorId, state => state.copy(executorState = UNREGISTERED))
+    updateState(executorId, _.copy(executorState = UNREGISTERED))
     if (areAll(UNREGISTERED)) {
       waitToLoad.foreach(_.success(UNREGISTERED))
     }
@@ -144,11 +150,20 @@ case class ExecutorStateManage(jContext: JalebiContext) extends JobManagerData w
     executorIdToState += (executorId -> mapState(state))
   }
 
+  def saveResult(jobId: String, executorId: String, result: Set[Node]): Unit = {
+    jobResult
+      .getOrElseUpdate(jobId, mutable.HashMap()[String, Set[Node]])
+      .update(executorId, result)
+    val executorIds = listExecutorIds()
+    val results = jobResult(jobId)
+    if (executorIds.forall(results.get(_).isDefined)) {
+      waitForJobToComplete(jobId).success(results.values.flatten.toSet)
+    }
+  }
+
   def listExecutorIds(): Set[String] = executorIdToState.keySet.toSet
 
-  def listPartsForExecutorId(executorId: String): Set[String] = {
-    executorIdToState(executorId).parts
-  }
+  def listPartsForExecutorId(executorId: String): Set[String] = executorIdToState(executorId).parts
 
   def clearParts(): Unit = {
     executorIdToState.keySet.foreach(executorId => {

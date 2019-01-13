@@ -5,7 +5,10 @@ import com.jalebi.common.Logging
 import com.jalebi.context.JalebiContext
 import com.jalebi.message._
 
+import scala.collection.mutable
+
 case class StateMonitor(executorStateManage: ExecutorStateManage, jContext: JalebiContext) extends Actor with Logging {
+
   override def receive: Receive = {
     case RegisterExecutor(executorId) =>
       executorStateManage.markRegistered(executorId)
@@ -15,9 +18,10 @@ case class StateMonitor(executorStateManage: ExecutorStateManage, jContext: Jale
       executorStateManage.markLoaded(executorId)
     case Heartbeat(executorId) =>
       LOGGER.info(s"Received $executorId heartbeat.")
-      executorStateManage.consumeNextJob(executorId).foreach {
-        sender() ! _
-      }
+      executorStateManage.consumeNextJob(executorId).foreach(sender() ! _)
+    case TaskResult(executorId, jobId, nodes) =>
+      executorStateManage.saveResult(jobId, executorId, nodes)
+
   }
 }
 

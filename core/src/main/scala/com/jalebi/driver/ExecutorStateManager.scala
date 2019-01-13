@@ -4,14 +4,13 @@ import com.jalebi.common.Logging
 import com.jalebi.context.JalebiContext
 import com.jalebi.message.JobAction
 import com.jalebi.partitioner.HashPartitioner
-import com.jalebi.proto.jobmanagement.{DatasetState, TaskRequest}
 import org.apache.hadoop.yarn.api.records.Container
 
 import scala.collection.mutable
 
 case class ExecutorStateManager(jContext: JalebiContext) extends Logging {
 
-  private val default = StateValue(parts = Set.empty, executorState = NEW, datasetState = DatasetState.NONE, container = None, nextAction = None)
+  private val default = StateValue(parts = Set.empty, executorState = NEW, datasetState = Noop, container = None, nextAction = None)
 
   private var initializationState = false
 
@@ -46,14 +45,6 @@ case class ExecutorStateManager(jContext: JalebiContext) extends Logging {
     HashPartitioner.partition(parts, listExecutorIds()).foreach {
       case (e, p) => assignPartsToExecutor(jobId, e, p, name)
     }
-  }
-
-  def assignNewTask(taskRequest: TaskRequest): Unit = {
-    //    executorIdToState.keySet.foreach(executorId => {
-    //      updateState(executorId, state => {
-    //        state.copy(nextAction = Some(taskRequest.copy(parts = state.parts.toSeq)))
-    //      })
-    //    })
   }
 
   def consumeNextTask(executorId: String): Option[JobAction] = {
@@ -142,7 +133,7 @@ case class ExecutorStateManager(jContext: JalebiContext) extends Logging {
   def clearParts(): Unit = {
     executorIdToState.keySet.foreach(executorId => {
       updateState(executorId, state => {
-        state.copy(parts = Set.empty, datasetState = DatasetState.NONE, nextAction = None)
+        state.copy(parts = Set.empty, datasetState = Noop, nextAction = None)
       })
     })
   }
@@ -150,5 +141,5 @@ case class ExecutorStateManager(jContext: JalebiContext) extends Logging {
 
 
 object ExecutorStateManager {
-  val default = StateValue(parts = Set.empty, executorState = NEW, datasetState = DatasetState.NONE, container = None, nextAction = None)
+  val default = StateValue(parts = Set.empty, executorState = NEW, datasetState = Noop, container = None, nextAction = None)
 }

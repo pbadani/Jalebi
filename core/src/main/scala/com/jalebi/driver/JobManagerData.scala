@@ -5,7 +5,6 @@ import com.jalebi.common.Logging
 import com.jalebi.context.JalebiContext
 import com.jalebi.message.{JobAction, LoadDataset}
 import com.jalebi.partitioner.HashPartitioner
-import com.jalebi.proto.jobmanagement.DatasetState
 import org.apache.hadoop.yarn.api.records.Container
 
 import scala.collection.mutable
@@ -23,7 +22,7 @@ case class ExecutorStateManage(jContext: JalebiContext) extends JobManagerData w
   private var waitToRegister: Option[Promise[ExecutorState]] = None
   private var waitToLoad: Option[Promise[ExecutorState]] = None
   private var waitToUnregister: Option[Promise[ExecutorState]] = None
-  private val waitForJobToComplete = new mutable.HashMap[String, Promise[Set[Node]]]()
+  private val jobToComplete = new mutable.HashMap[String, Promise[Set[Node]]]()
 
   //This is a blocking call made by the JobManager because we want to wait for all the executors
   //to be registered before we start executing the jobs.
@@ -47,7 +46,7 @@ case class ExecutorStateManage(jContext: JalebiContext) extends JobManagerData w
 
   def waitForJobToComplete(jobId: String, duration: Duration) = {
     val p = Promise[Set[Node]]()
-    waitForJobToComplete.put(jobId, p)
+    jobToComplete.put(jobId, p)
     Await.ready(p.future, duration)
   }
 
@@ -152,12 +151,12 @@ case class ExecutorStateManage(jContext: JalebiContext) extends JobManagerData w
 
   def saveResult(jobId: String, executorId: String, result: Set[Node]): Unit = {
     jobResult
-      .getOrElseUpdate(jobId, mutable.HashMap()[String, Set[Node]])
+      .getOrElseUpdate(jobId, mutable.HashMap[String, Set[Node]]())
       .update(executorId, result)
     val executorIds = listExecutorIds()
     val results = jobResult(jobId)
     if (executorIds.forall(results.get(_).isDefined)) {
-      waitForJobToComplete(jobId).success(results.values.flatten.toSet)
+      jobToComplete(jobId).success(results.values.flatten.toSet)
     }
   }
 
@@ -168,12 +167,12 @@ case class ExecutorStateManage(jContext: JalebiContext) extends JobManagerData w
   def clearParts(): Unit = {
     executorIdToState.keySet.foreach(executorId => {
       updateState(executorId, state => {
-        state.copy(parts = Set.empty, datasetState = DatasetState.NONE, nextAction = None)
+        state.copy(parts = Set.empty, datasetState = Noop, nextAction = None)
       })
     })
   }
 }
 
 object ExecutorStateManage {
-  val default = StateValue(parts = Set.empty, executorState = NEW, datasetState = DatasetState.NONE, container = None, nextAction = None)
+  val default = StateValue(parts = Set.empty, executorState = NEW, datasetState = Noop, container = None, nextAction = None)
 }

@@ -1,7 +1,6 @@
 package com.jalebi.driver
 
 import com.jalebi.message.JobAction
-import com.jalebi.proto.jobmanagement.DatasetState
 import org.apache.hadoop.yarn.api.records.Container
 
 sealed trait ESMData

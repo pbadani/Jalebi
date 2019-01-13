@@ -3,7 +3,7 @@ package com.jalebi.driver
 import com.jalebi.api.Node
 import com.jalebi.common.Logging
 import com.jalebi.context.JalebiContext
-import com.jalebi.message.{JobAction, LoadDataset, TaskResult}
+import com.jalebi.message.{JobAction, LoadDataset}
 import com.jalebi.partitioner.HashPartitioner
 import com.jalebi.proto.jobmanagement.DatasetState
 import org.apache.hadoop.yarn.api.records.Container

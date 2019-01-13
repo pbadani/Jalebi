@@ -6,7 +6,7 @@ import com.jalebi.context.JalebiContext
 import com.jalebi.exception.DatasetNotFoundException
 import com.jalebi.executor.LocalScheduler
 import com.jalebi.extensions.MasterSettings
-import com.jalebi.hdfs.{HDFSClient, HostPort}
+import com.jalebi.hdfs.HDFSClient
 import com.jalebi.message._
 import com.jalebi.yarn.ApplicationMaster
 import org.apache.hadoop.yarn.conf.YarnConfiguration

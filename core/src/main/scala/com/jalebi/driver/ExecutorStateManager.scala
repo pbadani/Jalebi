@@ -49,11 +49,11 @@ case class ExecutorStateManager(jContext: JalebiContext) extends Logging {
   }
 
   def assignNewTask(taskRequest: TaskRequest): Unit = {
-//    executorIdToState.keySet.foreach(executorId => {
-//      updateState(executorId, state => {
-//        state.copy(nextAction = Some(taskRequest.copy(parts = state.parts.toSeq)))
-//      })
-//    })
+    //    executorIdToState.keySet.foreach(executorId => {
+    //      updateState(executorId, state => {
+    //        state.copy(nextAction = Some(taskRequest.copy(parts = state.parts.toSeq)))
+    //      })
+    //    })
   }
 
   def consumeNextTask(executorId: String): Option[JobAction] = {
@@ -63,11 +63,11 @@ case class ExecutorStateManager(jContext: JalebiContext) extends Logging {
   }
 
   private def assignPartsToExecutor(jobId: String, executorId: String, parts: Set[String], name: String): Unit = {
-//    LOGGER.info(s"Assigned parts [${parts.mkString(",")}] to executor $executorId.")
-//    updateState(executorId, state => {
-//      val request = TaskRequestBuilder.loadDatasetRequest(jobId, name)
-//      state.copy(parts = parts, nextAction = Some(request))
-//    })
+    //    LOGGER.info(s"Assigned parts [${parts.mkString(",")}] to executor $executorId.")
+    //    updateState(executorId, state => {
+    //      val request = TaskRequestBuilder.loadDatasetRequest(jobId, name)
+    //      state.copy(parts = parts, nextAction = Some(request))
+    //    })
   }
 
   private def removePartsFromExecutor(executorId: String, parts: Set[String]): Unit = {

@@ -6,7 +6,6 @@ import java.net.URI
 import com.jalebi.api.{Jalebi, Triplets}
 import com.jalebi.common.Logging
 import com.jalebi.exception.{DatasetCorruptException, DatasetNotFoundException, DuplicateDatasetException}
-import com.jalebi.proto.jobmanagement.HostPort
 import com.sksamuel.avro4s.{AvroInputStream, AvroOutputStream}
 import org.apache.hadoop.fs.{FileSystem, Path}
 import org.apache.hadoop.io.IOUtils

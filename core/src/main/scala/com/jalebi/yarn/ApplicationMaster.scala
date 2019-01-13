@@ -42,7 +42,7 @@ class ApplicationMaster(jContext: JalebiContext, amArgs: ApplicationMasterArgs, 
 
   private val containerMemory = 256
   private val containerVCores = 1
-//  val (driverHost, driverPort) = (jContext.driverHostPort.host, jContext.driverHostPort.port)
+  //  val (driverHost, driverPort) = (jContext.driverHostPort.host, jContext.driverHostPort.port)
   val (driverHost, driverPort: Int) = (null, 1111)
 
   private val numOfExecutors = jContext.conf.getNumberOfExecutors().toInt

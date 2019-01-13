@@ -5,8 +5,6 @@ import com.jalebi.common.Logging
 import com.jalebi.context.JalebiContext
 import com.jalebi.message._
 
-import scala.collection.mutable
-
 case class StateMonitor(executorStateManage: ExecutorStateManage, jContext: JalebiContext) extends Actor with Logging {
 
   override def receive: Receive = {

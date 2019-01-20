@@ -9,7 +9,8 @@ import org.apache.hadoop.yarn.api.records.Container
 
 import scala.collection.mutable
 import scala.concurrent.duration.Duration
-import scala.concurrent.{Await, Promise}
+import scala.concurrent.{Await, Future, Promise}
+import scala.concurrent.duration._
 
 sealed trait JobManagerData extends Logging
 
@@ -23,28 +24,29 @@ case class ExecutorStateManage(jContext: JalebiContext) extends JobManagerData w
   private var waitToLoad: Option[Promise[ExecutorState]] = None
   private var waitToUnregister: Option[Promise[ExecutorState]] = None
   private val jobToComplete = new mutable.HashMap[String, Promise[Set[Node]]]()
+  private val defaultWaitDuration = 10 seconds
 
   //This is a blocking call made by the JobManager because we want to wait for all the executors
   //to be registered before we start executing the jobs.
-  def waitForAllToRegister(duration: Duration): Unit = {
+  def waitForAllToRegister(duration: Duration = defaultWaitDuration): Unit = {
     val p = Promise[ExecutorState]()
     waitToRegister = Some(p)
     Await.ready(p.future, duration)
   }
 
-  def waitForAllToLoad(duration: Duration): Unit = {
+  def waitForAllToLoad(duration: Duration = defaultWaitDuration): Unit = {
     val p = Promise[ExecutorState]()
     waitToLoad = Some(p)
     Await.ready(p.future, duration)
   }
 
-  def waitForAllToUnregister(duration: Duration): Unit = {
+  def waitForAllToUnregister(duration: Duration = defaultWaitDuration): Unit = {
     val p = Promise[ExecutorState]()
     waitToUnregister = Some(p)
     Await.ready(p.future, duration)
   }
 
-  def waitForJobToComplete(jobId: String, duration: Duration) = {
+  def waitForJobToComplete(jobId: String, duration: Duration = defaultWaitDuration) = {
     val p = Promise[Set[Node]]()
     jobToComplete.put(jobId, p)
     Await.ready(p.future, duration)
@@ -61,10 +63,13 @@ case class ExecutorStateManage(jContext: JalebiContext) extends JobManagerData w
     }
   }
 
-  def produceNewJob(executorAction: JobAction): Unit = {
+  def produceNewBlockingJob(executorAction: JobAction): Future[Set[Node]] = {
     executorIdToState.keySet.foreach(executorId => {
       updateState(executorId, _.copy(nextAction = Some(executorAction)))
     })
+    val p = Promise[Set[Node]]()
+    jobToComplete.put(executorAction.jobId, p)
+    Await.ready(p.future, defaultWaitDuration)
   }
 
   def consumeNextJob(executorId: String): Option[JobAction] = {

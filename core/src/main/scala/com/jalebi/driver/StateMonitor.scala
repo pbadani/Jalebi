@@ -17,9 +17,8 @@ case class StateMonitor(executorStateManage: ExecutorStateManage, jContext: Jale
     case Heartbeat(executorId) =>
       LOGGER.info(s"Received $executorId heartbeat.")
       executorStateManage.consumeNextJob(executorId).foreach(sender() ! _)
-    case TaskResult(executorId, jobId, nodes) =>
+    case FullResult(executorId, jobId, nodes) =>
       executorStateManage.saveResult(jobId, executorId, nodes)
-
   }
 }
 

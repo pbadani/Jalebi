@@ -17,7 +17,7 @@ case class UnregistrationAcknowledged(hdfs: HostPort)
 
 case class LoadedDataset(executorId: String)
 
-case class TaskResult(executorId: String, jobId: String, nodes: Set[Node])
+case class FullResult(executorId: String, jobId: String, nodes: Set[Node])
 
 object HeartbeatKey
 

@@ -1,6 +1,6 @@
 package com.jalebi.executor
 
-import akka.actor.{ActorSelection, ActorSystem, FSM, PoisonPill, Props, Timers}
+import akka.actor.{ActorRef, ActorSelection, ActorSystem, FSM, PoisonPill, Props, Timers}
 import com.jalebi.common.Logging
 import com.jalebi.extensions.ExecutorSettings
 import com.jalebi.hdfs.{HDFSClient, HostPort}
@@ -8,6 +8,7 @@ import com.jalebi.message._
 import com.typesafe.config.ConfigFactory
 import org.apache.hadoop.yarn.conf.YarnConfiguration
 
+import scala.collection.mutable
 import scala.concurrent.duration._
 
 case class Executor(executorId: String, driverHostPort: HostPort) extends FSM[ExecutorState, ExecutorData] with Timers with Logging {
@@ -15,6 +16,7 @@ case class Executor(executorId: String, driverHostPort: HostPort) extends FSM[Ex
   private val conf = ExecutorSettings(context.system)
   //  private var masterRef: Option[ActorSelection] = None
   private var monitorRef: Option[ActorSelection] = None
+  private val jobRunnerRefs = mutable.HashMap[String, ActorRef]()
 
   override def preStart(): Unit = {
     super.preStart()
@@ -57,11 +59,11 @@ case class Executor(executorId: String, driverHostPort: HostPort) extends FSM[Ex
   }
 
   when(Loaded) {
-    case Event(FindNode(nodeId, jobId), s) =>
+    case Event(f@FindNode(_, jobId), s) =>
       val executorState = s.asInstanceOf[LoadedExecutorState]
-      LOGGER.info(s"Finding node $nodeId in $executorId.")
-      val result = executorState.jalebi.searchNode(nodeId)
-      monitorRef.get ! TaskResult(executorId, jobId, result.map(Set(_)).getOrElse(Set.empty))
+      val jobRunner = context.actorOf(JobRunner.props(executorId, jobId, executorState.jalebi), JobRunner.name(executorId, jobId))
+      jobRunnerRefs += (jobId -> jobRunner)
+      jobRunner ! f
       stay using executorState
   }
 
@@ -73,15 +75,19 @@ case class Executor(executorId: String, driverHostPort: HostPort) extends FSM[Ex
   }
 
   whenUnhandled {
-    case Event(h@Heartbeat(name), _) =>
+    case Event(h@Heartbeat(_), _) =>
       monitorRef.get ! h
+      stay
+    case Event(t: FullResult, _) =>
+      monitorRef.get ! t
+      jobRunnerRefs.get(t.jobId).foreach(_ ! PoisonPill)
+      jobRunnerRefs -= t.jobId
       stay
     case Event(ShutExecutors, _) =>
       //perform cleanup, save state, flush results.
       self ! PoisonPill
       stay
   }
-
   initialize()
 }
 

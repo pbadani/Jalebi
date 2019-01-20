@@ -9,7 +9,10 @@ object YarnSampleClient {
     val dataset = jcontext.loadDataset("test1")
     val r = dataset.findNode(10)
 
-//    jcontext.close()
+    r.foreach(
+      println(_)
+    )
+    //    jcontext.close()
     //    println(r)
   }
 }

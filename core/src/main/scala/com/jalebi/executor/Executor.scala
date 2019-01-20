@@ -52,7 +52,7 @@ case class Executor(executorId: String, driverHostPort: HostPort) extends FSM[Ex
   when(Registered) {
     case Event(LoadDataset(jobId, name, parts), s) =>
       val state = s.asInstanceOf[RegisteredExecutorState]
-      LOGGER.info(s"Loading dataset $name.")
+      LOGGER.info(s"Loading dataset $name. JobId: $jobId.")
       val hdfsClient = HDFSClient.withDistributedFileSystem(Some(state.hdfs), new YarnConfiguration())
       val jalebi = hdfsClient.loadDataset(name, parts)
       goto(Loaded) using LoadedExecutorState(state.monitorRef, state.hdfs, jalebi)

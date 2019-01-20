@@ -19,11 +19,11 @@ object EmptyExecutorStateManager extends JobManagerData
 case class ExecutorStateManage(jContext: JalebiContext) extends JobManagerData with Logging {
 
   private val executorIdToState = new mutable.HashMap[String, StateValue]()
-  private val jobResult = new mutable.HashMap[String, mutable.Map[String, Set[Node]]]()
+  private val jobResult = new mutable.HashMap[String, mutable.Map[String, Seq[Node]]]()
   private var waitToRegister: Option[Promise[ExecutorState]] = None
   private var waitToLoad: Option[Promise[ExecutorState]] = None
   private var waitToUnregister: Option[Promise[ExecutorState]] = None
-  private val jobToComplete = new mutable.HashMap[String, Promise[Set[Node]]]()
+  private val jobToComplete = new mutable.HashMap[String, Promise[Seq[Node]]]()
   private val defaultWaitDuration = 10 seconds
 
   //This is a blocking call made by the JobManager because we want to wait for all the executors
@@ -46,8 +46,8 @@ case class ExecutorStateManage(jContext: JalebiContext) extends JobManagerData w
     Await.ready(p.future, duration)
   }
 
-  def waitForJobToComplete(jobId: String, duration: Duration = defaultWaitDuration) = {
-    val p = Promise[Set[Node]]()
+  def waitForJobToComplete(jobId: String, duration: Duration = defaultWaitDuration): Future[Seq[Node]] = {
+    val p = Promise[Seq[Node]]()
     jobToComplete.put(jobId, p)
     Await.ready(p.future, duration)
   }
@@ -63,13 +63,13 @@ case class ExecutorStateManage(jContext: JalebiContext) extends JobManagerData w
     }
   }
 
-  def produceNewBlockingJob(executorAction: JobAction): Future[Set[Node]] = {
+  def produceNewBlockingJob(executorAction: JobAction): Seq[Node] = {
     executorIdToState.keySet.foreach(executorId => {
       updateState(executorId, _.copy(nextAction = Some(executorAction)))
     })
-    val p = Promise[Set[Node]]()
+    val p = Promise[Seq[Node]]()
     jobToComplete.put(executorAction.jobId, p)
-    Await.ready(p.future, defaultWaitDuration)
+    Await.result(p.future, defaultWaitDuration)
   }
 
   def consumeNextJob(executorId: String): Option[JobAction] = {
@@ -154,14 +154,14 @@ case class ExecutorStateManage(jContext: JalebiContext) extends JobManagerData w
     executorIdToState += (executorId -> mapState(state))
   }
 
-  def saveResult(jobId: String, executorId: String, result: Set[Node]): Unit = {
+  def saveResult(jobId: String, executorId: String, result: Seq[Node]): Unit = {
     jobResult
-      .getOrElseUpdate(jobId, mutable.HashMap[String, Set[Node]]())
+      .getOrElseUpdate(jobId, mutable.HashMap[String, Seq[Node]]())
       .update(executorId, result)
     val executorIds = listExecutorIds()
     val results = jobResult(jobId)
     if (executorIds.forall(results.get(_).isDefined)) {
-      jobToComplete(jobId).success(results.values.flatten.toSet)
+      jobToComplete(jobId).success(results.values.flatten.toSeq)
     }
   }
 

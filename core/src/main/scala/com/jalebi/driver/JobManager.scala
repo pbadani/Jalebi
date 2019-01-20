@@ -1,6 +1,7 @@
 package com.jalebi.driver
 
 import akka.actor._
+import akka.pattern._
 import com.jalebi.common.Logging
 import com.jalebi.context.JalebiContext
 import com.jalebi.exception.DatasetNotFoundException
@@ -56,7 +57,14 @@ case class JobManager(jContext: JalebiContext) extends FSM[JobManagerState, JobM
       val jobId = jContext.newJobId(applicationId)
       val result = executorStateManage.produceNewBlockingJob(f.copy(jobId = jobId))
       LOGGER.info(s"Returning result for $jobId.")
-      sender() ! result.value.
+      //      implicit val ec = context.dispatcher
+      //      result onComplete {
+      //        case scala.util.Success(value) => sender() ! value
+      //        case scala.util.Failure(exception) =>
+      //          LOGGER.error(s"Exception occurred in job $jobId. message: ${exception.getMessage}", exception)
+      //          sender() ! Seq.empty
+      //      }
+      sender() ! result
       stay
   }
 

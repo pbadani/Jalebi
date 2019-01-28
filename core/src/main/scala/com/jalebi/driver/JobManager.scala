@@ -1,7 +1,6 @@
 package com.jalebi.driver
 
 import akka.actor._
-import akka.pattern._
 import com.jalebi.common.Logging
 import com.jalebi.context.JalebiContext
 import com.jalebi.exception.DatasetNotFoundException

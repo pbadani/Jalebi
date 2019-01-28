@@ -28,14 +28,14 @@ class JalebiContextTest extends FlatSpec with Matchers with BeforeAndAfter {
     val jalebiWriter = new JalebiWriter {
 
       override def vertices[V]: Seq[Node] = Seq(
-        Node(Node(1), Map("TestKey1" -> "TestValue1", "TestKey2" -> "TestValue2")),
-        Node(Node(2), Map("TestKey3" -> "TestValue3", "TestKey4" -> "TestValue4"))
+        Node(1, Map("TestKey1" -> "TestValue1", "TestKey2" -> "TestValue2")),
+        Node(2, Map("TestKey3" -> "TestValue3", "TestKey4" -> "TestValue4"))
       )
 
       override def datasetName: String = "TestDataset"
 
       override def edges[E]: Seq[Edge] = Seq(
-        Edge(Node(1), Node(2), Map("TestKey3" -> "TestValue3", "TestKey4" -> "TestValue4"), isDirected = false)
+        Edge(Node(1, Map.empty), Node(2, Map.empty), Map("TestKey3" -> "TestValue3", "TestKey4" -> "TestValue4"), isDirected = false)
       )
     }
 

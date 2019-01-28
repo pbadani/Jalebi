@@ -16,7 +16,7 @@ import org.apache.hadoop.yarn.conf.YarnConfiguration
 
 import scala.concurrent.duration._
 
-case class JalebiContext private(conf: JalebiConfig) extends Logging {
+case class JalebiContext private(conf: JalebiConfig, master: ActorSystem) extends Logging {
 
   private val jobIdCounter = new AtomicLong(0)
   private val executorIdCounter = new AtomicLong(0)
@@ -31,9 +31,9 @@ case class JalebiContext private(conf: JalebiConfig) extends Logging {
     Dataset(name, jobManager)
   }
 
-  def deleteDataset(name: String): Unit = {
-    HDFSClient.withDistributedFileSystem(conf.hdfsHostPort, new YarnConfiguration()).deleteDataset(name)
-  }
+  def deleteDataset(name: String): Unit = HDFSClient
+    .withDistributedFileSystem(conf.hdfsHostPort, new YarnConfiguration())
+    .deleteDataset(name)
 
   @throws[DuplicateDatasetException]
   def createDataset(input: JalebiWriter): Unit = {
@@ -61,7 +61,7 @@ case class JalebiContext private(conf: JalebiConfig) extends Logging {
 }
 
 object JalebiContext {
-  val master: ActorSystem = ActorSystem("Master", ConfigFactory.load("master"))
+  private val master: ActorSystem = ActorSystem("Master", ConfigFactory.load("master"))
 
-  def apply(conf: JalebiConfig): JalebiContext = new JalebiContext(conf)
+  def apply(conf: JalebiConfig): JalebiContext = new JalebiContext(conf, master)
 }

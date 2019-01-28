@@ -2,6 +2,7 @@ package com.jalebi.yarn
 
 import java.util
 
+import com.jalebi.common.JalebiUtils._
 import com.jalebi.common.{JalebiUtils, Logging, YarnUtils}
 import com.jalebi.yarn.CommandConstants.AppMaster
 import org.apache.hadoop.fs.{FileSystem, Path}
@@ -15,31 +16,28 @@ import scala.collection.JavaConverters._
 
 object ApplicationClient extends Logging {
 
-  import com.jalebi.common.JalebiUtils._
-
   def main(args: Array[String]): Unit = {
     val yarnClient = YarnClient.createYarnClient()
     val conf = new YarnConfiguration()
-    conf.set("fs.defaultFS", "hdfs://localhost:8020")
+    conf.set("fs.defaultFS", "hdfs://localhost:9820")
     yarnClient.init(conf)
     yarnClient.start()
-    val appclientArgs: ApplicationClientArgs = ApplicationClientArgs(args)
-    val application = yarnClient.createApplication()
-    val appContext = createApplicationSubmissionContext(application, conf, appclientArgs)
+    val appclientArgs = ApplicationClientArgs(args)
+    val appContext = createApplicationSubmissionContext(yarnClient, conf, appclientArgs)
     //    appContext.setApplicationTimeouts(util.Map[ApplicationTimeoutType, Long])
     LOGGER.info(s"Application ID - ${appContext.getApplicationId}")
-
     val applicationId = yarnClient.submitApplication(appContext)
     val report = yarnClient.getApplicationReport(applicationId)
     println(s"Report: $report")
     //    yarnClient.signalToContainer(application, SignalContainerCommand.GRACEFUL_SHUTDOWN)
   }
 
-  private def createApplicationSubmissionContext(app: YarnClientApplication, conf: YarnConfiguration, appclientArgs: ApplicationClientArgs) = {
-    val appContext = app.getApplicationSubmissionContext
-    val container = createApplicationMasterContext(conf, appclientArgs, appContext.getApplicationId.toString)
+  private def createApplicationSubmissionContext(yarnClient: YarnClient, conf: YarnConfiguration, appclientArgs: ApplicationClientArgs) = {
+    val application = yarnClient.createApplication()
+    val appContext = application.getApplicationSubmissionContext
+    val applicationMasterContainer = createApplicationMasterContext(conf, appclientArgs, appContext.getApplicationId.toString)
     appContext.setApplicationName(JalebiAppConstants.applicationName)
-    appContext.setAMContainerSpec(container)
+    appContext.setAMContainerSpec(applicationMasterContainer)
     appContext.setResource(applicationMasterCapacity)
     appContext
   }
@@ -47,12 +45,19 @@ object ApplicationClient extends Logging {
   private def createApplicationMasterContext(conf: YarnConfiguration, clientArgs: ApplicationClientArgs, applicationId: String) = {
     val amContainer: ContainerLaunchContext = Records.newRecord(classOf[ContainerLaunchContext])
     amContainer.setCommands(List(
-      s"scala ${clientArgs.getClientClass}" +
+      s"/usr/local/bin/scala ${clientArgs.getClientClass}" +
         //        s"--${CommandConstants.AppMaster.applicationId} $applicationId " +
         //        s"--${CommandConstants.AppMaster.jarPath} ${appclientArgs.getJarPath}" +
         s" 1> ${ApplicationConstants.LOG_DIR_EXPANSION_VAR}/stdout" +
         s" 2> ${ApplicationConstants.LOG_DIR_EXPANSION_VAR}/stderr"
     ).asJava)
+//        amContainer.setCommands(List(
+//          s"set" +
+//            //        s"--${CommandConstants.AppMaster.applicationId} $applicationId " +
+//            //        s"--${CommandConstants.AppMaster.jarPath} ${appclientArgs.getJarPath}" +
+//            s" 1> ${ApplicationConstants.LOG_DIR_EXPANSION_VAR}/stdout" +
+//            s" 2> ${ApplicationConstants.LOG_DIR_EXPANSION_VAR}/stderr"
+//        ).asJava)
     //Set the resource localization for the client jar and for dependencies in 'jalebihome'.
     val clientJar = localizeClientJar(amContainer, conf, clientArgs.getJarPath, applicationId)
     amContainer.setLocalResources(clientJar.asJava)

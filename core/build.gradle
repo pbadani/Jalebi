@@ -9,6 +9,22 @@ repositories {
     mavenCentral()
 }
 
+buildscript {
+    repositories {
+        jcenter()
+    }
+    dependencies {
+        classpath 'com.github.jengelman.gradle.plugins:shadow:4.0.4'
+    }
+}
+apply plugin: 'com.github.johnrengelman.shadow'
+
+shadowJar {
+    transform(com.github.jengelman.gradle.plugins.shadow.transformers.AppendingTransformer) {
+        resource = 'reference.conf'
+    }
+}
+
 dependencies {
     compile group: 'org.scala-lang', name: 'scala-library', version: '2.12.3'
     compile group: 'org.scala-lang', name: 'scala-compiler', version: '2.12.3'
@@ -42,8 +58,6 @@ dependencies {
     compile group: 'org.apache.hadoop', name: 'hadoop-yarn-client', version: '3.0.3'
     compile group: 'org.apache.hadoop', name: 'hadoop-yarn', version: '3.0.3'
 }
-
-
 
 task copyLibs(type: Copy) {
     from configurations.compile

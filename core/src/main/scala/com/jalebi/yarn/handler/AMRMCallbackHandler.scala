@@ -2,13 +2,13 @@ package com.jalebi.yarn.handler
 
 import java.util
 
+import akka.actor._
 import com.jalebi.common.Logging
-import com.jalebi.driver.ExecutorStateManager
-import com.jalebi.yarn.ApplicationMaster
+import com.jalebi.message.ContainerAllocated
 import org.apache.hadoop.yarn.api.records.{Container, ContainerStatus, NodeReport, UpdatedContainer}
 import org.apache.hadoop.yarn.client.api.async.AMRMClientAsync.AbstractCallbackHandler
 
-class AMRMCallbackHandler(applicationMaster: ApplicationMaster, executorStateManager: ExecutorStateManager) extends AbstractCallbackHandler with Logging {
+class AMRMCallbackHandler(applicationMaster: ActorRef) extends AbstractCallbackHandler with Logging {
 
   override def onContainersUpdated(containers: util.List[UpdatedContainer]): Unit = {
     containers.forEach(container => {
@@ -49,38 +49,34 @@ class AMRMCallbackHandler(applicationMaster: ApplicationMaster, executorStateMan
   }
 
   override def onContainersAllocated(containers: util.List[Container]): Unit = {
-    //    if (containerStateManager.areAllContainerRequestsFulfilled()) {
-    //      applicationMaster.releaseContainers(containers)
-    //    } else {
-    //    containerStateManager.containersAllocated(containers)
     containers.forEach(container => {
-      val executorId = executorStateManager.findExecutorToAssignContainer(container)
-      if (executorId.isDefined) {
-        val launchThread = applicationMaster.createLaunchContainerThread(executorId.get, container)
-        LOGGER.info(
-          s"""Launching executor on a new container:" +
-          " | Jalebi Executor id: $executorId" +
-          " | Container id: ${container.getId}" +
-          " | Node id: ${container.getNodeId}" +
-          " | Node address: ${container.getNodeHttpAddress}" +
-          " | Container memory: ${container.getResource.getMemorySize}" +
-          " | Container vcores: ${container.getResource.getVirtualCores}""".stripMargin('|'))
-        launchThread.start()
-      } else {
-        LOGGER.info(
-          s"""No executor to allocate. Removing container request:" +
-          " | Container id: ${container.getId}" +
-          " | Node id: ${container.getNodeId}" +
-          " | Node address: ${container.getNodeHttpAddress}" +
-          " | Container memory: ${container.getResource.getMemorySize}" +
-          " | Container vcores: ${container.getResource.getVirtualCores}""".stripMargin('|'))
-        applicationMaster.removeContainerRequest(container.getAllocationRequestId)
-      }
+      LOGGER.info(s"Container for request id ${container.getAllocationRequestId} allocated.")
+      applicationMaster ! ContainerAllocated(container)
+//      val executorId = executorStateManage.markAllocated(container)
+//      if (executorId.isDefined) {
+//        LOGGER.info(
+//          s"""Launching executor on a new container:" +
+//          " | Jalebi Executor id: $executorId" +
+//          " | Container id: ${container.getId}" +
+//          " | Node id: ${container.getNodeId}" +
+//          " | Node address: ${container.getNodeHttpAddress}" +
+//          " | Container memory: ${container.getResource.getMemorySize}" +
+//          " | Container vcores: ${container.getResource.getVirtualCores}""".stripMargin('|'))
+//        applicationMaster ! LaunchContainer(executorId.get, container)
+//      } else {
+//        LOGGER.info(
+//          s"""No executor to allocate. Removing container request:" +
+//          " | Container id: ${container.getId}" +
+//          " | Node id: ${container.getNodeId}" +
+//          " | Node address: ${container.getNodeHttpAddress}" +
+//          " | Container memory: ${container.getResource.getMemorySize}" +
+//          " | Container vcores: ${container.getResource.getVirtualCores}""".stripMargin('|'))
+//        applicationMaster ! RemoveContainer(container)
+//      }
     })
-    //    }
   }
 }
 
 object AMRMCallbackHandler {
-  def apply(applicationMaster: ApplicationMaster, executorStateManager: ExecutorStateManager): AMRMCallbackHandler = new AMRMCallbackHandler(applicationMaster, executorStateManager)
+  def apply(applicationMaster: ActorRef): AMRMCallbackHandler = new AMRMCallbackHandler(applicationMaster)
 }

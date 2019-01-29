@@ -3,13 +3,12 @@ package com.jalebi.yarn.handler
 import java.nio.ByteBuffer
 import java.util
 
+import akka.actor.ActorRef
 import com.jalebi.common.Logging
-import com.jalebi.driver.ExecutorStateManager
-import com.jalebi.yarn.ApplicationMaster
 import org.apache.hadoop.yarn.api.records.{ContainerId, ContainerStatus, Resource}
 import org.apache.hadoop.yarn.client.api.async.NMClientAsync.AbstractCallbackHandler
 
-class NMCallbackHandler(applicationMaster: ApplicationMaster, executorStateManager: ExecutorStateManager) extends AbstractCallbackHandler with Logging {
+class NMCallbackHandler(applicationMaster: ActorRef) extends AbstractCallbackHandler with Logging {
 
   override def onGetContainerStatusError(containerId: ContainerId, t: Throwable): Unit = ???
 
@@ -69,5 +68,5 @@ class NMCallbackHandler(applicationMaster: ApplicationMaster, executorStateManag
 }
 
 object NMCallbackHandler {
-  def apply(applicationMaster: ApplicationMaster, executorStateManager: ExecutorStateManager): NMCallbackHandler = new NMCallbackHandler(applicationMaster, executorStateManager)
+  def apply(applicationMaster: ActorRef): NMCallbackHandler = new NMCallbackHandler(applicationMaster)
 }

@@ -16,20 +16,20 @@ import scala.concurrent.duration._
 case class JobManager(jContext: JalebiContext) extends FSM[JobManagerState, JobManagerData] with Logging {
 
   private val applicationId = s"Jalebi-${System.currentTimeMillis()}"
-  private val scheduler = if (jContext.onLocalMaster) {
-    context.actorOf(LocalScheduler.props(jContext, applicationId), LocalScheduler.name())
-  } else {
-    context.actorOf(Props(ApplicationMaster(jContext, null, applicationId)), "AppMaster")
-  }
   private val conf = MasterSettings(context.system)
-  private var stateMonitorRef: Option[ActorRef] = None
+  private val executorStateManage = ExecutorStateManage(jContext)
+  private val stateMonitorRef = context.actorOf(StateMonitor.props(executorStateManage, jContext), StateMonitor.name())
+  private val scheduler = if (jContext.onLocalMaster) {
+    context.actorOf(LocalScheduler.props(applicationId, stateMonitorRef, conf.hostPort), LocalScheduler.name())
+  } else {
+    context.actorOf(ApplicationMaster.props(applicationId, stateMonitorRef, conf.hostPort), ApplicationMaster.name())
+  }
 
   startWith(UnInitialized, EmptyExecutorStateManager)
 
   when(UnInitialized) {
     case Event(InitializeExecutors, EmptyExecutorStateManager) =>
       val numOfExecutors = jContext.conf.getNumberOfExecutors().toInt
-      val executorStateManage = ExecutorStateManage(jContext)
       (0 until numOfExecutors).foreach(_ => {
         val executorId = jContext.newExecutorId(applicationId)
         executorStateManage.addExecutor(executorId, ExecutorStateManage.default)
@@ -83,9 +83,8 @@ case class JobManager(jContext: JalebiContext) extends FSM[JobManagerState, JobM
     case UnInitialized -> Initialized =>
       val executorStateManage = nextStateData.asInstanceOf[ExecutorStateManage]
       val executorIds = executorStateManage.listExecutorIds()
-      stateMonitorRef = Some(context.actorOf(StateMonitor.props(executorStateManage, jContext), StateMonitor.name()))
-      scheduler ! StartExecutors(executorIds, conf.hostPort)
-      executorStateManage.waitForAllToRegister(10 seconds)
+      scheduler ! StartExecutors(executorIds)
+      executorStateManage.waitForAllToRegister(15 seconds)
     case Initialized -> DatasetLoaded =>
       val executorStateManage = nextStateData.asInstanceOf[ExecutorStateManage]
       executorStateManage.waitForAllToLoad(10 seconds)

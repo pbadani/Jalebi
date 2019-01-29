@@ -2,38 +2,23 @@ package com.jalebi.executor
 
 import akka.actor.{ActorRef, Props}
 import com.jalebi.common.Logging
-import com.jalebi.context.JalebiContext
 import com.jalebi.driver.Scheduler
+import com.jalebi.hdfs.HostPort
 import com.jalebi.message._
 
 import scala.collection.mutable
 
-case class LocalScheduler(jContext: JalebiContext, applicationId: String) extends Scheduler(jContext) with Logging {
+case class LocalScheduler(applicationId: String, stateMonitorRef: ActorRef, driverHostPort: HostPort) extends Scheduler with Logging {
 
   private val refs = mutable.HashMap[String, ActorRef]()
 
-  override def startExecutors(executorIds: Set[String]): Unit = {
-
-  }
-
-  override def shutExecutors(executorIds: Set[String]): Unit = {
-    executorIds.foreach(executorId => {
-      refs.get(executorId).foreach(executorRef => context.stop(executorRef))
-      LOGGER.info(s"Stopping executor $executorId.")
-    })
-  }
-
-  override def shutAllExecutors(): Unit = {
-    shutExecutors(refs.keySet.toSet)
-  }
-
   override def receive: Receive = {
-    case StartExecutors(executorIds, hostPort) =>
+    case StartExecutors(executorIds) =>
       executorIds.foreach(executorId => {
         if (refs.contains(executorId)) {
           throw new IllegalStateException(s"Executor $executorId already started.")
         }
-        val executorRef = Executor.master.actorOf(Executor.props(executorId, hostPort), Executor.name(executorId))
+        val executorRef = Executor.master.actorOf(Executor.props(executorId, driverHostPort), Executor.name(executorId))
         refs += (executorId -> executorRef)
         LOGGER.info(s"Starting executor $executorId.")
       })
@@ -45,7 +30,7 @@ case class LocalScheduler(jContext: JalebiContext, applicationId: String) extend
 }
 
 object LocalScheduler {
-  def props(jContext: JalebiContext, applicationId: String) = Props(LocalScheduler(jContext, applicationId))
+  def props(applicationId: String, stateMonitorRef: ActorRef, driverHostPort: HostPort) = Props(LocalScheduler(applicationId, stateMonitorRef, driverHostPort))
 
   def name() = "LocalScheduler"
 }

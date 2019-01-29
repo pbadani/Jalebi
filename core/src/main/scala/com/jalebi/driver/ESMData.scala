@@ -13,4 +13,5 @@ case class StateValue(parts: Set[String],
                       executorState: ExecutorState,
                       datasetState: DatasetState,
                       container: Option[Container],
-                      nextAction: Option[JobAction])
+                      nextAction: Option[JobAction],
+                      requestId: Long)

@@ -11,6 +11,15 @@ case class StateMonitor(executorStateManage: ExecutorStateManage, jContext: Jale
     case RegisterExecutor(executorId) =>
       executorStateManage.markRegistered(executorId)
       sender() ! RegistrationAcknowledged(jContext.conf.hdfsHostPort.get)
+    case ContainerRequested(executorId, requestId) =>
+      LOGGER.info(s"Container requested $executorId, $requestId.")
+      executorStateManage.markRequested(executorId, requestId)
+    case ContainerAllocated(container) =>
+      LOGGER.info(s"Container allocated for request ${container.getAllocationRequestId}.")
+      val executorId = executorStateManage.markAllocated(container)
+      executorId.foreach { id =>
+        sender() ! LaunchContainer(id, container)
+      }
     case LoadedDataset(executorId) =>
       LOGGER.info(s"Loaded dataset at $executorId")
       executorStateManage.markLoaded(executorId)

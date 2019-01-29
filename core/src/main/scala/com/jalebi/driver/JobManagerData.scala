@@ -91,12 +91,21 @@ case class ExecutorStateManage(jContext: JalebiContext) extends JobManagerData w
     }
   }
 
-  def markAllocated(executorId: String): Unit = {
-    LOGGER.info(s"Allocated $executorId.")
+  def markRequested(executorId: String, requestId: Long): Unit = {
+    LOGGER.info(s"Requested $executorId.")
     if (!executorIdToState.contains(executorId)) {
       throw new IllegalStateException(s"Executor $executorId has not been added yet.")
     }
-    updateState(executorId, _.copy(executorState = ALLOCATED))
+    updateState(executorId, _.copy(executorState = REQUESTED, requestId = requestId))
+  }
+
+  def markAllocated(container: Container): Option[String] = {
+    executorIdToState.collectFirst {
+      case (executorId, state) if state.requestId == container.getAllocationRequestId && state.executorState == REQUESTED =>
+        updateState(executorId, _.copy(executorState = ALLOCATED, container = Some(container)))
+        LOGGER.info(s"Allocated $executorId.")
+        executorId
+    }
   }
 
   def markRegistered(executorId: String): Unit = {
@@ -179,5 +188,5 @@ case class ExecutorStateManage(jContext: JalebiContext) extends JobManagerData w
 }
 
 object ExecutorStateManage {
-  val default = StateValue(parts = Set.empty, executorState = NEW, datasetState = Noop, container = None, nextAction = None)
+  val default = StateValue(parts = Set.empty, executorState = NEW, datasetState = Noop, container = None, nextAction = None, requestId = 0L)
 }

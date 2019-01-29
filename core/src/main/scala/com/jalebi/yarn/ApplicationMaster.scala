@@ -3,14 +3,17 @@ package com.jalebi.yarn
 import java.util
 import java.util.Collections
 
+import akka.actor.{ActorRef, Props}
 import com.jalebi.common.{JalebiUtils, Logging, YarnUtils}
-import com.jalebi.context.JalebiContext
-import com.jalebi.driver.{ExecutorStateManager, Scheduler}
+import com.jalebi.driver.Scheduler
+import com.jalebi.hdfs.HostPort
+import com.jalebi.message._
 import com.jalebi.yarn.CommandConstants.{AppMaster, ExecutorConstants}
 import com.jalebi.yarn.handler.{AMRMCallbackHandler, NMCallbackHandler}
 import org.apache.commons.lang.StringUtils
 import org.apache.hadoop.fs.{FileSystem, Path}
 import org.apache.hadoop.yarn.api.ApplicationConstants
+import org.apache.hadoop.yarn.api.protocolrecords.RegisterApplicationMasterResponse
 import org.apache.hadoop.yarn.api.records._
 import org.apache.hadoop.yarn.client.api.AMRMClient.ContainerRequest
 import org.apache.hadoop.yarn.client.api.async.{AMRMClientAsync, NMClientAsync}
@@ -18,39 +21,45 @@ import org.apache.hadoop.yarn.conf.YarnConfiguration
 import org.apache.hadoop.yarn.util.Records
 
 import scala.collection.JavaConverters._
-import scala.collection.mutable.ListBuffer
 
-object ApplicationMaster extends Logging {
+case class ApplicationMaster(amArgs: ApplicationMasterArgs, applicationId: String, stateMonitorRef: ActorRef, driverHostPort: HostPort) extends Scheduler with Logging {
 
-  def apply(jContext: JalebiContext, executorStateManager: ExecutorStateManager, applicationId: String): ApplicationMaster = {
-    new ApplicationMaster(jContext, ApplicationMasterArgs.createArgsFromEnvironment(), executorStateManager, applicationId)
+  override def receive: Receive = {
+    case StartExecutors(executorIds) =>
+      executorIds.zipWithIndex.foreach {
+        case (executorId, requestId) =>
+          val resourceCapability = createResourceCapability()
+          val resourcePriority = YarnUtils.createResourcePriority()
+          val containerRequest = new ContainerRequest(resourceCapability, null, null, resourcePriority, requestId)
+          LOGGER.info(s"Container request $containerRequest")
+          amrmClient.addContainerRequest(containerRequest)
+          stateMonitorRef ! ContainerRequested(executorId, requestId)
+      }
+    case c@ContainerAllocated(_) => stateMonitorRef ! c
+    case LaunchContainer(executorId, allocatedContainer) =>
+      val containerLaunchContext = createExecutorContext(yarnConf, executorId)
+      LOGGER.info(s"Starting container at: " +
+        s" | Executor id: $executorId" +
+        s" | Container Id: ${allocatedContainer.getId}" +
+        s" | Node Id: ${allocatedContainer.getNodeId}" +
+        s" | Node Address: ${allocatedContainer.getNodeHttpAddress}".stripMargin('|'))
+      nmClient.startContainerAsync(allocatedContainer, containerLaunchContext)
+    //    case StopExecutors =>
+    //      refs.foreach {
+    //        case (_, ref) => ref ! ShutExecutors
+    //      }
   }
 
-}
-
-class ApplicationMaster(jContext: JalebiContext, amArgs: ApplicationMasterArgs, executorStateManager: ExecutorStateManager, applicationId: String) extends Scheduler(jContext) with Logging {
-  val numberOfContainersNeeded = 3
-  val containerStateManager = ContainerStateManager(numberOfContainersNeeded)
   val yarnConf = new YarnConfiguration()
-  val amrmClient: AMRMClientAsync[ContainerRequest] = AMRMClientAsync.createAMRMClientAsync[ContainerRequest](1000, AMRMCallbackHandler(this, executorStateManager))
+  val amrmClient: AMRMClientAsync[ContainerRequest] = AMRMClientAsync.createAMRMClientAsync[ContainerRequest](1000, AMRMCallbackHandler(context.self))
   amrmClient.init(yarnConf)
   amrmClient.start()
 
-  val nmClient: NMClientAsync = NMClientAsync.createNMClientAsync(NMCallbackHandler(this, executorStateManager))
+  val nmClient: NMClientAsync = NMClientAsync.createNMClientAsync(NMCallbackHandler(context.self))
   nmClient.init(yarnConf)
   nmClient.start()
 
-  private val containerMemory = 256
-  private val containerVCores = 1
-  //  val (driverHost, driverPort) = (jContext.driverHostPort.host, jContext.driverHostPort.port)
-  val (driverHost, driverPort: Int) = (null, 1111)
-
-  private val numOfExecutors = jContext.conf.getNumberOfExecutors().toInt
-  (0 until numOfExecutors).foreach(_ => executorStateManager.addExecutor(jContext.newExecutorId(applicationId)))
-
-  private val launchThreads = ListBuffer[Thread]()
-
-  val response = amrmClient.registerApplicationMaster(driverHost, driverPort.toInt, StringUtils.EMPTY)
+  val response: RegisterApplicationMasterResponse = amrmClient.registerApplicationMaster(driverHostPort.host, driverHostPort.port.toInt, StringUtils.EMPTY)
   LOGGER.info(s"Registered Application $response.")
 
   lazy val amContainerId: ContainerId = {
@@ -79,27 +88,12 @@ class ApplicationMaster(jContext: JalebiContext, amArgs: ApplicationMasterArgs, 
     })
   }
 
-  def createLaunchContainerThread(executorId: String, allocatedContainer: Container): Thread = {
-    val thread = new Thread(() => {
-      val containerLaunchContext = createExecutorContext(yarnConf, executorId)
-      LOGGER.info(s"Starting container at: " +
-        s" | Executor id: $executorId" +
-        s" | Container Id: ${allocatedContainer.getId}" +
-        s" | Node Id: ${allocatedContainer.getNodeId}" +
-        s" | Node Address: ${allocatedContainer.getNodeHttpAddress}".stripMargin('|'))
-      nmClient.startContainerAsync(allocatedContainer, containerLaunchContext)
-    })
-    thread.setName(executorId)
-    launchThreads += thread
-    thread
-  }
-
   private def createExecutorContext(conf: YarnConfiguration, executorId: String) = {
     val amContainer = Records.newRecord(classOf[ContainerLaunchContext])
     amContainer.setCommands(List(
-      s"scala com.jalebi.executor.Executor" +
-        s" --${ExecutorConstants.driverHost} $driverHost" +
-        s" --${ExecutorConstants.driverPort} $driverPort" +
+      s"/usr/local/bin/scala com.jalebi.executor.Executor" +
+        s" --${ExecutorConstants.driverHost} ${driverHostPort.host}" +
+        s" --${ExecutorConstants.driverPort} ${driverHostPort.port}" +
         s" --${ExecutorConstants.executorId} $executorId" +
         s" --${AppMaster.applicationId} ${amArgs.getApplicationId}" +
         s" 1> ${ApplicationConstants.LOG_DIR_EXPANSION_VAR}/stdout" +
@@ -118,15 +112,10 @@ class ApplicationMaster(jContext: JalebiContext, amArgs: ApplicationMasterArgs, 
 
   private def amrmClientIsInitialized = amrmClient != null
 
-  private def nmClientIsInitialized = nmClient != null
-
-  private def createResourceCapability(): Resource = {
-    Resource.newInstance(containerMemory, containerVCores)
-  }
+  private def createResourceCapability() = Resource.newInstance(256, 1)
 
   def finish(): Unit = {
     if (nmClient != null) {
-      containerStateManager.forAllLaunchedContainers((containerId, nodeId) => nmClient.stopContainerAsync(containerId, nodeId))
       nmClient.stop()
     }
     if (amrmClient != null) {
@@ -135,27 +124,11 @@ class ApplicationMaster(jContext: JalebiContext, amArgs: ApplicationMasterArgs, 
       amrmClient.stop()
     }
   }
+}
 
-  override def startExecutors(executorIds: Set[String]): Unit = {
-    executorIds.foreach(executorId => {
-      executorStateManager.addExecutor(executorId)
-      val resourceCapability = createResourceCapability()
-      val resourcePriority = YarnUtils.createResourcePriority()
-      val containerRequest = new ContainerRequest(resourceCapability, null, null, resourcePriority)
-      LOGGER.info(s"Container request $containerRequest")
-      amrmClient.addContainerRequest(containerRequest)
-    })
-  }
+object ApplicationMaster extends Logging {
 
-  override def shutExecutors(executorIds: Set[String]): Unit = {
-    LOGGER.info(s"Shutting executors ${executorIds.mkString(", ")}")
-  }
+  def props(applicationId: String, stateMonitorRef: ActorRef, driverHostPort: HostPort) = Props(ApplicationMaster(ApplicationMasterArgs.createArgsFromEnvironment(), applicationId, stateMonitorRef, driverHostPort))
 
-  override def shutAllExecutors(): Unit = {
-
-  }
-
-  override def receive: Receive = {
-    case "" =>
-  }
+  def name() = "AppMaster"
 }

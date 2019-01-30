@@ -1,11 +1,15 @@
 package com.jalebi.extensions
 
+import java.net.InetAddress
+
 import akka.actor.{ActorSystem, ExtendedActorSystem, Extension, ExtensionId, ExtensionIdProvider}
 import com.jalebi.hdfs.HostPort
 import com.typesafe.config.Config
+import org.apache.hadoop.net.NetUtils
 
 class MasterSettingsImpl(config: Config) extends Extension {
-  val host = config.getString("akka.remote.netty.tcp.hostname")
+//  val host = config.getString("akka.remote.netty.tcp.hostname")
+  val host = InetAddress.getLocalHost.getHostAddress
   val port = config.getLong("akka.remote.netty.tcp.port")
 
   def hostPort = HostPort("", host, port)

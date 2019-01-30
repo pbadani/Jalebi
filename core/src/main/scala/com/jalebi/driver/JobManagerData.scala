@@ -24,7 +24,7 @@ case class ExecutorStateManage(jContext: JalebiContext) extends JobManagerData w
   private var waitToLoad: Option[Promise[ExecutorState]] = None
   private var waitToUnregister: Option[Promise[ExecutorState]] = None
   private val jobToComplete = new mutable.HashMap[String, Promise[Seq[Node]]]()
-  private val defaultWaitDuration = 10 seconds
+  private val defaultWaitDuration = 30 seconds
 
   //This is a blocking call made by the JobManager because we want to wait for all the executors
   //to be registered before we start executing the jobs.

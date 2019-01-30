@@ -8,9 +8,9 @@ case class ExecutorArgs(args: Map[String, String]) {
 
   def getDriverHostPort = HostPort("http", args(ExecutorConstants.driverHost), args(ExecutorConstants.driverPort).toInt)
 
-  def getExecutorId = args(ExecutorConstants.executorId)
+  def getExecutorId: String = args(ExecutorConstants.executorId)
 
-  def getApplicationId = args(AppMaster.applicationId)
+  def getApplicationId: String = args(AppMaster.applicationId)
 }
 
 object ExecutorArgs extends Logging {

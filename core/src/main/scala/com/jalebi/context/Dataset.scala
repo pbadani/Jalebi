@@ -13,7 +13,7 @@ import scala.concurrent.{Await, Future}
 case class Dataset(name: String, jobManager: ActorRef) extends Logging {
 
   def findNode(nodeId: Long): Seq[Node] = {
-    implicit val timeout = Timeout(10 seconds)
-    Await.result(jobManager.ask(FindNode(nodeId)).asInstanceOf[Future[Seq[Node]]], 10 seconds)
+    implicit val timeout = Timeout(30 seconds)
+    Await.result(jobManager.ask(FindNode(nodeId)).asInstanceOf[Future[Seq[Node]]], 30 seconds)
   }
 }

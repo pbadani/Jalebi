@@ -21,7 +21,7 @@ case class JalebiContext private(conf: JalebiConfig, master: ActorSystem) extend
   private val jobIdCounter = new AtomicLong(0)
   private val executorIdCounter = new AtomicLong(0)
   private val jobManager = JalebiContext.master.actorOf(JobManager.props(this), JobManager.name)
-  implicit val timeout: Timeout = Timeout(10 seconds)
+  implicit val timeout: Timeout = Timeout(30 seconds)
   jobManager ? InitializeExecutors
 
   @throws[DatasetNotFoundException]

@@ -89,6 +89,7 @@ case class ApplicationMaster(amArgs: ApplicationMasterArgs, applicationId: Strin
   }
 
   private def createExecutorContext(conf: YarnConfiguration, executorId: String) = {
+    LOGGER.info(s"Executor Context ${driverHostPort.host}, ${driverHostPort.port} $executorId")
     val amContainer = Records.newRecord(classOf[ContainerLaunchContext])
     amContainer.setCommands(List(
       s"/usr/local/bin/scala com.jalebi.executor.Executor" +

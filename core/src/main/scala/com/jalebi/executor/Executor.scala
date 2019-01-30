@@ -44,8 +44,8 @@ case class Executor(executorId: String, driverHostPort: HostPort) extends FSM[Ex
 
   when(New) {
     case Event(RegistrationAcknowledged(hdfs), _) =>
-      LOGGER.info(s"Registered $executorId")
       require(monitorRef.isDefined, "MonitorRef not set.")
+      LOGGER.info(s"Registered $executorId")
       goto(Registered) using RegisteredExecutorState(monitorRef.get, hdfs)
   }
 
@@ -100,6 +100,7 @@ object Executor extends Logging {
   def name(executorId: String): String = executorId
 
   def main(args: Array[String]): Unit = {
+    LOGGER.info(s"Executor args $args")
     val executorArgs = ExecutorArgs(args)
     LOGGER.info(s"Starting Executor with Args $executorArgs")
     Executor.master.actorOf(Executor.props(executorArgs.getExecutorId, executorArgs.getDriverHostPort), Executor.name(executorArgs.getExecutorId))

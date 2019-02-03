@@ -30,7 +30,7 @@ case class Executor(executorId: String, driverHostPort: HostPort) extends FSM[Ex
     }
 
     //    masterRef = Some(Executor.master.actorSelection(pathToRemote(conf.masterActor)))
-    monitorRef = Some(Executor.master.actorSelection(pathToRemote(conf.monitorActor)))
+    monitorRef = Some(context.actorSelection(pathToRemote(conf.monitorActor)))
     monitorRef.get ! RegisterExecutor(executorId)
   }
 

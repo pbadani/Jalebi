@@ -8,9 +8,8 @@ import com.jalebi.partitioner.HashPartitioner
 import org.apache.hadoop.yarn.api.records.Container
 
 import scala.collection.mutable
-import scala.concurrent.duration.Duration
+import scala.concurrent.duration.{Duration, _}
 import scala.concurrent.{Await, Future, Promise}
-import scala.concurrent.duration._
 
 sealed trait JobManagerData extends Logging
 

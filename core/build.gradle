@@ -32,25 +32,11 @@ dependencies {
     compile group: 'org.scala-lang', name: 'scala-library', version: '2.12.3'
     compile group: 'org.scala-lang', name: 'scala-compiler', version: '2.12.3'
     testCompile group: 'org.scalatest', name: 'scalatest_2.12', version: '3.0.0'
-
     compile group: 'com.typesafe.akka', name: 'akka-actor_2.12', version: '2.5.19'
     testCompile group: 'com.typesafe.akka', name: 'akka-testkit_2.12', version: '2.5.19'
-
     compile group: 'com.typesafe.akka', name: 'akka-remote_2.12', version: '2.5.19'
     testCompile group: 'com.typesafe.akka', name: 'akka-multi-node-testkit_2.12', version: '2.5.19'
-
     compile group: 'com.typesafe.akka', name: 'akka-slf4j_2.12', version: '2.5.19'
-
-//    compile group: 'com.thesamet.scalapb', name: 'compilerplugin_2.12', version: '0.7.4'
-//    compile group: 'com.thesamet.scalapb', name: 'protoc-bridge_2.12', version: '0.7.3'
-//    compile group: 'com.thesamet.scalapb', name: 'scalapbc_2.12', version: '0.7.4'
-//    compile group: 'com.thesamet.scalapb', name: 'scalapb-runtime_2.12', version: '0.7.4'
-//    compile group: 'com.thesamet.scalapb', name: 'scalapb-runtime-grpc_2.12', version: '0.7.4'
-//
-//    compile group: 'io.grpc', name: 'grpc-netty-shaded', version: '1.13.2'
-//    compile group: 'io.netty', name: 'netty-common', version: '4.1.8.Final'
-//    compile group: 'com.google.protobuf', name: 'protobuf-java', version: '3.5.1'
-//    compile group: 'com.github.os72', name: 'protoc-jar', version: '3.5.1.1'
 
     compile group: 'org.apache.avro', name: 'avro', version: '1.8.2'
     compile group: 'com.sksamuel.avro4s', name: 'avro4s-core_2.12', version: '1.9.0'
@@ -76,12 +62,4 @@ task fatJar(type: Jar) {
 task copyGraphJar(type: Copy) {
     from file("${buildDir}/libs/core.jar")
     into file("${projectDir}/publish/")
-}
-
-task deleteArtifacts(type: Delete, group: "ProtoBuf", description: "Deletes protobuf artifacts") {
-    delete './src/main/scala/com/jalebi/proto/', './src/main/java/com/jalebi/generated/'
-}
-
-task generateArtifacts(type: Exec, group: "ProtoBuf", description: "Generates protobuf artifacts") {
-    commandLine './src/main/resources/scalapbc-0.7.4/bin/scalapbc', '--scala_out=grpc:./src/main/scala', /* '--java_out=./src/main/java',*/ './src/main/resources/jobmanagement.proto'
 }
